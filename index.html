@@ -1,0 +1,35 @@
+<!DOCTYPE html>  
+<html ng-app="Geographr">  
+  <head>  
+    <title>Geographr</title>
+    <meta charset="utf-8">
+    <!-- CSS -->
+    <link href='http://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'/>
+    <link href="css/bootstrap.css" rel="stylesheet" media="screen"/>
+    <link href="css/main.css" media="screen" rel="stylesheet"/>
+    <link href="css/slider.css" media="screen" rel="stylesheet"/>
+  </head>  
+  <body>
+  	<div ng-cloak ng-view></div> <!-- View display -->
+    
+    <!-- Bootstrap -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> <!-- Jquery -->
+    <script src="js/vendor/bootstrap.js"></script>
+    <!-- Plugins -->
+    <script src="js/vendor/bootstrap-slider.js"></script>
+    <script src="js/vendor/jquery.mousewheel.js"></script>
+    <script src="js/vendor/seedrandom.js"></script>
+    
+    <!-- AngularJS -->
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
+    <script src="js/vendor/localStorageModule.js"></script> <!-- Makes local storage easier in Angular -->
+    <script src="https://cdn.firebase.com/v0/firebase.js"></script> <!-- Firebase -->
+    <script src="https://cdn.firebase.com/v0/firebase-simple-login.js"></script>
+    <script src="js/main.js"></script> <!-- My stuff -->
+    <script src="js/controllers.js"></script>
+    <script src="js/service-colors.js"></script>
+    <script src="js/service-canvas.js"></script>
+    <script src="js/service-game.js"></script>
+    <script src="js/directives.js"></script>
+  </body>
+</html>

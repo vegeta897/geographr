@@ -1,0 +1,144 @@
+html { height: 100%; }
+body { height: 100%; }
+
+*:focus {
+    outline: 0 !important;
+}
+
+.hidden { display: none !important; }
+
+.navbar { height: 55px; border-color: #111; }
+
+h1 { margin: 4px 0 0; }
+h1 a:hover, h1 a:focus { text-decoration: none; }
+h1 small { font-size: 12px; }
+
+.geographr-color {
+    color: #e2ebf5; text-shadow: none; -webkit-text-fill-color: transparent;
+    background: -webkit-linear-gradient(left top, #e2ebf5, #b5e5f6);
+    background: -o-linear-gradient(transparent, transparent); -webkit-background-clip: text;
+}
+
+#loginForm { margin-right: -30px; }
+#loginForm input { width: 150px; margin-right: 8px; }
+p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
+
+#mainContainer {
+    width: 1204px;
+    padding: 4px 0 0 2px;
+}
+
+canvas { position: relative; }
+#mainPingCanvas, #mainHighlightCanvas, #lowlightCanvas { position: absolute; top: -5000px; }
+
+.hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
+
+#uiContainer { top: -24px; }
+
+
+#info h2 { color: #c8c8c8; font-size: 20px }
+
+#log ul { font-size: 11px; }
+#log ul li { margin-bottom: 0; }
+
+#uiContainer li { margin-bottom: 3px; }
+#uiContainer li button {
+    position: relative; top: -1px;
+    padding: 1px 5px 3px;
+}
+
+#scoreboard table { margin-bottom: 0; }
+
+button .glyphicon {
+    margin-right: 3px;
+}
+
+.attach-top { position: relative; top: -6px; }
+
+#uiContainer table.unstyled { background: transparent; }
+#uiContainer table.unstyled tr td { padding: 2px 6px 0 0; border: none; color: #999; }
+strong { color: #ccc; }
+
+
+/* --- Bootstrap Overrides --- */
+
+p { color: #999; }
+h2 { color: #aaa; font-size: 18px; line-height: 22px; margin-top: 6px; }
+h2 small { font-size: 14px; margin-left: 12px; }
+.text-warning strong { color: #f8a416; }
+.text-warning small { color: #d89416; }
+.well { padding: 8px; background-color: #24272b; border-color: #1b1e21; }
+.progress { height: 12px; margin-bottom: 12px; margin-top: 4px; }
+.navbar { margin-bottom: 4px; border-radius: 0; }
+
+/* --- Unresponsive Bootstrap --- */
+
+.container {
+    position: relative;
+    max-width: none !important;
+    width: 1200px;
+    padding: 0;
+}
+
+/* Undo the collapsing navbar */
+.navbar-collapse {
+    display: block !important;
+    height: auto !important;
+    padding-bottom: 0;
+    overflow: visible !important;
+}
+
+.navbar-toggle {
+    display: none;
+}
+
+.navbar-brand {
+    margin-left: -15px;
+}
+
+/* Always apply the floated nav */
+.navbar-nav {
+    float: left;
+    margin: 0;
+}
+.navbar-nav > li {
+    float: left;
+}
+.navbar-nav > li > a {
+    padding: 15px;
+}
+
+/* Redeclare since we override the float above */
+.navbar-nav.navbar-right {
+    float: right;
+}
+
+/* Undo custom dropdowns */
+.navbar .open .dropdown-menu {
+    position: absolute;
+    float: left;
+    background-color: #fff;
+    border: 1px solid #cccccc;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-width: 0 1px 1px;
+    border-radius: 0 0 4px 4px;
+    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+}
+.navbar .open .dropdown-menu > li > a {
+    color: #333;
+}
+.navbar .open .dropdown-menu > li > a:hover,
+.navbar .open .dropdown-menu > li > a:focus,
+.navbar .open .dropdown-menu > .active > a,
+.navbar .open .dropdown-menu > .active > a:hover,
+.navbar .open .dropdown-menu > .active > a:focus {
+    color: #fff !important;
+    background-color: #428bca !important;
+}
+.navbar .open .dropdown-menu > .disabled > a,
+.navbar .open .dropdown-menu > .disabled > a:hover,
+.navbar .open .dropdown-menu > .disabled > a:focus {
+    color: #999 !important;
+    background-color: transparent !important;
+}
