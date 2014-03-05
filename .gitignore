@@ -21,9 +21,7 @@ org.eclipse.*
 .buildpath
 
 # IntelliJ
-.idea/workspace.xml 
-.idea/tasks.xml
-*.iws
+.idea/
 
 # Media
 *.mp3

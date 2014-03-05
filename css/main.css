@@ -15,7 +15,7 @@ h1 small { font-size: 12px; }
 
 .geographr-color {
     color: #e2ebf5; text-shadow: none; -webkit-text-fill-color: transparent;
-    background: -webkit-linear-gradient(left top, #e2ebf5, #b5e5f6);
+    background: -webkit-linear-gradient(left top, brown, green);
     background: -o-linear-gradient(transparent, transparent); -webkit-background-clip: text;
 }
 
