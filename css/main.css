@@ -29,7 +29,7 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 }
 
 canvas { position: relative; }
-#mainPingCanvas, #mainHighlightCanvas, #lowlightCanvas { position: absolute; top: -5000px; }
+#mainPingCanvas, #mainHighlightCanvas, #terrainCanvas { position: absolute; top: -5000px; }
 
 .hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
 

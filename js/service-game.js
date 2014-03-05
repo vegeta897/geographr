@@ -73,6 +73,15 @@ angular.module('Geographr.game', [])
         return false;
     };
     return {
+        newMap: function() {
+            var map = {};
+            for(var i = 0; i < 240; i++) {
+                for(var ii = 0; ii < 150; ii++) {
+                    map[i + ':' + ii] = 'water-deep';
+                }
+            }
+            return map;
+        },
         someGameFunction: function(ox,oy) { // ox and oy are the clicked coords
            // Placeholder game function!
         },

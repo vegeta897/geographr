@@ -21,8 +21,8 @@
     </div>
 </div>
 <div id="mainContainer" class="container">
-    <canvas id="lowlightCanvas" width="1200" height="750"></canvas> <!-- Lowlight canvas -->
-    <canvas id="mainCanvas" width="1200" height="750"> <!-- Main canvas -->
+    <canvas id="terrainCanvas" width="1200" height="750"></canvas> <!-- Terrain canvas -->
+    <canvas id="objectCanvas" width="1200" height="750"> <!-- Object canvas -->
         Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
     </canvas>
     <canvas id="mainPingCanvas" width="1200" height="750"></canvas> <!-- Ping canvas -->
@@ -36,7 +36,7 @@
         <div id="info" class="col-xs-4">
             <h2>Welcome to <span class="geographr-color">Geographr</span>!</h2>
             <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
-            <button ng-show="user.id == 4" class="btn btn-danger" ng-click="reset()">Reset</button>
+            <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
         </div>
         <div id="userStats" class="col-xs-2">
             <h2>{{ user.nick }}'s Stats</h2>

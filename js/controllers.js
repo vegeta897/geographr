@@ -10,7 +10,7 @@ angular.module('Geographr.controllers', [])
         $scope.localUsers = {};
         $scope.eventLog = [];
         var mainPixSize = 5, keyPressed = false, keyUpped = true, mouseDown,
-            pinging = false, userID, fireUser, localPixels = {}, tutorialStep = 0;
+            pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, tutorialStep = 0;
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -99,26 +99,26 @@ angular.module('Geographr.controllers', [])
         }
     
         // Set up our canvas
-        var mainCanvas = document.getElementById('mainCanvas');
-        var mainContext = mainCanvas.getContext ? mainCanvas.getContext('2d') : null;
+        var objectCanvas = document.getElementById('objectCanvas');
+        var objectContext = objectCanvas.getContext ? objectCanvas.getContext('2d') : null;
     
         // Prevent right-click on canvas
         jQuery('body').on('contextmenu', '#mainHighlightCanvas', function(e){ return false; });
     
         var mainPingCanvas = document.getElementById('mainPingCanvas'); // Main canvas pinging
         var mainHighCanvas = document.getElementById('mainHighlightCanvas'); // Main canvas highlighting
-        var mainLowCanvas = document.getElementById('lowlightCanvas'); // Main canvas lowlighting
+        var terrainCanvas = document.getElementById('terrainCanvas'); // Terrain canvas
         var mainPingContext = mainPingCanvas.getContext ? mainPingCanvas.getContext('2d') : null;
         var mainHighContext = mainHighCanvas.getContext ? mainHighCanvas.getContext('2d') : null;
-        var mainLowContext = mainLowCanvas.getContext ? mainLowCanvas.getContext('2d') : null;
+        var terrainContext = terrainCanvas.getContext ? terrainCanvas.getContext('2d') : null;
         $timeout(function(){ alignCanvases(); }, 500); // Set its position to match the real canvas
-        canvasUtility.fillCanvas(mainLowContext,'1f2022');
+        canvasUtility.fillCanvas(terrainContext,'2c3d4b');
     
         // Align canvas positions
         var alignCanvases = function() {
-            jQuery(mainPingCanvas).offset(jQuery(mainCanvas).offset());
-            jQuery(mainHighCanvas).offset(jQuery(mainCanvas).offset());
-            jQuery(mainLowCanvas).offset(jQuery(mainCanvas).offset());
+            jQuery(mainPingCanvas).offset(jQuery(objectCanvas).offset());
+            jQuery(mainHighCanvas).offset(jQuery(objectCanvas).offset());
+            jQuery(terrainCanvas).offset(jQuery(objectCanvas).offset());
         };
     
         // Keep track of if the mouse is up or down
@@ -139,15 +139,16 @@ angular.module('Geographr.controllers', [])
         // Disable text selection.
         mainHighCanvas.onselectstart = function() { return false; };
     
-        // Reset all pixels and scores
+        // Reset all objects, clear map, reset scores
         $scope.reset = function() {
             fireRef.once('value',function(snap) {
                 var cleaned = snap.val();
-                delete cleaned.pixels;
+                if(cleaned.hasOwnProperty('objects')) { delete cleaned.objects; }
+                if(cleaned.hasOwnProperty('terrain')) { delete cleaned.terrain; }
                 for(var key in cleaned.users) {
                     if(cleaned.users.hasOwnProperty(key)) {
                         var cleanUser = cleaned.users[key];
-                        cleanUser.breaks = cleanUser.score = cleanUser.taps = 0;
+                        cleanUser.score = 0;
                     }
                 }
                 fireRef.set(cleaned);
@@ -156,9 +157,11 @@ angular.module('Geographr.controllers', [])
     
         var onMouseDown = function(e) {
             e.preventDefault();
+            if(userID == 2) { return; } // Ignore actions from server
             var x = $scope.overPixel[0], y = $scope.overPixel[1];
             // Make stuff happen when user clicks on map
-            console.log('click!');
+            fireRef.child('terrain/' + x + ':' + y).set('land');
+            
         };
     
         var onMouseUp = function(e) { mouseDown = false; };
@@ -207,20 +210,21 @@ angular.module('Geographr.controllers', [])
         jQuery(mainHighCanvas).mouseleave(onMouseOut);
         jQuery(window).resize(alignCanvases); // Re-align canvases on window resize
     
-        // When a tap is added/changed
-        var drawPixel = function(snap) {
-            var pixel = localPixels[snap.name()] = snap.val();
-            var coords = snap.name().split(":");
-            
-            if(!$scope.localUsers.hasOwnProperty('4')) { return; } // If users haven't been fetched yet
+        // When terrain is added/changed
+        var drawTerrain = function(snap) {
+            var terrain = localTerrain[snap.name()] = snap.val();
+            var coords = snap.name().split(":"); 
+            canvasUtility.drawTerrain(terrainContext,snap.val(),coords,localTerrain);
+            if(!$scope.localUsers.hasOwnProperty('2')) { return; } // If users haven't been fetched yet
             // TODO: Log stuff
         };
-        // When the board is reset
-        var clearCanvas = function(snapshot) {
-            localPixels = {}; // Delete all local pixels
-            $scope.eventLog = [];
-            canvasUtility.fillCanvas(mainContext,'1f2022'); // Clear canvas
-            $timeout(function(){ alignCanvases(); }, 200); // Realign canvases
+        // When an object is added/changed
+        var drawObject = function(snapshot) {
+            localObjects[snapshot.name()] = snapshot.val(); // Update local object
+        };
+        // When an object is removed
+        var removeObject = function(snapshot) {
+            localObjects[snapshot.name()] = {}; // Delete local object
         };
     
         var sortArrayByProperty = function(arr, sortby, descending) {
@@ -275,9 +279,11 @@ angular.module('Geographr.controllers', [])
         };
 
         // Firebase listeners
-        fireRef.child('pixels').on('child_added', drawPixel);
-        fireRef.child('pixels').on('child_changed', drawPixel);
-        fireRef.child('pixels').on('child_removed', clearCanvas);
+        fireRef.child('terrain').on('child_added', drawTerrain);
+        fireRef.child('terrain').on('child_changed', drawTerrain);
+        fireRef.child('objects').on('child_added', drawObject);
+        fireRef.child('objects').on('child_changed', drawObject);
+        fireRef.child('objects').on('child_removed', removeObject);
         fireRef.child('meta/pings').on('child_added', drawPing);
         fireRef.child('meta/pings').on('child_removed', hidePing);
         fireRef.child('status').on('value', onServerStatus);
