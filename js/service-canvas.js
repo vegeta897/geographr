@@ -2,8 +2,8 @@
 
 angular.module('Geographr.canvas', [])
 .factory('canvasUtility', function(colorUtility) {
-        var pixSize = 5;
-        var pixOff = pixSize/2;
+        var mainPixSize = 2;
+        var mainPixOff = mainPixSize/2;
         
         // Return a list of coordinates surrounding and including the input coords
         var listNear = function(coords) {
@@ -72,39 +72,57 @@ angular.module('Geographr.canvas', [])
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
                 context[method](0,0,1200,750);
             },
+            fillMainArea: function(context,color,coords,size) {
+                var method = color == 'erase' ? 'clearRect' : 'fillRect';
+                if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
+                context[method](coords[0]*mainPixSize,coords[1]*mainPixSize,size[0]*mainPixSize,size[1]*mainPixSize);
+            },
             drawPixel: function(context,color,coords,size) {
                 var method = color == 'erase' ? 'clearRect' : 'fillRect';
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
                 context[method](x*pixSize,y*pixSize,size[0]*pixSize,size[1]*pixSize);
             },
-            drawTerrain: function(context,type,coords,terrain) {
+            drawTerrain: function(context,terrain,coords,zoomPosition,zoomPixSize) {
+                var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
+                var x = parseInt(coords[0]), y = parseInt(coords[1]);
+                // Don't draw on zoom canvas if pixel is out of bounds
+                if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
+                    (canvasType == 'zoom' && y+1 < zoomPosition[1]) ||
+                    (canvasType == 'zoom' && (x-1) > zoomPosition[0]+(600/zoomPixSize)) ||
+                    (canvasType == 'zoom' && (y-1) > zoomPosition[1]+(600/zoomPixSize))) {
+                    return;
+                }
+                var canvasPixSize = canvasType == 'full' ? mainPixSize : zoomPixSize;
+                var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 var affected = listNear(coords);
                 for(var i = 0; i < affected.length; i++) {
                     var thisCoord = affected[i].split(':');
                     var nearThis = listNear(thisCoord);
                     var color = surveyNear(nearThis,terrain);
-                    var x = parseInt(thisCoord[0]), y = parseInt(thisCoord[1]);
+                    var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.fillStyle = color;
-                    context.fillRect(x*pixSize,y*pixSize,pixSize,pixSize);
+                    context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
+                        canvasPixSize,canvasPixSize);
                 }
             },
-            drawSelect: function(context,coords,pixSize) {
+            drawSelect: function(context,coords,zoomPixSize) {
                 var x = coords[0], y = coords[1];
-                context.beginPath();
-                context.moveTo(x * pixSize + pixOff, y * pixSize - 4.5);
-                context.lineTo(x * pixSize + pixOff, y * pixSize + pixSize + 4.5);
-                context.moveTo(x * pixSize - 4.5, y * pixSize + pixOff);
-                context.lineTo(x * pixSize + pixSize + 4.5, y * pixSize + pixOff);
-                context.strokeStyle = 'rgba(255,255,255,0.5)';
-                context.stroke();
-                context.clearRect(x * pixSize, y * pixSize, // Inner box
-                    pixSize, pixSize);
+                var thickness = zoomPixSize < 16 ? 1 : zoomPixSize < 31 ? 2 : 3;
+                context.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                context.fillRect(x * zoomPixSize-thickness, y * zoomPixSize-thickness, // Outer box
+                    zoomPixSize+thickness*2, zoomPixSize+thickness*2);
+                context.clearRect(x * zoomPixSize+2*thickness, y * zoomPixSize-thickness, // Vertical
+                    zoomPixSize-4*thickness, zoomPixSize+thickness*2);
+                context.clearRect(x * zoomPixSize-thickness, y * zoomPixSize+2*thickness, // Horizontal
+                    zoomPixSize+thickness*2, zoomPixSize-4*thickness);
+                context.clearRect(x * zoomPixSize, y * zoomPixSize, // Inner box
+                    zoomPixSize, zoomPixSize);
             },
             drawPing: function(context,coords) {
                 var pingGradient = context.createRadialGradient(
-                    coords[0]*pixSize + pixSize/2, coords[1]*pixSize + pixSize/2, 5,
-                    coords[0]*pixSize + pixSize/2, coords[1]*pixSize + pixSize/2, 0
+                    coords[0]*mainPixSize + mainPixSize/2, coords[1]*mainPixSize + mainPixSize/2, 5,
+                    coords[0]*mainPixSize + mainPixSize/2, coords[1]*mainPixSize + mainPixSize/2, 0
                 );
                 pingGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
                 pingGradient.addColorStop(0.2, "rgba(255, 255, 255, 1)");
@@ -112,15 +130,15 @@ angular.module('Geographr.canvas', [])
                 pingGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
                 context.fillStyle = pingGradient;
                 context.beginPath();
-                context.arc(coords[0]*pixSize + pixSize/2,
-                    coords[1]*pixSize + pixSize/2, 5, 0, 2 * Math.PI, false);
+                context.arc(coords[0]*mainPixSize + mainPixOff,
+                    coords[1]*mainPixSize +mainPixOff, 5, 0, 2 * Math.PI, false);
                 var cycle = 0;
                 function fadePing() {
                     if(Math.round(cycle/2) == cycle/2) {
                         context.fill();
                     } else {
-                        context.clearRect(coords[0] * pixSize - 15 + pixSize/2,
-                            coords[1] * pixSize - 15 + pixSize/2, 30, 30);
+                        context.clearRect(coords[0] * mainPixSize - 15 + mainPixOff,
+                            coords[1] * mainPixSize - 15 + mainPixOff, 30, 30);
                     }
                     cycle++;
                     if(cycle >= 8) {
@@ -130,8 +148,8 @@ angular.module('Geographr.canvas', [])
                 var pingInt = setInterval(function(){fadePing()},200);
             },
             clearPing: function(context,coords) {
-                context.clearRect(coords[0] * pixSize - 15 + pixSize/2,
-                    coords[1] * pixSize - 15 + pixSize/2, 30, 30);
+                context.clearRect(coords[0] * mainPixSize - 15 + mainPixOff,
+                    coords[1] * mainPixSize - 15 + mainPixOff, 30, 30);
             }
         }
 });

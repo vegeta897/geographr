@@ -21,14 +21,29 @@
     </div>
 </div>
 <div id="mainContainer" class="container">
-    <canvas id="terrainCanvas" width="1200" height="750"></canvas> <!-- Terrain canvas -->
-    <canvas id="objectCanvas" width="1200" height="750"> <!-- Object canvas -->
-        Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
-    </canvas>
-    <canvas id="mainPingCanvas" width="1200" height="750"></canvas> <!-- Ping canvas -->
-    <canvas id="mainHighlightCanvas" width="1200" height="750"></canvas> <!-- Highlight canvas -->
+    <div class="canvas-container"> <!-- Left side canvases -->
+        <canvas id="fullTerrainCanvas" width="600" height="600"></canvas> <!-- Terrain canvas -->
+        <canvas id="fullObjectCanvas" width="600" height="600"></canvas> <!-- Object canvas -->
+        <canvas id="fullPingCanvas" width="600" height="600"></canvas> <!-- Ping canvas -->
+        <canvas id="fullHighCanvas" width="600" height="600"> <!-- Highlight canvas -->
+            Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
+        </canvas>
+    </div>
+    <div class="canvas-container"> <!-- Right side canvases -->
+        <canvas id="zoomTerrainCanvas" width="600" height="600"></canvas> <!-- Terrain canvas -->
+        <canvas id="zoomObjectCanvas" width="600" height="600"></canvas> <!-- Object canvas -->
+        <canvas id="zoomPingCanvas" width="600" height="600"></canvas> <!-- Ping canvas -->
+        <canvas id="zoomHighCanvas" width="600" height="600"></canvas> <!-- Highlight canvas -->
+    </div>
+    <div class="col-xs-1 pull-left hard-left coords">
+        {{ zoomPosition[0] }} , {{ zoomPosition[1] }}
+    </div>
     <div class="col-xs-1 text-right hard-right pull-right coords">
-        {{ overPixel[0] }} <span class="text-muted">,</span> {{ overPixel[1] }}
+        {{ overPixel[0] }} , {{ overPixel[1] }}
+    </div>
+    <div class="col-xs-2 text-right hard-right pull-right coords">
+        <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
+               data-slider-max="8" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
     </div>
 </div>
 <div id="uiContainer" ng-show="userInit" class="container">

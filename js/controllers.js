@@ -3,13 +3,16 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.02; $scope.versionName = 'Complex Composer'; $scope.needUpdate = false;
-        $scope.overPixel = ['-','-']; // Tracking your coordinates'
+        $scope.version = 0.03; $scope.versionName = 'Fierce Ram'; $scope.needUpdate = false;
+        $scope.zoomPosition = [120,120]; // Tracking zoom window position
+        $scope.overPixel = ['-','-']; // Tracking your coordinates
         $scope.authStatus = '';
         $scope.helpText = '';
         $scope.localUsers = {};
+        $scope.zoomLevel = 6;
         $scope.eventLog = [];
-        var mainPixSize = 5, keyPressed = false, keyUpped = true,
+        var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
+            keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, tutorialStep = 0;
     
         // Create a reference to the pixel data for our canvas
@@ -79,8 +82,8 @@ angular.module('Geographr.controllers', [])
                     $scope.user = snapshot.val();
                     $scope.userInit = true;
                     $scope.authStatus = 'logged';
-                    jQuery(mainHighCanvas).mousedown(onMouseDown);
-                    jQuery(mainHighCanvas).mouseup(onMouseUp);
+                    jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
+                    jQuery(zoomHighCanvas).mouseup(onMouseUp);
                     fireRef.child('users').on('child_added', updateUsers);
                     fireRef.child('users').on('child_changed', updateUsers);
                     if(userID == 2) {
@@ -98,44 +101,44 @@ angular.module('Geographr.controllers', [])
             }
         }
     
-        // Set up our canvas
-        var objectCanvas = document.getElementById('objectCanvas');
-        var objectContext = objectCanvas.getContext ? objectCanvas.getContext('2d') : null;
-    
-        // Prevent right-click on canvas
-        jQuery('body').on('contextmenu', '#mainHighlightCanvas', function(e){ return false; });
-    
-        var mainPingCanvas = document.getElementById('mainPingCanvas'); // Main canvas pinging
-        var mainHighCanvas = document.getElementById('mainHighlightCanvas'); // Main canvas highlighting
-        var terrainCanvas = document.getElementById('terrainCanvas'); // Terrain canvas
-        var mainPingContext = mainPingCanvas.getContext ? mainPingCanvas.getContext('2d') : null;
-        var mainHighContext = mainHighCanvas.getContext ? mainHighCanvas.getContext('2d') : null;
-        var terrainContext = terrainCanvas.getContext ? terrainCanvas.getContext('2d') : null;
-        $timeout(function(){ alignCanvases(); }, 500); // Set its position to match the real canvas
-        canvasUtility.fillCanvas(terrainContext,'2c3d4b');
+        // Set up our canvases
+        var fullTerrainCanvas = document.getElementById('fullTerrainCanvas');
+        var fullObjectCanvas = document.getElementById('fullObjectCanvas');
+        var fullPingCanvas = document.getElementById('fullPingCanvas');
+        var fullHighCanvas = document.getElementById('fullHighCanvas');
+        var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas');
+        var zoomObjectCanvas = document.getElementById('zoomObjectCanvas');
+        var zoomPingCanvas = document.getElementById('zoomPingCanvas');
+        var zoomHighCanvas = document.getElementById('zoomHighCanvas');
+        var fullTerrainContext = fullTerrainCanvas.getContext ? fullTerrainCanvas.getContext('2d') : null;
+        var fullObjectContext = fullObjectCanvas.getContext ? fullObjectCanvas.getContext('2d') : null;
+        var fullPingContext = fullPingCanvas.getContext ? fullPingCanvas.getContext('2d') : null;
+        var fullHighContext = fullHighCanvas.getContext ? fullHighCanvas.getContext('2d') : null;
+        var zoomTerrainContext = zoomTerrainCanvas.getContext ? zoomTerrainCanvas.getContext('2d') : null;
+        var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
+        var zoomPingContext = zoomPingCanvas.getContext ? zoomPingCanvas.getContext('2d') : null;
+        var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
+        $timeout(function(){ alignCanvases(); }, 500); // Align canvases half a second after load
+        canvasUtility.fillCanvas(fullTerrainContext,'2c3d4b');
+        canvasUtility.fillCanvas(zoomTerrainContext,'2c3d4b');
     
         // Align canvas positions
         var alignCanvases = function() {
-            jQuery(mainPingCanvas).offset(jQuery(objectCanvas).offset());
-            jQuery(mainHighCanvas).offset(jQuery(objectCanvas).offset());
-            jQuery(terrainCanvas).offset(jQuery(objectCanvas).offset());
+            jQuery(fullPingCanvas).offset(jQuery(fullTerrainCanvas).offset());
+            jQuery(fullObjectCanvas).offset(jQuery(fullTerrainCanvas).offset());
+            jQuery(fullHighCanvas).offset(jQuery(fullTerrainCanvas).offset());
+            jQuery(zoomPingCanvas).offset(jQuery(zoomTerrainCanvas).offset());
+            jQuery(zoomObjectCanvas).offset(jQuery(zoomTerrainCanvas).offset());
+            jQuery(zoomHighCanvas).offset(jQuery(zoomTerrainCanvas).offset());
         };
-    
-        // Keep track of if the mouse is up or down
-        mainHighCanvas.onmousedown = function(event) {
-            if(event.which == 2) {
-    
-            }
-            return false;
-        };
-        mainHighCanvas.onmouseout = mainHighCanvas.onmouseup = function(event) {
-            if(event.which == 2) {
-    
-            }
-        };
+
+        // Prevent right-click on high canvases
+        jQuery('body').on('contextmenu', '#fullHighCanvas', function(e){ return false; })
+            .on('contextmenu', '#zoomHighCanvas', function(e){ return false; });
     
         // Disable text selection.
-        mainHighCanvas.onselectstart = function() { return false; };
+        fullHighCanvas.onselectstart = function() { return false; };
+        zoomHighCanvas.onselectstart = function() { return false; };
     
         // Reset all objects, clear map, reset scores
         $scope.reset = function() {
@@ -152,44 +155,198 @@ angular.module('Geographr.controllers', [])
                 fireRef.set(cleaned);
             });
         };
-    
-        var onMouseDown = function(e) {
+
+        $scope.changeZoom = function(val) {
+            if($scope.zoomLevel == val && viewCenter) { return; }
+            $timeout(function(){});
+            var oldZoom = zoomSize;
+            var zoomLevels = [5,8,10,12,15,20,30,40,60];
+            $scope.zoomLevel = parseInt(val);
+            localStorageService.set('zoomLevel',$scope.zoomLevel);
+            zoomPixSize = zoomLevels[$scope.zoomLevel];
+            zoomSize = [600/zoomPixSize,600/zoomPixSize];
+            var offset = [oldZoom[0]-zoomSize[0],oldZoom[1]-zoomSize[1]];
+            if(!viewCenter) {
+                viewCenter = [$scope.zoomPosition[0] + zoomSize[0]/2,
+                    $scope.zoomPosition[1] + zoomSize[1]/2];
+                lastZoomPosition = $scope.zoomPosition;
+            } else {
+                var fixedCoords = [Math.floor(viewCenter[0]-oldZoom[0]/2),Math.floor(viewCenter[1]-oldZoom[1]/2)];
+                lastZoomPosition = [Math.floor(fixedCoords[0]+offset[0]/2), // Keep centered
+                    Math.floor(fixedCoords[1]+offset[1]/2)];
+            }
+            var x = lastZoomPosition[0], y = lastZoomPosition[1]; // Fix zoom area going off edge
+            if(x < 0) { x = 0; } if(y < 0) { y = 0; }
+            if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
+            if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
+            $scope.zoomPosition = lastZoomPosition = [x,y];
+            localStorageService.set('zoomPosition',$scope.zoomPosition);
+            canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
+            canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
+                lastZoomPosition,zoomSize);
+            drawZoomCanvas();
+            dimPixel();
+        };
+
+        var drawZoomCanvas = function() {
+            canvasUtility.fillCanvas(zoomTerrainContext,'2c3d4b');
+            for(var pixKey in localTerrain) {
+                if(localTerrain.hasOwnProperty(pixKey)) {
+                    var coords = pixKey.split(":");
+                    canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,
+                        coords,$scope.zoomPosition,zoomPixSize);
+                }
+            }
+            // TODO: Enumerate over localObjects to draw those too
+        };
+
+
+        var changeZoomPosition = function(x,y) {
+            canvasUtility.fillMainArea(fullHighContext,'erase',lastZoomPosition,zoomSize);
+            $timeout(function(){});
+            $scope.zoomPosition = [x,y];
+            if(viewCenter){ localStorageService.set('zoomPosition',$scope.zoomPosition); }
+            lastZoomPosition = [x,y];
+            drawZoomCanvas();
+            if(viewCenter){ canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
+                [x,y],zoomSize); } // Draw new zoom rect
+        };
+        changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]);
+
+        var startDragPanning = function(e) {
+            dragPanning = true;
+            panOrigin = $scope.overPixel;
+            dimPixel();
+            jQuery(zoomHighCanvas).unbind('mousemove');
+            jQuery(zoomHighCanvas).unbind('mousedown');
+            jQuery(zoomHighCanvas).mousemove(dragPan);
+            jQuery(zoomHighCanvas).mouseup(stopDragPanning);
+        };
+
+        var dragPan = function(e) {
+            if(!dragPanning || e.which == 0) { stopDragPanning(); return; }
+            var offset = jQuery(zoomHighCanvas).offset(); // Get pixel location
+            var x = Math.floor($scope.zoomPosition[0] + (e.pageX - offset.left) / zoomPixSize),
+                y = Math.floor($scope.zoomPosition[1] + (e.pageY - offset.top) / zoomPixSize);
+            var panOffset = [x - panOrigin[0], y - panOrigin[1]];
+            if(panOffset[0] == 0 && panOffset[1] == 0) { return; }
+            var newPosition = [$scope.zoomPosition[0]-panOffset[0],$scope.zoomPosition[1]-panOffset[1]];
+            if(newPosition[0] < 0) { newPosition[0] = 0; } if(newPosition[1] < 0) { newPosition[1] = 0; }
+            if(newPosition[0] > 300 - zoomSize[0]) { newPosition[0] = 300 - zoomSize[0]; }
+            if(newPosition[1] > 300 - zoomSize[1]) { newPosition[1] = 300 - zoomSize[1]; }
+            viewCenter = [newPosition[0]+zoomSize[0]/2,newPosition[1]+zoomSize[1]/2];
+            changeZoomPosition(newPosition[0],newPosition[1]);
+            dimPixel();
+        };
+
+        var stopDragPanning = function() {
+            dragPanning = false;
+            jQuery(zoomHighCanvas).unbind('mousemove');
+            jQuery(zoomHighCanvas).unbind('mousedown');
+            jQuery(zoomHighCanvas).unbind('mouseup');
+            jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
+            jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
+        };
+
+        var panOnMouseDown = function(e) {
             e.preventDefault();
+            panMouseDown = true;
+            var offset = jQuery(fullHighCanvas).offset(); // Get pixel location
+            var x = Math.floor((e.pageX - offset.left) / mainPixSize),
+                y = Math.floor((e.pageY - offset.top) / mainPixSize);
+            viewCenter = [x,y]; // Store view center
+            x = Math.floor(x - zoomSize[0]/2); y = Math.floor(y - zoomSize[1]/2); // Apply offsets
+            if(x < 0) { x = 0; } if(y < 0) { y = 0; } // Stay in bounds
+            if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
+            if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
+            if(lastZoomPosition[0] == x && lastZoomPosition[1] == y) { return; }
+            changeZoomPosition(x,y);
+            dimPixel();
+        };
+
+        var panOnMouseMove = function(e) {
+            if(!panMouseDown || e.which == 0) { return; }
+            var offset = jQuery(fullHighCanvas).offset(); // Get pixel location
+            var x = Math.floor((e.pageX - offset.left) / mainPixSize),
+                y = Math.floor((e.pageY - offset.top) / mainPixSize);
+            viewCenter = [x,y]; // Store view center
+            x = Math.floor(x - zoomSize[0]/2); y = Math.floor(y - zoomSize[1]/2); // Apply offsets
+            if(x < 0) { x = 0; } if(y < 0) { y = 0; }
+            if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
+            if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
+            if(lastZoomPosition[0] == x && lastZoomPosition[1] == y) { return; }
+            changeZoomPosition(x,y);
+            dimPixel();
+        };
+    
+        var zoomOnMouseDown = function(e) {
+            e.preventDefault();
+            if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
             if(userID == 2) { return; } // Ignore actions from server
             var x = $scope.overPixel[0], y = $scope.overPixel[1];
             // Make stuff happen when user clicks on map
-            fireRef.child('terrain/' + x + ':' + y).set('land');
+            if(e.which == 3) {
+                for(var i = -1; i < 2; i++) {
+                    for(var ii = -1; ii < 2; ii++) {
+                        if(localTerrain[(x + i) + ':' + (y + ii)]) {
+                            fireRef.child('terrain/' + (x + i) + ':' + (y + ii)).set(null);
+                        }
+                    }
+                }
+            } else if (e.which == 1) {
+                fireRef.child('terrain/' + x + ':' + y).set('land');
+            }
         };
     
-        var onMouseUp = function(e) { mouseDown = false; };
+        var onMouseUp = function(e) { /* should anything happen here? */ };
     
         // Check for mouse moving to new pixel
-        var onMouseMove = function(e) {
-            var offset = jQuery(mainHighCanvas).offset(); // Get pixel location
-            var x = Math.floor((e.pageX - offset.left) / mainPixSize),
-                y = Math.floor((e.pageY - offset.top) / mainPixSize);
+        var zoomOnMouseMove = function(e) {
+            var offset = jQuery(zoomHighCanvas).offset(); // Get pixel location
+            var x = Math.floor((e.pageX - offset.left) / zoomPixSize),
+                y = Math.floor((e.pageY - offset.top) / zoomPixSize);
             // If the pixel location has changed
-            if($scope.overPixel[0] != x || $scope.overPixel[1] != y) {
-                mainHighCanvas.style.cursor = 'default'; // Show cursor
+            if($scope.overPixel[0] != x + $scope.zoomPosition[0] || 
+                $scope.overPixel[1] != y + $scope.zoomPosition[1]) {
+                zoomHighCanvas.style.cursor = 'default'; // Show cursor
                 dimPixel(); // Dim the previous pixel
                 var drawColor = 'rgba(255, 255, 255, 0.2)';
-                $scope.$apply(function() { 
-                    $scope.overPixel = [x,y];
-                    canvasUtility.drawSelect(mainHighContext, $scope.overPixel, 5);
-                    if(e.which == 1) {
-                        onMouseDown(e);
+                $timeout(function() {
+                    $scope.overPixel = [x+$scope.zoomPosition[0],y+$scope.zoomPosition[1]];
+                    var coords = [$scope.overPixel[0]-$scope.zoomPosition[0],
+                        $scope.overPixel[1]-$scope.zoomPosition[1]];
+                    canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize);
+                    if(e.which == 1 || e.which == 3) {
+                        zoomOnMouseDown(e);
                     }
                 });
             }
         };
+        // When scrolling on the zoom canvas
+        var zoomScroll = function(event, delta, deltaX, deltaY){
+            var doZoom = function() {
+                if(deltaY < 0 && $scope.zoomLevel > 0) {
+                    $scope.changeZoom($scope.zoomLevel - 1);
+                } else if(deltaY > 0 && $scope.zoomLevel < 8) {
+                    $scope.changeZoom($scope.zoomLevel + 1);
+                }
+                $('.zoom-slider').slider('setValue',$scope.zoomLevel);
+            };
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(doZoom, 3);
+            event.preventDefault();
+            return false;
+        };
+        var scrollTimer; // Timer to prevent scroll event firing twice in a row
+        
         // Dim the pixel after leaving it
         var dimPixel = function() {
-            canvasUtility.fillCanvas(mainHighContext,'erase');
+            canvasUtility.fillCanvas(zoomHighContext,'erase');
         };
         // When the mouse leaves the canvas
         var onMouseOut = function() {
             dimPixel();
-            $scope.$apply(function() { $scope.overPixel = ['-','-']; });
+            $timeout(function() { $scope.overPixel = ['-','-']; });
         };
         // Ping a pixel
         var ping = function() {
@@ -203,21 +360,37 @@ angular.module('Geographr.controllers', [])
             fireRef.child('meta/pings/'+pinging[0] + ":" + pinging[1]).set(null);
             pinging = false;
         };
-        var drawPing = function(snapshot) { canvasUtility.drawPing(mainPingContext,snapshot.name().split(":")); };
-        var hidePing = function(snapshot) { canvasUtility.clearPing(mainPingContext,snapshot.name().split(":")); };
+        var drawPing = function(snapshot) { canvasUtility.drawPing(fullPingContext,snapshot.name().split(":")); };
+        var hidePing = function(snapshot) { canvasUtility.clearPing(fullPingContext,snapshot.name().split(":")); };
+        // TODO: Draw pings on zoom ping canvas
     
-        jQuery(mainHighCanvas).mousemove(onMouseMove);
-        jQuery(mainHighCanvas).mouseleave(onMouseOut);
+        jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
+        jQuery(zoomHighCanvas).mouseleave(onMouseOut);
+        jQuery(zoomHighCanvas).mousewheel(zoomScroll);
+        jQuery(fullHighCanvas).mousemove(panOnMouseMove);
+        jQuery(fullHighCanvas).mousedown(panOnMouseDown);
         jQuery(window).resize(alignCanvases); // Re-align canvases on window resize
     
         // When terrain is added/changed
         var drawTerrain = function(snap) {
             var terrain = localTerrain[snap.name()] = snap.val();
             var coords = snap.name().split(":"); 
-            canvasUtility.drawTerrain(terrainContext,snap.val(),coords,localTerrain);
-            if(!$scope.localUsers.hasOwnProperty('2')) { return; } // If users haven't been fetched yet
-            // TODO: Log stuff
+            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
+                $scope.zoomPosition,zoomPixSize);
+            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,
+                $scope.zoomPosition,zoomPixSize);
         };
+        // TODO: Combine the above and below event handlers
+        // When terrain is removed
+        var removeTerrain = function(snap) {
+            delete localTerrain[snap.name()];
+            var coords = snap.name().split(":");
+            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
+                $scope.zoomPosition,zoomPixSize);
+            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,
+                $scope.zoomPosition,zoomPixSize);
+        };
+        
         // When an object is added/changed
         var drawObject = function(snapshot) {
             localObjects[snapshot.name()] = snapshot.val(); // Update local object
@@ -281,6 +454,7 @@ angular.module('Geographr.controllers', [])
         // Firebase listeners
         fireRef.child('terrain').on('child_added', drawTerrain);
         fireRef.child('terrain').on('child_changed', drawTerrain);
+        fireRef.child('terrain').on('child_removed', removeTerrain);
         fireRef.child('objects').on('child_added', drawObject);
         fireRef.child('objects').on('child_changed', drawObject);
         fireRef.child('objects').on('child_removed', removeObject);
@@ -310,6 +484,7 @@ angular.module('Geographr.controllers', [])
     
         jQuery(window).keydown(onKeyDown);
         jQuery(window).keyup(function() { keyUpped = true; });
+        $scope.changeZoom($scope.zoomLevel); // Apply initial zoom on load
     
 }])
 ;

@@ -25,16 +25,21 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 
 #mainContainer {
     width: 1204px;
-    padding: 4px 0 0 2px;
+    padding: 4px 0 0;
+}
+
+.canvas-container {
+    width: 602px;
+    float: left;
 }
 
 canvas { position: relative; }
-#mainPingCanvas, #mainHighlightCanvas, #terrainCanvas { position: absolute; top: -5000px; }
+#fullPingCanvas, #fullHighCanvas, #fullObjectCanvas, 
+    #zoomPingCanvas, #zoomHighCanvas, #zoomObjectCanvas { position: absolute; top: -5000px; }
 
 .hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
 
-#uiContainer { top: -24px; }
-
+#uiContainer { top: 0; }
 
 #info h2 { color: #c8c8c8; font-size: 20px }
 
