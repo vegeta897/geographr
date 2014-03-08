@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.01; $scope.versionName = 'Predictable Taste'; $scope.needUpdate = false;
+        $scope.version = 0.02; $scope.versionName = 'Complex Composer'; $scope.needUpdate = false;
         $scope.overPixel = ['-','-']; // Tracking your coordinates'
         $scope.authStatus = '';
         $scope.helpText = '';
@@ -179,6 +179,9 @@ angular.module('Geographr.controllers', [])
                 $scope.$apply(function() { 
                     $scope.overPixel = [x,y];
                     canvasUtility.drawSelect(mainHighContext, $scope.overPixel, 5);
+                    if(mouseDown) {
+                        onMouseDown(e);
+                    }
                 });
             }
         };

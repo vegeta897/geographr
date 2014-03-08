@@ -1,12 +1,12 @@
 <div class="navbar">
     <div class="container">
         <div class="navbar-header">
-            <h1><a href="#"><span class="geographr-color">Geographr</span></a>  <small>v{{ version }} - {{ versionName }}
+            <h1><a href="#"><span class="geographr-color">Geographr</span></a>  <small>v{{ version }} - "{{ versionName }}"
             &nbsp;&mdash;&nbsp;Server status: 
                 <strong ng-class="{'text-success': serverStatus == 'Online', 'text-danger': serverStatus != 'Online'}">{{ serverStatus }}</strong></small></h1>
         </div>
         <div class="navbar-collapse collapse">
-            <p ng-show="needUpdate" class="navbar-right text-warning">Your version is <strong>out of date!</strong> Please press <strong>shift+F5</strong> or clear your browser cache. <small>If that doesn't work, Vegeta probably locked the app.</small></p>
+            <p ng-show="needUpdate" class="navbar-right text-warning">Your version is <strong>out of date!</strong> Please press <strong>shift+F5</strong>. <small>If that doesn't work, Vegeta probably locked the app.</small></p>
             <p class="navbar-right" ng-show="userInit">Welcome back, <strong class="text-info">{{ user.nick }}</strong> &mdash; <a href="#" ng-click="logOut()">Log out</a></p>
             <form ng-show="!user && authStatus" class="navbar-form navbar-right" data-login-form="{{ authStatus }}" id="loginForm" ng-disabled="authStatus=='logging'" ng-submit="authenticate()">
                 <div class="form-group">
