@@ -248,6 +248,7 @@ angular.module('Geographr.controllers', [])
 
         var panOnMouseDown = function(e) {
             e.preventDefault();
+            if(dragPanning) { return; }
             panMouseDown = true;
             var offset = jQuery(fullHighCanvas).offset(); // Get pixel location
             var x = Math.floor((e.pageX - offset.left) / mainPixSize),
@@ -276,9 +277,12 @@ angular.module('Geographr.controllers', [])
             changeZoomPosition(x,y);
             dimPixel();
         };
+        
+        var onMouseUp = function(e) { panMouseDown = dragPanning = false; };
     
         var zoomOnMouseDown = function(e) {
             e.preventDefault();
+            if(panMouseDown) { return; }
             if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
             if(userID == 2 || !userID) { return; } // Ignore actions from server or non-user
             var x = $scope.overPixel[0], y = $scope.overPixel[1];
@@ -366,6 +370,7 @@ angular.module('Geographr.controllers', [])
         jQuery(zoomHighCanvas).mousewheel(zoomScroll);
         jQuery(fullHighCanvas).mousemove(panOnMouseMove);
         jQuery(fullHighCanvas).mousedown(panOnMouseDown);
+        jQuery(window).mouseup(onMouseUp);
         jQuery(window).resize(alignCanvases); // Re-align canvases on window resize
     
         // When terrain is added/changed
