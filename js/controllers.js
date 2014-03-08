@@ -9,7 +9,7 @@ angular.module('Geographr.controllers', [])
         $scope.helpText = '';
         $scope.localUsers = {};
         $scope.eventLog = [];
-        var mainPixSize = 5, keyPressed = false, keyUpped = true, mouseDown,
+        var mainPixSize = 5, keyPressed = false, keyUpped = true,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, tutorialStep = 0;
     
         // Create a reference to the pixel data for our canvas
@@ -123,7 +123,6 @@ angular.module('Geographr.controllers', [])
     
         // Keep track of if the mouse is up or down
         mainHighCanvas.onmousedown = function(event) {
-            mouseDown = 1;
             if(event.which == 2) {
     
             }
@@ -133,7 +132,6 @@ angular.module('Geographr.controllers', [])
             if(event.which == 2) {
     
             }
-            mouseDown = 0;
         };
     
         // Disable text selection.
@@ -161,7 +159,6 @@ angular.module('Geographr.controllers', [])
             var x = $scope.overPixel[0], y = $scope.overPixel[1];
             // Make stuff happen when user clicks on map
             fireRef.child('terrain/' + x + ':' + y).set('land');
-            
         };
     
         var onMouseUp = function(e) { mouseDown = false; };
@@ -179,7 +176,7 @@ angular.module('Geographr.controllers', [])
                 $scope.$apply(function() { 
                     $scope.overPixel = [x,y];
                     canvasUtility.drawSelect(mainHighContext, $scope.overPixel, 5);
-                    if(mouseDown) {
+                    if(e.which == 1) {
                         onMouseDown(e);
                     }
                 });
