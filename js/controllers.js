@@ -82,8 +82,6 @@ angular.module('Geographr.controllers', [])
                     $scope.user = snapshot.val();
                     $scope.userInit = true;
                     $scope.authStatus = 'logged';
-                    jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
-                    jQuery(zoomHighCanvas).mouseup(onMouseUp);
                     fireRef.child('users').on('child_added', updateUsers);
                     fireRef.child('users').on('child_changed', updateUsers);
                     if(userID == 2) {
@@ -282,7 +280,7 @@ angular.module('Geographr.controllers', [])
         var zoomOnMouseDown = function(e) {
             e.preventDefault();
             if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
-            if(userID == 2) { return; } // Ignore actions from server
+            if(userID == 2 || !userID) { return; } // Ignore actions from server or non-user
             var x = $scope.overPixel[0], y = $scope.overPixel[1];
             // Make stuff happen when user clicks on map
             if(e.which == 3) {
@@ -297,8 +295,6 @@ angular.module('Geographr.controllers', [])
                 fireRef.child('terrain/' + x + ':' + y).set('land');
             }
         };
-    
-        var onMouseUp = function(e) { /* should anything happen here? */ };
     
         // Check for mouse moving to new pixel
         var zoomOnMouseMove = function(e) {
@@ -363,7 +359,8 @@ angular.module('Geographr.controllers', [])
         var drawPing = function(snapshot) { canvasUtility.drawPing(fullPingContext,snapshot.name().split(":")); };
         var hidePing = function(snapshot) { canvasUtility.clearPing(fullPingContext,snapshot.name().split(":")); };
         // TODO: Draw pings on zoom ping canvas
-    
+
+        jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
         jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
         jQuery(zoomHighCanvas).mouseleave(onMouseOut);
         jQuery(zoomHighCanvas).mousewheel(zoomScroll);
