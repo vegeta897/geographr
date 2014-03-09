@@ -16,7 +16,7 @@ angular.module('Geographr.controllers', [])
         var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
-            addingLabel = false, fullImageData, zoomLevels = [5,8,10,12,15,20,30,40,60];
+            addingLabel = false, fullImageData, zoomLevels = [4,5,6,8,12,20,40,60];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -361,7 +361,7 @@ angular.module('Geographr.controllers', [])
             var doZoom = function() {
                 if(deltaY < 0 && $scope.zoomLevel > 0) {
                     $scope.changeZoom($scope.zoomLevel - 1);
-                } else if(deltaY > 0 && $scope.zoomLevel < 8) {
+                } else if(deltaY > 0 && $scope.zoomLevel < zoomLevels.length-1) {
                     $scope.changeZoom($scope.zoomLevel + 1);
                 }
                 $('.zoom-slider').slider('setValue',$scope.zoomLevel);
@@ -403,6 +403,7 @@ angular.module('Geographr.controllers', [])
         jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
         jQuery(zoomHighCanvas).mouseleave(zoomOnMouseOut);
         jQuery(zoomHighCanvas).mousewheel(zoomScroll);
+        jQuery(fullHighCanvas).mousewheel(zoomScroll);
         jQuery(fullHighCanvas).mousemove(panOnMouseMove);
         jQuery(fullHighCanvas).mousedown(panOnMouseDown);
         jQuery(window).mouseup(onMouseUp);
