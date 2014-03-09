@@ -44,8 +44,11 @@
             <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
                    data-slider-max="8" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
         </div>
-        <div class="col-xs-2 hard-left pull-left coords">
+        <div class="col-xs-3 hard-left pull-left coords">
             <span class="text-muted">Terrain:</span> {{ overPixel.type | capitalize }}
+        </div>
+        <div class="col-xs-3 hard-left pull-left coords">
+            <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
         </div>
     </div>
 </div>

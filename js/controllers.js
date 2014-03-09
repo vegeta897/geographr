@@ -3,9 +3,10 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.03; $scope.versionName = 'Fierce Ram'; $scope.needUpdate = false;
+        $scope.version = 0.04; $scope.versionName = 'Eastern Justice'; $scope.needUpdate = false;
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = ['-','-']; // Tracking your coordinates
+        $scope.overPixel.type = $scope.overPixel.elevation = '-';
         $scope.authStatus = ''; $scope.helpText = '';
         $scope.localUsers = {};
         $scope.zoomLevel = 6;
@@ -197,7 +198,6 @@ angular.module('Geographr.controllers', [])
             // TODO: Enumerate over localObjects to draw those too
         };
 
-
         var changeZoomPosition = function(x,y) {
             canvasUtility.fillMainArea(fullHighContext,'erase',lastZoomPosition,zoomSize);
             $timeout(function(){});
@@ -262,7 +262,7 @@ angular.module('Geographr.controllers', [])
         var panOnMouseMove = function(e) { if(!panMouseDown || e.which == 0) { return; } fullViewPan(e); };
         
         var onMouseUp = function(e) { panMouseDown = dragPanning = false; };
-    
+        // Clicking in zoomed view
         var zoomOnMouseDown = function(e) {
             e.preventDefault();
             if(panMouseDown) { return; }
@@ -279,8 +279,14 @@ angular.module('Geographr.controllers', [])
                     }
                 }
             } else if (e.which == 1) {
-                fireRef.child('terrain/' + x + ':' + y).set('land');
+                var localPixel = localTerrain[x + ':' + y];
+                var newElevation = localPixel ? localPixel + 1 : 1;
+                fireRef.child('terrain/' + x + ':' + y).set(newElevation);
             }
+            $timeout(function() {
+                $scope.overPixel.type = localTerrain[x + ':' + y] ? 'land' : 'water';
+                $scope.overPixel.elevation = localTerrain[x + ':' + y] ? localTerrain[x + ':' + y] : 0;
+            });
         };
     
         // Check for mouse moving to new pixel
@@ -298,7 +304,8 @@ angular.module('Geographr.controllers', [])
                     $scope.overPixel.x = (x+$scope.zoomPosition[0]); 
                     $scope.overPixel.y = (y+$scope.zoomPosition[1]);
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
-                    $scope.overPixel.type = localTerrain[grid] ? localTerrain[grid] : '-';
+                    $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
+                    $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
                     var coords = [$scope.overPixel.x-$scope.zoomPosition[0],
                         $scope.overPixel.y-$scope.zoomPosition[1]];
                     canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize);
@@ -329,10 +336,11 @@ angular.module('Geographr.controllers', [])
         var dimPixel = function() {
             canvasUtility.fillCanvas(zoomHighContext,'erase');
         };
-        // When the mouse leaves the canvas
-        var onMouseOut = function() {
+        // When the mouse leaves the zoomed view
+        var zoomOnMouseOut = function() {
             dimPixel();
-            $timeout(function() { $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; $scope.overPixel.type = '-' });
+            $timeout(function() { $scope.overPixel.x = $scope.overPixel.y = 
+                $scope.overPixel.type = $scope.overPixel.elevation = '-' });
         };
         // Ping a pixel
         var ping = function() {
@@ -352,7 +360,7 @@ angular.module('Geographr.controllers', [])
 
         jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
         jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
-        jQuery(zoomHighCanvas).mouseleave(onMouseOut);
+        jQuery(zoomHighCanvas).mouseleave(zoomOnMouseOut);
         jQuery(zoomHighCanvas).mousewheel(zoomScroll);
         jQuery(fullHighCanvas).mousemove(panOnMouseMove);
         jQuery(fullHighCanvas).mousedown(panOnMouseDown);

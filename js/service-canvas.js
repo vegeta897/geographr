@@ -17,38 +17,34 @@ angular.module('Geographr.canvas', [])
             return near;
         };
         var surveyNear = function(near,terrain) {
-
             /*
-            land
-                #3c5d2c
-                #466b35
-                #527d3e
-                #6a8c46
-                #889e56
-                #aeac66
-
-            water
-                #628c76
-                #47796e
-                #395e61
-                #334f57
-                #2e454f
+            land            water
+                #3c5d2c     #628c76
+                #466b35     #47796e
+                #527d3e     #395e61
+                #6a8c46     #334f57
+                #889e56     #2e454f
+                #aeac66     
             */
             var color = '';
-            var type = terrain[near[4]] == 'land' ? 'land' : 'water';
+            var type = terrain[near[4]] > 0 ? terrain[near[4]] : 'water';
             var landNear = 0;
+            var nearHeight = 0;
             for(var i = 0; i < near.length; i++) {
                 if(terrain.hasOwnProperty(near[i])) {
-                    if(terrain[near[i]] == 'land') {
+                    if(terrain[near[i]] > 0) {
                         if(i == 0 || i == 2 || i == 6 || i == 8) {
                             landNear += 10;
                         } else if(i == 1 || i == 3 || i == 5 || i == 7) {
                             landNear += 15;
+                            if(i == 1 || i == 3) {
+                                nearHeight += terrain[near[i]];
+                            }
                         }
                     }
                 }
             }
-            if(type == 'land') {
+            if(type > 0) {
                 if(landNear >= 95) { color = '#3c5d2c'; }
                 else if(landNear >= 90) { color = '#466b35'; }
                 else if(landNear >= 80) { color = '#527d3e'; }
@@ -63,7 +59,7 @@ angular.module('Geographr.canvas', [])
                 else if(landNear >= 10) { color = '#2e454f'; }
                 else { color = '#2c3d4b'; }
             }
-            return color;
+            return {color: color, shade: nearHeight - terrain[near[4]]*2};
         };
             
         return {
@@ -90,8 +86,8 @@ angular.module('Geographr.canvas', [])
                 // Don't draw on zoom canvas if pixel is out of bounds
                 if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
                     (canvasType == 'zoom' && y+1 < zoomPosition[1]) ||
-                    (canvasType == 'zoom' && (x-1) > zoomPosition[0]+(600/zoomPixSize)) ||
-                    (canvasType == 'zoom' && (y-1) > zoomPosition[1]+(600/zoomPixSize))) {
+                    (canvasType == 'zoom' && x-1 > zoomPosition[0]+(600/zoomPixSize)) ||
+                    (canvasType == 'zoom' && y-1 > zoomPosition[1]+(600/zoomPixSize))) {
                     return;
                 }
                 var canvasPixSize = canvasType == 'full' ? mainPixSize : zoomPixSize;
@@ -100,11 +96,31 @@ angular.module('Geographr.canvas', [])
                 for(var i = 0; i < affected.length; i++) {
                     var thisCoord = affected[i].split(':');
                     var nearThis = listNear(thisCoord);
-                    var color = surveyNear(nearThis,terrain);
+                    var thisPixel = surveyNear(nearThis,terrain);
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
-                    context.fillStyle = color;
+                    context.fillStyle = thisPixel.color;
                     context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
                         canvasPixSize,canvasPixSize);
+                    if(terrain[affected[i]] > 1) {
+                        context.fillStyle = 'rgba(93,90,76,' + (terrain[affected[i]] - 1) / 8 + ')';
+                        context.fillRect((thisX - offset[0])*canvasPixSize,
+                            (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                    }
+                    if(terrain[affected[i]] > 6) {
+                        context.fillStyle = 'rgba(144,144,144,' + (terrain[affected[i]] - 9) / 8 + ')';
+                        context.fillRect((thisX - offset[0])*canvasPixSize,
+                            (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                    }
+                    if(thisPixel.shade > 0) {
+                        context.fillStyle = 'rgba(10,10,10,' + thisPixel.shade / 25 + ')';
+                        context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
+                            canvasPixSize,canvasPixSize);
+                    }
+                    if(thisPixel.shade < 0) {
+                        context.fillStyle = 'rgba(255,255,240,' + thisPixel.shade * -1 / 50 + ')';
+                        context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
+                            canvasPixSize,canvasPixSize);
+                    }
                 }
             },
             drawSelect: function(context,coords,zoomPixSize) {

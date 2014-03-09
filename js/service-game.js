@@ -89,8 +89,8 @@ angular.module('Geographr.game', [])
             var text = '';
             switch(parseInt(step)) {
                 case 0:
-                    text = 'Click on the map to influence the terrain.\n' +
-                        'That\'s about all I got so far.';
+                    text = 'Click on the right-side view to influence the terrain.\n' +
+                        'Middle mouse to pan around, scroll wheel to zoom.';
                     break;
             }
             return text;
