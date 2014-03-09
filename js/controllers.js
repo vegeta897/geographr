@@ -16,7 +16,7 @@ angular.module('Geographr.controllers', [])
         var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
-            addingLabel = false, zoomLevels = [5,8,10,12,15,20,30,40,60];
+            addingLabel = false, fullImageData, zoomLevels = [5,8,10,12,15,20,30,40,60];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -122,7 +122,13 @@ angular.module('Geographr.controllers', [])
         $timeout(function(){ alignCanvases(); }, 500); // Align canvases half a second after load
         canvasUtility.fillCanvas(fullTerrainContext,'2c3d4b');
         canvasUtility.fillCanvas(zoomTerrainContext,'2c3d4b');
-    
+
+        // Disable interpolation on zoom canvas
+        zoomTerrainContext.mozImageSmoothingEnabled = false;
+        zoomTerrainContext.webkitImageSmoothingEnabled = false;
+        zoomTerrainContext.msImageSmoothingEnabled = false;
+        zoomTerrainContext.imageSmoothingEnabled = false;
+        
         // Align canvas positions
         var alignCanvases = function() {
             jQuery(fullPingCanvas).offset(jQuery(fullTerrainCanvas).offset());
@@ -200,15 +206,14 @@ angular.module('Geographr.controllers', [])
         };
 
         var drawZoomCanvas = function() {
+
+            if(!fullImageData){return;}
+            
+            zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*2, 
+                $scope.zoomPosition[1]*2, 1200/zoomPixSize, 1200/zoomPixSize, 0, 0, 600, 600);
+            
             var coords = [];
-            canvasUtility.fillCanvas(zoomTerrainContext,'2c3d4b');
-            for(var pixKey in localTerrain) {
-                if(localTerrain.hasOwnProperty(pixKey)) {
-                    coords = pixKey.split(":");
-                    canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,
-                        coords,$scope.zoomPosition,zoomPixSize);
-                }
-            }
+            
             canvasUtility.fillCanvas(zoomPingContext,'erase');
             for(var labKey in localLabels) {
                 if(localLabels.hasOwnProperty(labKey)) {
@@ -410,7 +415,13 @@ angular.module('Geographr.controllers', [])
             canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
                 $scope.zoomPosition,zoomPixSize);
             canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
+            var getImageData = function() {
+                fullImageData = fullTerrainContext.getImageData(0,0,600,600);
+            };
+            clearTimeout(imageTimer);
+            imageTimer = setTimeout(getImageData, 50);
         };
+        var imageTimer;
         
         // Draw labels
         var drawLabel = function(coords,text) {
