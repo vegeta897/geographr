@@ -75,7 +75,8 @@ angular.module('Geographr.canvas', [])
             fillMainArea: function(context,color,coords,size) {
                 var method = color == 'erase' ? 'clearRect' : 'fillRect';
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
-                context[method](coords[0]*mainPixSize,coords[1]*mainPixSize,size[0]*mainPixSize,size[1]*mainPixSize);
+                context[method](coords[0]*mainPixSize,coords[1]*mainPixSize,
+                    size[0]*mainPixSize,size[1]*mainPixSize);
             },
             drawPixel: function(context,color,coords,size) {
                 var method = color == 'erase' ? 'clearRect' : 'fillRect';

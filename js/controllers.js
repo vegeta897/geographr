@@ -6,14 +6,14 @@ angular.module('Geographr.controllers', [])
         $scope.version = 0.03; $scope.versionName = 'Fierce Ram'; $scope.needUpdate = false;
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = ['-','-']; // Tracking your coordinates
-        $scope.authStatus = '';
-        $scope.helpText = '';
+        $scope.authStatus = ''; $scope.helpText = '';
         $scope.localUsers = {};
         $scope.zoomLevel = 6;
         $scope.eventLog = [];
         var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
-            pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, tutorialStep = 0;
+            pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, tutorialStep = 0,
+            zoomLevels = [5,8,10,12,15,20,30,40,60];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -158,7 +158,6 @@ angular.module('Geographr.controllers', [])
             if($scope.zoomLevel == val && viewCenter) { return; }
             $timeout(function(){});
             var oldZoom = zoomSize;
-            var zoomLevels = [5,8,10,12,15,20,30,40,60];
             $scope.zoomLevel = parseInt(val);
             localStorageService.set('zoomLevel',$scope.zoomLevel);
             zoomPixSize = zoomLevels[$scope.zoomLevel];
@@ -209,18 +208,16 @@ angular.module('Geographr.controllers', [])
             if(viewCenter){ canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
                 [x,y],zoomSize); } // Draw new zoom rect
         };
-        changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]);
-
+        // Middle mouse panning on zoomed view
         var startDragPanning = function(e) {
             dragPanning = true;
-            panOrigin = $scope.overPixel;
+            panOrigin = [$scope.overPixel.x,$scope.overPixel.y];
             dimPixel();
             jQuery(zoomHighCanvas).unbind('mousemove');
             jQuery(zoomHighCanvas).unbind('mousedown');
             jQuery(zoomHighCanvas).mousemove(dragPan);
             jQuery(zoomHighCanvas).mouseup(stopDragPanning);
         };
-
         var dragPan = function(e) {
             if(!dragPanning || e.which == 0) { stopDragPanning(); return; }
             var offset = jQuery(zoomHighCanvas).offset(); // Get pixel location
@@ -236,7 +233,6 @@ angular.module('Geographr.controllers', [])
             changeZoomPosition(newPosition[0],newPosition[1]);
             dimPixel();
         };
-
         var stopDragPanning = function() {
             dragPanning = false;
             jQuery(zoomHighCanvas).unbind('mousemove');
@@ -245,11 +241,8 @@ angular.module('Geographr.controllers', [])
             jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
             jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
         };
-
-        var panOnMouseDown = function(e) {
-            e.preventDefault();
-            if(dragPanning) { return; }
-            panMouseDown = true;
+        // When panning the full view
+        var fullViewPan = function(e) {
             var offset = jQuery(fullHighCanvas).offset(); // Get pixel location
             var x = Math.floor((e.pageX - offset.left) / mainPixSize),
                 y = Math.floor((e.pageY - offset.top) / mainPixSize);
@@ -262,21 +255,11 @@ angular.module('Geographr.controllers', [])
             changeZoomPosition(x,y);
             dimPixel();
         };
-
-        var panOnMouseMove = function(e) {
-            if(!panMouseDown || e.which == 0) { return; }
-            var offset = jQuery(fullHighCanvas).offset(); // Get pixel location
-            var x = Math.floor((e.pageX - offset.left) / mainPixSize),
-                y = Math.floor((e.pageY - offset.top) / mainPixSize);
-            viewCenter = [x,y]; // Store view center
-            x = Math.floor(x - zoomSize[0]/2); y = Math.floor(y - zoomSize[1]/2); // Apply offsets
-            if(x < 0) { x = 0; } if(y < 0) { y = 0; }
-            if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
-            if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
-            if(lastZoomPosition[0] == x && lastZoomPosition[1] == y) { return; }
-            changeZoomPosition(x,y);
-            dimPixel();
+        // Mouse down on full view
+        var panOnMouseDown = function(e) {
+            e.preventDefault(); if(dragPanning) { return; } panMouseDown = true; fullViewPan(e);
         };
+        var panOnMouseMove = function(e) { if(!panMouseDown || e.which == 0) { return; } fullViewPan(e); };
         
         var onMouseUp = function(e) { panMouseDown = dragPanning = false; };
     
@@ -285,12 +268,12 @@ angular.module('Geographr.controllers', [])
             if(panMouseDown) { return; }
             if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
             if(userID == 2 || !userID) { return; } // Ignore actions from server or non-user
-            var x = $scope.overPixel[0], y = $scope.overPixel[1];
+            var x = $scope.overPixel.x, y = $scope.overPixel.y;
             // Make stuff happen when user clicks on map
-            if(e.which == 3) {
+            if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
-                        if(localTerrain[(x + i) + ':' + (y + ii)]) {
+                        if(localTerrain[(x + i) + ':' + (y + ii)]) { // If something is there to erase
                             fireRef.child('terrain/' + (x + i) + ':' + (y + ii)).set(null);
                         }
                     }
@@ -306,15 +289,18 @@ angular.module('Geographr.controllers', [])
             var x = Math.floor((e.pageX - offset.left) / zoomPixSize),
                 y = Math.floor((e.pageY - offset.top) / zoomPixSize);
             // If the pixel location has changed
-            if($scope.overPixel[0] != x + $scope.zoomPosition[0] || 
-                $scope.overPixel[1] != y + $scope.zoomPosition[1]) {
+            if($scope.overPixel.x != x + $scope.zoomPosition[0] || 
+                $scope.overPixel.y != y + $scope.zoomPosition[1]) {
                 zoomHighCanvas.style.cursor = 'default'; // Show cursor
                 dimPixel(); // Dim the previous pixel
                 var drawColor = 'rgba(255, 255, 255, 0.2)';
                 $timeout(function() {
-                    $scope.overPixel = [x+$scope.zoomPosition[0],y+$scope.zoomPosition[1]];
-                    var coords = [$scope.overPixel[0]-$scope.zoomPosition[0],
-                        $scope.overPixel[1]-$scope.zoomPosition[1]];
+                    $scope.overPixel.x = (x+$scope.zoomPosition[0]); 
+                    $scope.overPixel.y = (y+$scope.zoomPosition[1]);
+                    var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
+                    $scope.overPixel.type = localTerrain[grid] ? localTerrain[grid] : '-';
+                    var coords = [$scope.overPixel.x-$scope.zoomPosition[0],
+                        $scope.overPixel.y-$scope.zoomPosition[1]];
                     canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize);
                     if(e.which == 1 || e.which == 3) {
                         zoomOnMouseDown(e);
@@ -346,12 +332,12 @@ angular.module('Geographr.controllers', [])
         // When the mouse leaves the canvas
         var onMouseOut = function() {
             dimPixel();
-            $timeout(function() { $scope.overPixel = ['-','-']; });
+            $timeout(function() { $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; $scope.overPixel.type = '-' });
         };
         // Ping a pixel
         var ping = function() {
-            if(pinging || $scope.overPixel[0] == '-') { return; }
-            pinging = $scope.overPixel;
+            if(pinging || $scope.overPixel.x == '-') { return; }
+            pinging = [$scope.overPixel.x,$scope.overPixel.y];
             fireRef.child('meta/pings/'+pinging[0] + ":" + pinging[1]).set(true);
             $timeout(function(){unPing()},1600); // Keep ping for 5 seconds
         };
@@ -373,25 +359,19 @@ angular.module('Geographr.controllers', [])
         jQuery(window).mouseup(onMouseUp);
         jQuery(window).resize(alignCanvases); // Re-align canvases on window resize
     
+        // Draw terrain, whether adding, changing, or removing
+        var drawTerrain = function(coords,value) {
+            if(value) { localTerrain[coords.join(':')] = value; } else
+                { delete localTerrain[coords.join(':')]; }
+            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
+                $scope.zoomPosition,zoomPixSize);
+            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
+        };
+        
         // When terrain is added/changed
-        var drawTerrain = function(snap) {
-            var terrain = localTerrain[snap.name()] = snap.val();
-            var coords = snap.name().split(":"); 
-            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
-                $scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,
-                $scope.zoomPosition,zoomPixSize);
-        };
-        // TODO: Combine the above and below event handlers
+        var addTerrain = function(snap) { drawTerrain(snap.name().split(':'),snap.val()); };
         // When terrain is removed
-        var removeTerrain = function(snap) {
-            delete localTerrain[snap.name()];
-            var coords = snap.name().split(":");
-            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
-                $scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,
-                $scope.zoomPosition,zoomPixSize);
-        };
+        var removeTerrain = function(snap) { drawTerrain(snap.name().split(':'),null); };
         
         // When an object is added/changed
         var drawObject = function(snapshot) {
@@ -454,8 +434,8 @@ angular.module('Geographr.controllers', [])
         };
 
         // Firebase listeners
-        fireRef.child('terrain').on('child_added', drawTerrain);
-        fireRef.child('terrain').on('child_changed', drawTerrain);
+        fireRef.child('terrain').on('child_added', addTerrain);
+        fireRef.child('terrain').on('child_changed', addTerrain);
         fireRef.child('terrain').on('child_removed', removeTerrain);
         fireRef.child('objects').on('child_added', drawObject);
         fireRef.child('objects').on('child_changed', drawObject);
@@ -470,8 +450,8 @@ angular.module('Geographr.controllers', [])
             fireRef.child('clients/logged').on('child_changed', changeClient);
             fireRef.child('clients/logged').on('child_removed', removeClient);
             fireRef.child('clients/actions').on('child_added', onClientAction);
-            fireRef.child('status').set('Online');
-            fireRef.child('status').onDisconnect().set('Offline');
+            fireRef.child('status').set('online');
+            fireRef.child('status').onDisconnect().set('offline');
         };
     
         var onKeyDown = function(e) {
@@ -487,6 +467,6 @@ angular.module('Geographr.controllers', [])
         jQuery(window).keydown(onKeyDown);
         jQuery(window).keyup(function() { keyUpped = true; });
         $scope.changeZoom($scope.zoomLevel); // Apply initial zoom on load
-    
+        changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]); // Apply zoom position to full view
 }])
 ;

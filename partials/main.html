@@ -3,7 +3,7 @@
         <div class="navbar-header">
             <h1><a href="#"><span class="geographr-color">Geographr</span></a>  <small>v{{ version }} - "{{ versionName }}"
             &nbsp;&mdash;&nbsp;Server status: 
-                <strong ng-class="{'text-success': serverStatus == 'Online', 'text-danger': serverStatus != 'Online'}">{{ serverStatus }}</strong></small></h1>
+                <strong ng-class="{'text-success': serverStatus == 'Online', 'text-danger': serverStatus != 'Online'}">{{ serverStatus | capitalize }}</strong></small></h1>
         </div>
         <div class="navbar-collapse collapse">
             <p ng-show="needUpdate" class="navbar-right text-warning">Your version is <strong>out of date!</strong> Please press <strong>shift+F5</strong>. <small>If that doesn't work, Vegeta probably locked the app.</small></p>
@@ -28,22 +28,25 @@
         <canvas id="fullHighCanvas" width="600" height="600"> <!-- Highlight canvas -->
             Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
         </canvas>
+        <div class="col-xs-2 pull-left hard-left coords">
+            {{ zoomPosition[0] }} , {{ zoomPosition[1] }}
+        </div>
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
         <canvas id="zoomTerrainCanvas" width="600" height="600"></canvas> <!-- Terrain canvas -->
         <canvas id="zoomObjectCanvas" width="600" height="600"></canvas> <!-- Object canvas -->
         <canvas id="zoomPingCanvas" width="600" height="600"></canvas> <!-- Ping canvas -->
         <canvas id="zoomHighCanvas" width="600" height="600"></canvas> <!-- Highlight canvas -->
-    </div>
-    <div class="col-xs-1 pull-left hard-left coords">
-        {{ zoomPosition[0] }} , {{ zoomPosition[1] }}
-    </div>
-    <div class="col-xs-1 text-right hard-right pull-right coords">
-        {{ overPixel[0] }} , {{ overPixel[1] }}
-    </div>
-    <div class="col-xs-2 text-right hard-right pull-right coords">
-        <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
-               data-slider-max="8" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
+        <div class="col-xs-2 text-right hard-right pull-right coords">
+            {{ overPixel.x }} , {{ overPixel.y }}
+        </div>
+        <div class="col-xs-4 text-right pull-right coords">
+            <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
+                   data-slider-max="8" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
+        </div>
+        <div class="col-xs-2 hard-left pull-left coords">
+            <span class="text-muted">Terrain:</span> {{ overPixel.type | capitalize }}
+        </div>
     </div>
 </div>
 <div id="uiContainer" ng-show="userInit" class="container">

@@ -72,4 +72,10 @@ angular.module('Geographr.directives', [])
         return input.split(':').join(' , ');
     }
 })
+.filter('capitalize', function() {
+    return function(input, scope) {
+        if(!input) { return ''; }
+        return input.substring(0,1).toUpperCase()+input.substring(1);
+    }
+})
 ;
