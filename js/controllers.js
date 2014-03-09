@@ -16,7 +16,7 @@ angular.module('Geographr.controllers', [])
         var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
-            addingLabel = false, fullImageData, zoomLevels = [4,5,6,8,12,20,40,60];
+            addingLabel = false, zoomLevels = [4,5,6,8,12,20,40,60];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -206,9 +206,6 @@ angular.module('Geographr.controllers', [])
         };
 
         var drawZoomCanvas = function() {
-
-            if(!fullImageData){return;}
-            
             zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*2, 
                 $scope.zoomPosition[1]*2, 1200/zoomPixSize, 1200/zoomPixSize, 0, 0, 600, 600);
             
@@ -319,6 +316,7 @@ angular.module('Geographr.controllers', [])
                         // TODO: Check surrounding pixels to prevent too-steep cliffs
                         // Send update to firebase only if new elevation is different
                         if(localPixel != newElevation) {
+                            newElevation = newElevation > 0 ? newElevation : null;
                             fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
                         }
                     }
@@ -416,13 +414,7 @@ angular.module('Geographr.controllers', [])
             canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
                 $scope.zoomPosition,zoomPixSize);
             canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
-            var getImageData = function() {
-                fullImageData = fullTerrainContext.getImageData(0,0,600,600);
-            };
-            clearTimeout(imageTimer);
-            imageTimer = setTimeout(getImageData, 50);
         };
-        var imageTimer;
         
         // Draw labels
         var drawLabel = function(coords,text) {
