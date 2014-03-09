@@ -51,6 +51,17 @@ angular.module('Geographr.directives', [])
         }
     };
 })
+.directive('brushSlider', function() {
+    return {
+        restrict: 'C',
+        link: function(scope, element) {
+            var changeBrush = function() {
+                if(element.val()){ scope.changeBrush(parseInt(element.val())); }
+            };
+            element.slider().slider('setValue',scope.brushSize).on('slide', changeBrush);
+        }
+    };
+})
 .filter('nlToArray', function() {
     return function(text) {
         if(!text) { return text; }

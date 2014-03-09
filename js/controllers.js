@@ -10,7 +10,9 @@ angular.module('Geographr.controllers', [])
         $scope.authStatus = ''; $scope.helpText = '';
         $scope.localUsers = {};
         $scope.zoomLevel = 6;
+        $scope.brushSize = 0;
         $scope.eventLog = [];
+        $scope.lockElevation = false; $scope.lockedElevation = 1;
         var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
@@ -186,6 +188,13 @@ angular.module('Geographr.controllers', [])
             dimPixel();
         };
         
+        $scope.changeBrush = function(val) {
+            $timeout(function(){ 
+                $scope.brushSize = val;
+                $scope.lockElevation = $scope.lockElevation || val > 0; // Lock elevation if brush size is bigger than 1px
+            });
+        };
+        
         $scope.addLabel = function(val) {
             addingLabel = true;
         };
@@ -297,9 +306,18 @@ angular.module('Geographr.controllers', [])
                     }
                 }
             } else if (e.which == 1) {
-                var localPixel = localTerrain[x + ':' + y];
-                var newElevation = localPixel ? localPixel + 1 : 1;
-                fireRef.child('terrain/' + x + ':' + y).set(newElevation);
+                for(var j = $scope.brushSize*-1; j < $scope.brushSize+1; j++) {
+                    for(var jj = $scope.brushSize*-1; jj < $scope.brushSize+1; jj++) {
+                        var localPixel = localTerrain[(x + j) + ':' + (y + jj)];
+                        var newElevation = $scope.lockElevation || $scope.brushSize > 0 ? 
+                            parseInt($scope.lockedElevation) : localPixel ? localPixel + 1 : 1;
+                        // TODO: Check surrounding pixels to prevent too-steep cliffs
+                        // Send update to firebase only if new elevation is different
+                        if(localPixel != newElevation) {
+                            fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
+                        }
+                    }
+                }
             }
             $timeout(function() {
                 $scope.overPixel.type = localTerrain[x + ':' + y] ? 'land' : 'water';
@@ -414,12 +432,16 @@ angular.module('Geographr.controllers', [])
         var removeObject = function(snapshot) {
             localObjects[snapshot.name()] = {}; // Delete local object
         };
-        
+        // Adding and removing labels
         var addLabel = function(snap) {
             var coords = snap.name().split(':');
             drawLabel(coords,snap.val());
             canvasUtility.drawLabel(zoomPingContext,
                 [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],snap.val());
+        };
+        var removeLabel = function(snap) {
+            delete localLabels[snap.name().split(':')];
+            drawZoomCanvas();
         };
     
         var sortArrayByProperty = function(arr, sortby, descending) {
@@ -478,6 +500,7 @@ angular.module('Geographr.controllers', [])
         fireRef.child('terrain').on('child_changed', addTerrain);
         fireRef.child('terrain').on('child_removed', removeTerrain);
         fireRef.child('labels').on('child_added', addLabel);
+        fireRef.child('labels').on('child_removed', removeLabel);
         fireRef.child('objects').on('child_added', drawObject);
         fireRef.child('objects').on('child_changed', drawObject);
         fireRef.child('objects').on('child_removed', removeObject);

@@ -29,7 +29,9 @@ angular.module('Geographr.canvas', [])
                         } else if(i == 1 || i == 3 || i == 5 || i == 7) {
                             landNear += 15;
                             if(i == 1 || i == 3) {
-                                nearHeight += terrain[near[i]];
+                                nearHeight += terrain[near[i]] - terrain[near[4]];
+                            } else if(i == 5 || i == 7) {
+                                nearHeight -= terrain[near[i]] - terrain[near[4]];
                             }
                         }
                     }
@@ -62,13 +64,12 @@ angular.module('Geographr.canvas', [])
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
             if(terrain[near[4]] > 0) {
-                var shade = nearHeight - terrain[near[4]]*2;
-                if(shade > 0) { // Draw shading
-                    coef = shade/35;
+                if(nearHeight > 0) { // Draw shading
+                    coef = nearHeight/50;
                     diff = {r:color.r - 10,g:color.g - 10, b:color.b - 10};
                     color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
-                } else if(shade < 0) { // Draw highlighting
-                    coef = shade/-50;
+                } else if(nearHeight < 0) { // Draw highlighting
+                    coef = nearHeight/-50;
                     diff = {r:color.r - 247,g:color.g - 246, b:color.b - 220};
                     color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
                 }

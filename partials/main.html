@@ -57,8 +57,27 @@
         <div id="info" class="col-xs-4">
             <h2>Welcome to <span class="geographr-color">Geographr</span>!</h2>
             <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
-            <input type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
-            <button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button><br />
+            <div class="row form-group">
+                <div class="input-group input-group-sm col-xs-7">
+                    <input class="form-control input-sm" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
+                    <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button></span>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-xs-3">
+                <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
+                </div>
+                <div class="col-xs-5 hard-left">
+                    <div class="checkbox-inline"><label>
+                        <input ng-model="lockElevation" type="checkbox"> Fixed Elevation
+                    </label></div>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-xs-12">
+                    Brush Size: {{ brushSize * 2 + 1 }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+                </div>
+            </div>
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
         </div>
         <div id="userStats" class="col-xs-2">

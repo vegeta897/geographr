@@ -1863,11 +1863,12 @@ textarea.form-control {
 .radio-inline,
 .checkbox-inline {
   display: inline-block;
-  padding-left: 20px;
+  padding: 5px 0 0 20px;
   margin-bottom: 0;
   font-weight: normal;
   vertical-align: middle;
   cursor: pointer;
+  height: 24px;
 }
 
 .radio-inline + .radio-inline,
