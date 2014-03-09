@@ -17,17 +17,8 @@ angular.module('Geographr.canvas', [])
             return near;
         };
         var surveyNear = function(near,terrain) {
-            /*
-            land            water
-                #3c5d2c     #628c76
-                #466b35     #47796e
-                #527d3e     #395e61
-                #6a8c46     #334f57
-                #889e56     #2e454f
-                #aeac66     
-            */
             var color = '';
-            var type = terrain[near[4]] > 0 ? terrain[near[4]] : 'water';
+            var type = terrain[near[4]] > 0 ? terrain[near[4]] : 0;
             var landNear = 0;
             var nearHeight = 0;
             for(var i = 0; i < near.length; i++) {
@@ -45,21 +36,46 @@ angular.module('Geographr.canvas', [])
                 }
             }
             if(type > 0) {
-                if(landNear >= 95) { color = '#3c5d2c'; }
-                else if(landNear >= 90) { color = '#466b35'; }
-                else if(landNear >= 80) { color = '#527d3e'; }
-                else if(landNear >= 70) { color = '#6a8c46'; }
-                else if(landNear >= 60) { color = '#889e56'; }
-                else { color = '#aeac66'; }
+                if(landNear >= 95) { color = {r:60,g:93,b:44}; }
+                else if(landNear >= 90) { color = {r:70,g:107,b:53}; }
+                else if(landNear >= 80) { color = {r:82,g:125,b:62}; }
+                else if(landNear >= 70) { color = {r:106,g:140,b:70}; }
+                else if(landNear >= 60) { color = {r:136,g:158,b:86}; }
+                else { color = {r:174,g:172,b:102}; }
             } else {
-                if(landNear >= 90) { color = '#628c76'; }
-                else if(landNear >= 65) { color = '#47796e'; }
-                else if(landNear >= 40) { color = '#395e61'; }
-                else if(landNear >= 15) { color = '#334f57'; }
-                else if(landNear >= 10) { color = '#2e454f'; }
-                else { color = '#2c3d4b'; }
+                if(landNear >= 90) { color = {r:98,g:140,b:118}; }
+                else if(landNear >= 65) { color = {r:71,g:121,b:110}; }
+                else if(landNear >= 40) { color = {r:57,g:94,b:97}; }
+                else if(landNear >= 15) { color = {r:51,g:79,b:87}; }
+                else if(landNear >= 10) { color = {r:46,g:69,b:79}; }
+                else { color = {r:44,g:61,b:75}; }
             }
-            return {color: color, shade: nearHeight - terrain[near[4]]*2};
+            var factor = 0, diff = {};
+            if(terrain[near[4]] > 1) { // Draw brown mountains
+                factor = (terrain[near[4]]-1)/8;
+                diff = {r:color.r - 88,g:color.g - 93, b:color.b - 70};
+                color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+            }
+            if(terrain[near[4]] > 6) { // Draw white peaks
+                factor = (terrain[near[4]]-9)/8;
+                diff = {r:color.r - 144,g:color.g - 144, b:color.b - 145};
+                color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+            }
+            if(terrain[near[4]] > 0) {
+                var shade = nearHeight - terrain[near[4]]*2;
+                if(shade > 0) { // Draw shading
+                    factor = shade/35;
+                    diff = {r:color.r - 10,g:color.g - 10, b:color.b - 10};
+                    color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+                } else if(shade < 0) { // Draw highlighting
+                    factor = shade/-50;
+                    diff = {r:color.r - 247,g:color.g - 246, b:color.b - 220};
+                    color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+                }
+            }
+            
+            color = {r:parseInt(color.r),g:parseInt(color.g),b:parseInt(color.b)}; // Int-ify
+            return 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',1)';
         };
             
         return {
@@ -96,31 +112,11 @@ angular.module('Geographr.canvas', [])
                 for(var i = 0; i < affected.length; i++) {
                     var thisCoord = affected[i].split(':');
                     var nearThis = listNear(thisCoord);
-                    var thisPixel = surveyNear(nearThis,terrain);
+                    var color = surveyNear(nearThis,terrain);
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
-                    context.fillStyle = thisPixel.color;
+                    context.fillStyle = color;
                     context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
                         canvasPixSize,canvasPixSize);
-                    if(terrain[affected[i]] > 1) {
-                        context.fillStyle = 'rgba(93,90,76,' + (terrain[affected[i]] - 1) / 8 + ')';
-                        context.fillRect((thisX - offset[0])*canvasPixSize,
-                            (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
-                    }
-                    if(terrain[affected[i]] > 6) {
-                        context.fillStyle = 'rgba(144,144,144,' + (terrain[affected[i]] - 9) / 8 + ')';
-                        context.fillRect((thisX - offset[0])*canvasPixSize,
-                            (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
-                    }
-                    if(thisPixel.shade > 0) {
-                        context.fillStyle = 'rgba(10,10,10,' + thisPixel.shade / 25 + ')';
-                        context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
-                            canvasPixSize,canvasPixSize);
-                    }
-                    if(thisPixel.shade < 0) {
-                        context.fillStyle = 'rgba(255,255,240,' + thisPixel.shade * -1 / 50 + ')';
-                        context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
-                            canvasPixSize,canvasPixSize);
-                    }
                 }
             },
             drawSelect: function(context,coords,zoomPixSize) {
