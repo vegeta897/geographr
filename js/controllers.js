@@ -13,8 +13,8 @@ angular.module('Geographr.controllers', [])
         $scope.eventLog = [];
         var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
-            pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, tutorialStep = 0,
-            zoomLevels = [5,8,10,12,15,20,30,40,60];
+            pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
+            addingLabel = false, zoomLevels = [5,8,10,12,15,20,30,40,60];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -185,14 +185,26 @@ angular.module('Geographr.controllers', [])
             drawZoomCanvas();
             dimPixel();
         };
+        
+        $scope.addLabel = function(val) {
+            addingLabel = true;
+        };
 
         var drawZoomCanvas = function() {
+            var coords = [];
             canvasUtility.fillCanvas(zoomTerrainContext,'2c3d4b');
             for(var pixKey in localTerrain) {
                 if(localTerrain.hasOwnProperty(pixKey)) {
-                    var coords = pixKey.split(":");
+                    coords = pixKey.split(":");
                     canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,
                         coords,$scope.zoomPosition,zoomPixSize);
+                }
+            }
+            canvasUtility.fillCanvas(zoomPingContext,'erase');
+            for(var labKey in localLabels) {
+                if(localLabels.hasOwnProperty(labKey)) {
+                    coords = labKey.split(":");
+                    drawLabel(coords,localLabels[labKey]);
                 }
             }
             // TODO: Enumerate over localObjects to draw those too
@@ -270,6 +282,12 @@ angular.module('Geographr.controllers', [])
             if(userID == 2 || !userID) { return; } // Ignore actions from server or non-user
             var x = $scope.overPixel.x, y = $scope.overPixel.y;
             // Make stuff happen when user clicks on map
+            if(addingLabel) {
+                fireRef.child('labels/' + x + ':' + y).set($scope.labelText);
+                $scope.labelText = '';
+                addingLabel = false;
+                return;
+            }
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
@@ -376,6 +394,13 @@ angular.module('Geographr.controllers', [])
             canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
         };
         
+        // Draw labels
+        var drawLabel = function(coords,text) {
+            localLabels[coords.join(':')] = text;
+            canvasUtility.drawLabel(zoomPingContext,
+                [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],text,zoomPixSize);
+        };
+        
         // When terrain is added/changed
         var addTerrain = function(snap) { drawTerrain(snap.name().split(':'),snap.val()); };
         // When terrain is removed
@@ -388,6 +413,13 @@ angular.module('Geographr.controllers', [])
         // When an object is removed
         var removeObject = function(snapshot) {
             localObjects[snapshot.name()] = {}; // Delete local object
+        };
+        
+        var addLabel = function(snap) {
+            var coords = snap.name().split(':');
+            drawLabel(coords,snap.val());
+            canvasUtility.drawLabel(zoomPingContext,
+                [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],snap.val());
         };
     
         var sortArrayByProperty = function(arr, sortby, descending) {
@@ -445,6 +477,7 @@ angular.module('Geographr.controllers', [])
         fireRef.child('terrain').on('child_added', addTerrain);
         fireRef.child('terrain').on('child_changed', addTerrain);
         fireRef.child('terrain').on('child_removed', removeTerrain);
+        fireRef.child('labels').on('child_added', addLabel);
         fireRef.child('objects').on('child_added', drawObject);
         fireRef.child('objects').on('child_changed', drawObject);
         fireRef.child('objects').on('child_removed', removeObject);

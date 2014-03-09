@@ -50,27 +50,27 @@ angular.module('Geographr.canvas', [])
                 else if(landNear >= 10) { color = {r:46,g:69,b:79}; }
                 else { color = {r:44,g:61,b:75}; }
             }
-            var factor = 0, diff = {};
+            var coef = 0, diff = {};
             if(terrain[near[4]] > 1) { // Draw brown mountains
-                factor = (terrain[near[4]]-1)/8;
+                coef = (terrain[near[4]]-1)/8;
                 diff = {r:color.r - 88,g:color.g - 93, b:color.b - 70};
-                color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+                color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
             if(terrain[near[4]] > 6) { // Draw white peaks
-                factor = (terrain[near[4]]-9)/8;
+                coef = (terrain[near[4]]-9)/8;
                 diff = {r:color.r - 144,g:color.g - 144, b:color.b - 145};
-                color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+                color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
             if(terrain[near[4]] > 0) {
                 var shade = nearHeight - terrain[near[4]]*2;
                 if(shade > 0) { // Draw shading
-                    factor = shade/35;
+                    coef = shade/35;
                     diff = {r:color.r - 10,g:color.g - 10, b:color.b - 10};
-                    color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+                    color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
                 } else if(shade < 0) { // Draw highlighting
-                    factor = shade/-50;
+                    coef = shade/-50;
                     diff = {r:color.r - 247,g:color.g - 246, b:color.b - 220};
-                    color = {r:color.r - diff.r*factor,g:color.g - diff.g*factor,b:color.b - diff.b*factor};
+                    color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
                 }
             }
             
@@ -131,6 +131,20 @@ angular.module('Geographr.canvas', [])
                     zoomPixSize+thickness*2, zoomPixSize-4*thickness);
                 context.clearRect(x * zoomPixSize, y * zoomPixSize, // Inner box
                     zoomPixSize, zoomPixSize);
+            },
+            drawLabel: function(context,coords,text,zoomPixSize) {
+                var x = parseInt(coords[0]), y = parseInt(coords[1]);
+                context.font = "14px Georgia";
+                context.textAlign = 'center';
+                context.textBaseline = 'bottom';
+                context.fillStyle = 'rgba(0,0,0,0.8)';
+                context.shadowColor = 'black';
+                context.shadowOffsetX = 0;
+                context.shadowOffsetY = 0;
+                context.shadowBlur = 1;
+                context.fillText(text, x*zoomPixSize+2+zoomPixSize/2, y*zoomPixSize+1);
+                context.fillStyle = 'white';
+                context.fillText(text, x*zoomPixSize+zoomPixSize/2, y*zoomPixSize);
             },
             drawPing: function(context,coords) {
                 var pingGradient = context.createRadialGradient(

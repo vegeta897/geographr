@@ -57,6 +57,8 @@
         <div id="info" class="col-xs-4">
             <h2>Welcome to <span class="geographr-color">Geographr</span>!</h2>
             <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
+            <input type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
+            <button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button><br />
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
         </div>
         <div id="userStats" class="col-xs-2">
