@@ -91,13 +91,12 @@ angular.module('Geographr.directives', [])
 })
 .filter('timeUnits', function() {
     return function(input, scope) {
-        if(!input) { return ''; }
+        if(!input) { return 0; }
         var seconds = Math.floor(input/1000);
         if(seconds < 60) { return seconds; } // seconds
         if(seconds < 3600) { return Math.floor(seconds/60); } // minutes
         if(seconds < 86400) { return Math.floor(seconds/3600); } // hours
-        if(seconds < 2592000) { return Math.floor(seconds/86400); } // days
-        return input;
+        else { return Math.floor(seconds/86400); } // days
     }
 })
 .filter('timeUnitsLabel', function() {
@@ -107,8 +106,7 @@ angular.module('Geographr.directives', [])
         if(seconds < 60) { return seconds > 1 ? 'seconds' : 'second'; } // seconds
         if(seconds < 3600) { return seconds > 119 ? 'minutes' : 'minute'; } // minutes
         if(seconds < 86400) { return seconds > 7199 ? 'hours' : 'hour'; } // hours
-        if(seconds < 2592000) { return seconds > 172799 ? 'days' : 'day'; } // days
-        return input;
+        else { return seconds > 172799 ? 'days' : 'day'; } // days
     }
 })
 ;

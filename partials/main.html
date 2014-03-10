@@ -102,7 +102,7 @@
             </div>
             
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
-            <button class="btn btn-warning" ng-click="drawIso()">Draw Iso</button>
+            <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Draw Iso</button>
         </div>
         <div id="inventory" class="col-xs-3">
             <h2>Inventory</h2>
@@ -123,7 +123,7 @@
             <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
                 {{ selectedObject.type | itemDisplay }}&emsp;
                 <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
-                <span class="text-muted">Age</span>&emsp;{{ theTime - selectedObject.created | timeUnits }}&nbsp; <small class="text-muted">minutes</small>
+                <span class="text-muted">Age</span>&emsp;{{ theTime - selectedObject.created | timeUnits }}&nbsp; <small class="text-muted">{{ theTime - selectedObject.created | timeUnitsLabel }}</small>
             </p>
             <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row">
                 <div class="col-xs-4 hard-right">
