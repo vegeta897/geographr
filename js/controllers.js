@@ -424,7 +424,7 @@ angular.module('Geographr.controllers', [])
             jQuery(zoomHighCanvas).unbind('mousedown');
             jQuery(zoomHighCanvas).unbind('mouseup');
             jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
-            if($scope.placingObject) {
+            if($scope.placingObject.hasOwnProperty('type')) {
                 jQuery(zoomHighCanvas).mousedown(placeObject);
             } else {
                 jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
