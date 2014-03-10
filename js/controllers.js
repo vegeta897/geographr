@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.04; $scope.versionName = 'Eastern Justice'; $scope.needUpdate = false;
+        $scope.version = 0.05; $scope.versionName = 'Primitive Emergence'; $scope.needUpdate = false;
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = ['-','-']; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
@@ -12,11 +12,12 @@ angular.module('Geographr.controllers', [])
         $scope.zoomLevel = 6;
         $scope.brushSize = 0;
         $scope.eventLog = [];
+        $scope.addingObject = {};
         $scope.lockElevation = false; $scope.lockedElevation = 1;
-        var mainPixSize = 2, zoomPixSize = 12, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
+        var mainPixSize = 2, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
-            addingLabel = false, zoomLevels = [4,5,6,8,12,20,40,60];
+            addingLabel = false, zoomLevels = [4,5,6,8,12,20,40,60], fireInventory;
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -36,7 +37,7 @@ angular.module('Geographr.controllers', [])
                                             userID = createdUser.id;
                                             $scope.user = {id: createdUser.id, email: createdUser.email, score: 0,
                                                 nick: gameUtility.capitalize(createdUser.email.substr(0,
-                                                    createdUser.email.indexOf('@')))};
+                                                    createdUser.email.indexOf('@'))), new: true};
                                             fireRef.auth(createdUser.token, function() {
                                                 fireUser = fireRef.child('users/'+userID);
                                                 fireUser.set($scope.user,
@@ -85,12 +86,21 @@ angular.module('Geographr.controllers', [])
                     $scope.user = snapshot.val();
                     $scope.userInit = true;
                     $scope.authStatus = 'logged';
+                    $scope.camp = snapshot.val().camp;
+                    $scope.newUser = snapshot.val()['new'];
                     fireRef.child('users').on('child_added', updateUsers);
                     fireRef.child('users').on('child_changed', updateUsers);
                     if(userID == 2) {
                         createServerListeners();
                     }
+                    if(!$scope.newUser) { return; }
+                    tutorialStep = -1;
+                    tutorial('next');
                 });
+                fireInventory = fireUser.child('inventory');
+                fireInventory.on('child_added', updateInventory);
+                fireInventory.on('child_changed', updateInventory);
+                fireInventory.on('child_removed', removeInventory);
             });
         };
     
@@ -193,6 +203,33 @@ angular.module('Geographr.controllers', [])
             drawZoomCanvas();
             dimPixel();
         };
+        // Add camp to inventory, newbie's first step
+        $scope.createCamp = function() {
+            tutorial('next');
+            $scope.camp = {};
+            $scope.camp.color = colorUtility.generate('camp',{hsv:true});
+            fireUser.child('camp').set(angular.copy($scope.camp));
+            fireInventory.push({
+                type: 'camp', color: $scope.camp.color
+            //    contents: [ 'somatic', 'somatic', 'somatic', 'somatic' ]
+            });
+        };
+        // Adding an object to the canvas
+        $scope.addObject = function(object) {
+            object.adding = true;
+            $scope.addingObject = object;
+            jQuery(zoomHighCanvas).unbind('mousedown');
+            jQuery(zoomHighCanvas).mousedown(placeObject);
+        };
+        $scope.cancelAddObject = function() {
+            $timeout(function() {
+                dimPixel();
+                $scope.addingObject.adding = false;
+                $scope.addingObject = {};
+                jQuery(zoomHighCanvas).unbind('mousedown');
+                jQuery(zoomHighCanvas).mousedown(selectObject);
+            });
+        };
         
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -200,9 +237,88 @@ angular.module('Geographr.controllers', [])
                 $scope.lockElevation = $scope.lockElevation || val > 0; // Lock elevation if brush size is bigger than 1px
             });
         };
-        
         $scope.addLabel = function(val) {
             addingLabel = true;
+        };
+
+        var updateInventory = function(snapshot) {
+            var itemAdded = snapshot.val();
+            itemAdded.fireID = snapshot.name();
+            $timeout(function(){
+                switch(itemAdded.type) {
+                    case 'camp':
+                        fireUser.child('new').set('false');
+                        $scope.newUser = false;
+                        break;
+                    default:
+                        break;
+                }
+                if(!$scope.inventory) { $scope.inventory = {}; }
+                $scope.inventory[snapshot.name()] = itemAdded;
+            });
+        };
+
+        var removeInventory = function(snapshot) {
+            $timeout(function(){
+                switch(snapshot.val().type) {
+                    case 'camp':
+                        tutorial('next');
+                        break;
+                    default:
+                        break;
+                }
+                delete $scope.inventory[snapshot.name()];
+                var items = 0; // Check how many items are in the inventory
+                for(var key in $scope.inventory) {
+                    if($scope.inventory.hasOwnProperty(key)) { items++; break; }
+                }
+                if(items == 0) {
+                    $scope.inventory = null;
+                }
+            });
+        };
+        // Selecting an object on the map
+        var selectObject = function(event) {
+            if(event.which == 3) {  event.preventDefault(); return; } // If right click pressed
+            if(event.which == 2) {  startDragPanning(event); return; } // If middle click pressed
+            if($scope.authStatus != 'logged') { return; } // If not authed
+            $timeout(function() {
+                if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
+                    $scope.selectedObject = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
+                    $scope.selectedObject.ownerNick = $scope.localUsers[$scope.selectedObject.owner].nick;
+                } else { $scope.selectedObject = null; }
+                dimPixel(); // Will draw select box
+                if(!$scope.selectedObject) { return; }
+                if($scope.selectedObject.type == 'camp' && $scope.selectedObject.owner == userID
+                    && tutorialStep == 2) { tutorial('next'); }
+            });
+        };
+        // Placing an object on the map
+        var placeObject = function(event) {
+            if($scope.authStatus != 'logged') { return; } // If not authed
+            if(event.which == 3) { $scope.cancelAddObject(); event.preventDefault(); return; } // If right click pressed
+            if(event.which == 2) { startDragPanning(event); return; } // If middle click pressed
+            var object = $scope.addingObject;
+            if(!gameUtility.validLocation(userID, localObjects, object.type, 
+                [$scope.overPixel.x,$scope.overPixel.y])) { return; }
+            dimPixel(); // Dim the pixel being drawn on
+            // Add the object in firebase
+            fireRef.child('objects/'+$scope.overPixel.x + ':' + $scope.overPixel.y).set(
+                {
+                    owner: userID, type: object.type, color: object.color, created: null,
+                    contents: object.contents ? object.contents : [], life: 100, 
+                    grid: $scope.overPixel.x + ':' + $scope.overPixel.y
+                }
+            );
+            fireInventory.child(object.fireID).remove();
+            if(object.type == 'camp') {
+                $scope.camp.grid = $scope.overPixel.x + ':' + $scope.overPixel.y;
+                fireUser.child('camp').update($scope.camp);
+            }
+            if(object.type == 'energy' && tutorialStep == 6) { tutorial('next'); }
+            $scope.addingObject = {};
+            jQuery(zoomHighCanvas).unbind('mousedown');
+            jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
         };
 
         var drawZoomCanvas = function() {
@@ -218,9 +334,36 @@ angular.module('Geographr.controllers', [])
                     drawLabel(coords,localLabels[labKey]);
                 }
             }
-            // TODO: Enumerate over localObjects to draw those too
+            canvasUtility.fillCanvas(zoomObjectContext,'erase');
+            for(var objKey in localObjects) {
+                if(localObjects.hasOwnProperty(objKey)) {
+                    coords = objKey.split(":");
+                    drawObject(coords,localObjects[objKey]);
+                }
+            }
         };
 
+        // teaching raz stuff
+        
+        var json = {};
+        
+        var data = {};
+        for(var key in json) {
+            if(json.hasOwnProperty(key)) {
+                var x = key.split(':')[0], y = key.split(':')[1];
+                data[key] = {
+                    elevation: json[key],
+                    x: x, y: y,
+                    northDiff: json.hasOwnProperty(x + ':' + (y - 1)) ? json[key] - json[x + ':' + (y - 1)] : json[key],
+                    eastDiff: json.hasOwnProperty((x + 1) + ':' + y) ? json[key] - json[(x + 1) + ':' + y] : json[key],
+                    southDiff: json.hasOwnProperty(x + ':' + (y + 1)) ? json[key] - json[x + ':' + (y + 1)] : json[key],
+                    westDiff: json.hasOwnProperty((x - 1) + ':' + y) ? json[key] - json[(x - 1) + ':' + y] : json[key]
+                }
+            }
+        }
+        
+        // end teaching raz stuff
+        
         var changeZoomPosition = function(x,y) {
             canvasUtility.fillMainArea(fullHighContext,'erase',lastZoomPosition,zoomSize);
             $timeout(function(){});
@@ -299,6 +442,12 @@ angular.module('Geographr.controllers', [])
                 addingLabel = false;
                 return;
             }
+            if(localObjects.hasOwnProperty(x+':'+y)) { selectObject(e); return; } // If selecting an object
+            
+            // If an object is selected, but is not clicked, clear the selected object
+            if($scope.selectedObject) { if($scope.selectedObject.grid != x + ':' + y) { 
+                $timeout(function() { $scope.selectedObject = null; }); return; } }
+            
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
@@ -411,11 +560,20 @@ angular.module('Geographr.controllers', [])
         var drawTerrain = function(coords,value) {
             if(value) { localTerrain[coords.join(':')] = value; } else
                 { delete localTerrain[coords.join(':')]; }
-            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
+            canvasUtility.drawThing(zoomTerrainContext,localTerrain,coords,
                 $scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
+            canvasUtility.drawThing(fullTerrainContext,localTerrain,coords,0,0);
         };
-        
+        // Draw an object, whether adding, changing, or removing
+        var drawObject = function(coords,value) {
+            if(value) { localObjects[coords.join(':')] = value; } else { 
+                delete localObjects[coords.join(':')]; 
+                canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
+            }
+            canvasUtility.drawThing(zoomObjectContext,localObjects,coords,
+                $scope.zoomPosition,zoomPixSize);
+            canvasUtility.drawThing(fullObjectContext,localObjects,coords,0,0);
+        };
         // Draw labels
         var drawLabel = function(coords,text) {
             localLabels[coords.join(':')] = text;
@@ -427,15 +585,11 @@ angular.module('Geographr.controllers', [])
         var addTerrain = function(snap) { drawTerrain(snap.name().split(':'),snap.val()); };
         // When terrain is removed
         var removeTerrain = function(snap) { drawTerrain(snap.name().split(':'),null); };
-        
         // When an object is added/changed
-        var drawObject = function(snapshot) {
-            localObjects[snapshot.name()] = snapshot.val(); // Update local object
-        };
+        var addObject = function(snap) { drawObject(snap.name().split(':'),snap.val()); };
         // When an object is removed
-        var removeObject = function(snapshot) {
-            localObjects[snapshot.name()] = {}; // Delete local object
-        };
+        var removeObject = function(snap) { drawObject(snap.name().split(':'),null); };
+        
         // Adding and removing labels
         var addLabel = function(snap) {
             var coords = snap.name().split(':');
@@ -505,8 +659,8 @@ angular.module('Geographr.controllers', [])
         fireRef.child('terrain').on('child_removed', removeTerrain);
         fireRef.child('labels').on('child_added', addLabel);
         fireRef.child('labels').on('child_removed', removeLabel);
-        fireRef.child('objects').on('child_added', drawObject);
-        fireRef.child('objects').on('child_changed', drawObject);
+        fireRef.child('objects').on('child_added', addObject);
+        fireRef.child('objects').on('child_changed', addObject);
         fireRef.child('objects').on('child_removed', removeObject);
         fireRef.child('meta/pings').on('child_added', drawPing);
         fireRef.child('meta/pings').on('child_removed', hidePing);

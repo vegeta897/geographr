@@ -64,6 +64,28 @@ button .glyphicon {
 #uiContainer table.unstyled tr td { padding: 2px 6px 0 0; border: none; color: #999; }
 strong { color: #ccc; }
 
+.item-color {
+    border: 1px solid black;
+    width: 16px; height: 16px;
+    display: inline-block;
+    position: relative;
+    top: 3px;
+    margin-right: 4px;
+}
+
+button .glyphicon {
+    margin-right: 3px;
+}
+
+.attach-top { position: relative; top: -6px; }
+
+#objectInfo .well { padding-bottom: 5px; display: inline-block; }
+#objectInfo h3 { font-size: 16px; margin: 0 0 10px; color: #737880; }
+#objectInfo ul { margin-bottom: 0; }
+#objectInfo li button {
+    position: relative; top: -1px;
+    padding: 1px 5px 2px;
+}
 
 /* --- Bootstrap Overrides --- */
 

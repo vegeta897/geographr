@@ -114,9 +114,9 @@ angular.module('Geographr.colors', [])
                 };
             } else if(cellType && brainColor) {
                 switch(cellType) {
-                    case 'brain':
+                    case 'camp':
                         hsv = {
-                            hue: Math.floor(Math.random()*360),
+                            hue: Math.floor(Math.random()*290+145), // Not green
                             sat: Math.round(Math.random()*20 + 75)/100,
                             val: Math.round(Math.random()*20 + 75)/100
                         }; break;

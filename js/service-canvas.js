@@ -16,7 +16,7 @@ angular.module('Geographr.canvas', [])
             }
             return near;
         };
-        var surveyNear = function(near,terrain) {
+        var surveyTerrain = function(near,terrain) {
             var color = '';
             var type = terrain[near[4]] > 0 ? terrain[near[4]] : 0;
             var landNear = 0;
@@ -78,6 +78,27 @@ angular.module('Geographr.canvas', [])
             color = {r:parseInt(color.r),g:parseInt(color.g),b:parseInt(color.b)}; // Int-ify
             return 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',1)';
         };
+        var surveyObjects = function(near,objects) {
+            var color = '';
+            var type = objects[near[4]] ? objects[near[4]].type : null;
+            for(var i = 0; i < near.length; i++) {
+                if(objects.hasOwnProperty(near[i])) {
+                    if(objects[near[i]] > 0) {
+                        if(i == 0 || i == 2 || i == 6 || i == 8) {
+                            
+                        } else if(i == 1 || i == 3 || i == 5 || i == 7) {
+                            
+                            if(i == 1 || i == 3) {
+                                
+                            } else if(i == 5 || i == 7) {
+                                
+                            }
+                        }
+                    }
+                }
+            }
+            return objects[near[4]].color.hex;
+        };
             
         return {
             fillCanvas: function(context,color) {
@@ -97,8 +118,9 @@ angular.module('Geographr.canvas', [])
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
                 context[method](x*pixSize,y*pixSize,size[0]*pixSize,size[1]*pixSize);
             },
-            drawTerrain: function(context,terrain,coords,zoomPosition,zoomPixSize) {
+            drawThing: function(context,things,coords,zoomPosition,zoomPixSize) {
                 var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
+                var drawType = context.canvas.id.substr(4,1); // Object or terrain?
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);
                 // Don't draw on zoom canvas if pixel is out of bounds
                 if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
@@ -111,9 +133,11 @@ angular.module('Geographr.canvas', [])
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 var affected = listNear(coords);
                 for(var i = 0; i < affected.length; i++) {
+                    if(drawType=='O' && !things.hasOwnProperty(affected[i])) { continue; }
                     var thisCoord = affected[i].split(':');
                     var nearThis = listNear(thisCoord);
-                    var color = surveyNear(nearThis,terrain);
+                    var color = drawType == 'O' ? surveyObjects(nearThis,things) : 
+                        surveyTerrain(nearThis,things);
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.fillStyle = color;
                     context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,

@@ -73,6 +73,44 @@ angular.module('Geographr.game', [])
         return false;
     };
     return {
+        validLocation: function(user, objects, objectType, loc) {
+            var neighbors, ownObjectsFound = 0, specialFound = false;
+            switch(objectType) {
+                case 'camp': // Can't be placed on another object
+                    return !objects.hasOwnProperty(loc.join(':'));
+                    break;
+                case 'somatic': // Can't be placed on another cell, must be next to brain or energy
+                    neighbors = getNeighbors(loc, 1);
+                    for (var i = 0; i < neighbors.length; i++) {
+                        if(objects.hasOwnProperty(neighbors[i])) {
+                            if(jQuery.inArray(objects[neighbors[i]].type,['brain','energy','germ']) > -1 &&
+                                objects[neighbors[i]].owner == user) {
+                                specialFound = true; break; }
+                        }
+                    }
+                    return specialFound && !objects.hasOwnProperty(loc.join(':'));
+                    break;
+                case 'energy': // Can't be on another cell, must be next to owner's cell
+                    neighbors = getNeighbors(loc, 1);
+                    for (var j = 0; j < neighbors.length; j++) {
+                        if(objects.hasOwnProperty(neighbors[j]) && objects[neighbors[j]].owner == user) {
+                            ownObjectsFound++; break;
+                        }
+                    }
+                    return ownObjectsFound > 0 && !objects.hasOwnProperty(loc.join(':'));
+                    break;
+                case 'germ': // Can't be on another cell, must be next to owner's cell
+                    neighbors = getNeighbors(loc, 1);
+                    for (var k = 0; k < neighbors.length; k++) {
+                        if(objects.hasOwnProperty(neighbors[k]) && objects[neighbors[k]].owner == user) {
+                            ownObjectsFound++; break;
+                        }
+                    }
+                    return ownObjectsFound > 0 && !objects.hasOwnProperty(loc.join(':'));
+                    break;
+                default: return false; break; // Can't place unknown cell type!
+            }
+        },
         newMap: function() {
             var map = {};
             for(var i = 0; i < 240; i++) {
@@ -89,8 +127,8 @@ angular.module('Geographr.game', [])
             var text = '';
             switch(parseInt(step)) {
                 case 0:
-                    text = 'Click on the right-side view to influence the terrain.\n' +
-                        'Middle mouse to pan around, scroll wheel to zoom.';
+                    text = 'Middle mouse to pan around, scroll wheel to zoom.\n' +
+                        'Begin your empire by creating your starting camp!';
                     break;
             }
             return text;

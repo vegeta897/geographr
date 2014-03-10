@@ -54,20 +54,23 @@
 </div>
 <div id="uiContainer" ng-show="userInit" class="container">
     <div class="row">
-        <div id="info" class="col-xs-4">
+        <div id="info" class="col-xs-3">
             <h2>Welcome to <span class="geographr-color">Geographr</span>!</h2>
-            <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
+            <div class="well">
+                <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
+                <button ng-show="newUser" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
+            </div>
             <div class="row form-group">
-                <div class="input-group input-group-sm col-xs-7">
+                <div class="input-group input-group-sm col-xs-8">
                     <input class="form-control input-sm" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
                     <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button></span>
                 </div>
             </div>
             <div class="row form-group">
-                <div class="col-xs-3">
+                <div class="col-xs-4">
                 <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
                 </div>
-                <div class="col-xs-5 hard-left">
+                <div class="col-xs-6 hard-left">
                     <div class="checkbox-inline"><label>
                         <input ng-model="lockElevation" type="checkbox"> Fixed Elevation
                     </label></div>
@@ -75,26 +78,67 @@
             </div>
             <div class="row form-group">
                 <div class="col-xs-12">
-                    Brush Size: {{ brushSize * 2 + 1 }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+                    Size: {{ brushSize * 2 + 1 }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
                 </div>
             </div>
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
         </div>
-        <div id="userStats" class="col-xs-2">
-            <h2>{{ user.nick }}'s Stats</h2>
-            <div class="col-xs-10 hard-left">
-                <table class="table unstyled">
-                    <tr><td>Score</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
-                </table>
+        <div id="inventory" class="col-xs-3">
+            <h2>Inventory</h2>
+            <ul class="list-unstyled">
+                <li class="text-muted" ng-hide="inventory">No items</li>
+                <li ng-repeat="item in inventory">
+                    <button type="button" ng-disabled="item.adding" ng-click="addObject(item)"
+                            class="btn btn-xs btn-default"><span class="glyphicon glyphicon-plus"></span>
+                        <span ng-init="style={background: '#'+item.color.hex}" ng-style="style" class="item-color"></span>
+                        {{ item.type | itemDisplay }}
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div id="objectInfoSpacer" ng-hide="selectedObject" class="col-xs-3"></div>
+        <div id="objectInfo" ng-show="selectedObject" class="col-xs-3">
+            <h2>Object Info<small>{{ selectedObject.ownerNick }}</small></h2>
+            <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
+                {{ selectedObject.type | itemDisplay }}&emsp;
+                <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
+                <span class="text-muted">Age</span>&emsp;{{ heartbeats - selectedObject.created }}
+            </p>
+            <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row">
+                <div class="col-xs-4 hard-right">
+                    <p><span class="text-muted">Health</span>&emsp;{{ selectedObject.life }}</p>
+                </div>
+                <div class="col-xs-8">
+                    <div class="progress">
+                        <div class="progress-bar" ng-style="{width: selectedObject.life+'%'}"></div>
+                    </div>
+                </div>
+            </div>
+            <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row attach-top">
+                <div class="col-xs-12"><p>
+                    <span class="text-muted">Decay</span>&emsp;
+                    {{ (heartbeats - selectedObject.created)/2 | number:0 }} -
+                    {{ (heartbeats - selectedObject.created)*1.5 | number:0 }}
+                </p></div>
+            </div>
+            <p ng-show="selectedObject.output">
+                <span class="text-muted">Output</span>
+                &emsp;{{ selectedObject.output }}&nbsp;&nbsp;<small class="text-muted">health</small>
+            </p>
+            <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
+                <h3>Contents</h3>
+                <ul class="list-unstyled">
+                    <li ng-repeat="item in selectedObject.contents">
+                        <button type="button" ng-click="harvestItem($index,item)" class="btn btn-xs btn-default">
+                            <span class="glyphicon glyphicon-arrow-left"></span>
+                            {{ item | itemDisplay }}
+                        </button>
+
+                    </li>
+                </ul>
             </div>
         </div>
-        <div id="scoreboard" class="col-xs-2">
-            <h2>Scoreboard</h2>
-            <table class="table unstyled">
-                <tr ng-repeat="user in scoreBoard | limitTo:10"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
-            </table>
-        </div>
-        <div id="log" class="col-xs-4">
+        <div id="log" class="col-xs-3">
             <h2>Event Log</h2>
             <!-- <em ng-hide="eventLog.length > 0" class="text-muted">Only shows events occurring after opening this page.</em> -->
             <em ng-hide="eventLog.length > 0" class="text-muted">This feature hasn't been implemented yet.</em>
@@ -105,6 +149,10 @@
                     {{ event.coords }}
                 </li>
             </ul>
+            <h2>Scoreboard</h2>
+            <table class="table unstyled">
+                <tr ng-repeat="user in scoreBoard | limitTo:10"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
+            </table>
         </div>
     </div>
 </div>
