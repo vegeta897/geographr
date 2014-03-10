@@ -3,16 +3,19 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.05; $scope.versionName = 'Primitive Emergence'; $scope.needUpdate = false;
+        $scope.version = 0.06; $scope.versionName = 'Rival Hypothesis'; $scope.needUpdate = false;
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = ['-','-']; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
         $scope.authStatus = ''; $scope.helpText = '';
         $scope.localUsers = {};
         $scope.zoomLevel = 6;
+        $scope.showLabels = true;
+        $scope.showObjects = true;
+        $scope.editTerrain = false;
         $scope.brushSize = 0;
         $scope.eventLog = [];
-        $scope.addingObject = {};
+        $scope.placingObject = {};
         $scope.lockElevation = false; $scope.lockedElevation = 1;
         var mainPixSize = 2, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
@@ -167,10 +170,25 @@ angular.module('Geographr.controllers', [])
                     if(cleaned.users.hasOwnProperty(key)) {
                         var cleanUser = cleaned.users[key];
                         cleanUser.score = 0;
+                        cleanUser.new = true;
                     }
                 }
                 fireRef.set(cleaned);
             });
+        };
+        
+        // Redraw zoom canvas
+        $scope.refresh = function(full) {
+            drawZoomCanvas();
+            if(full) { // If also refreshing the full view
+                canvasUtility.fillCanvas(fullObjectContext,'erase');
+                for(var objKey in localObjects) { // Draw objects
+                    if(localObjects.hasOwnProperty(objKey)) {
+                        var coords = objKey.split(":");
+                        drawObject(coords,localObjects[objKey]);
+                    }
+                }
+            }
         };
 
         $scope.changeZoom = function(val) {
@@ -217,17 +235,17 @@ angular.module('Geographr.controllers', [])
         // Adding an object to the canvas
         $scope.addObject = function(object) {
             object.adding = true;
-            $scope.addingObject = object;
+            $scope.placingObject = object;
             jQuery(zoomHighCanvas).unbind('mousedown');
             jQuery(zoomHighCanvas).mousedown(placeObject);
         };
         $scope.cancelAddObject = function() {
             $timeout(function() {
                 dimPixel();
-                $scope.addingObject.adding = false;
-                $scope.addingObject = {};
+                $scope.placingObject.adding = false;
+                $scope.placingObject = {};
                 jQuery(zoomHighCanvas).unbind('mousedown');
-                jQuery(zoomHighCanvas).mousedown(selectObject);
+                jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
             });
         };
         
@@ -247,7 +265,7 @@ angular.module('Geographr.controllers', [])
             $timeout(function(){
                 switch(itemAdded.type) {
                     case 'camp':
-                        fireUser.child('new').set('false');
+                        fireUser.child('new').set(false);
                         $scope.newUser = false;
                         break;
                     default:
@@ -278,9 +296,10 @@ angular.module('Geographr.controllers', [])
             });
         };
         // Selecting an object on the map
-        var selectObject = function(event) {
-            if(event.which == 3) {  event.preventDefault(); return; } // If right click pressed
-            if(event.which == 2) {  startDragPanning(event); return; } // If middle click pressed
+        var selectObject = function(e) {
+            $scope.theTime = new Date().getTime();
+            if(e.which == 3) {  e.preventDefault(); return; } // If right click pressed
+            if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
             if($scope.authStatus != 'logged') { return; } // If not authed
             $timeout(function() {
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
@@ -298,14 +317,14 @@ angular.module('Geographr.controllers', [])
             if($scope.authStatus != 'logged') { return; } // If not authed
             if(event.which == 3) { $scope.cancelAddObject(); event.preventDefault(); return; } // If right click pressed
             if(event.which == 2) { startDragPanning(event); return; } // If middle click pressed
-            var object = $scope.addingObject;
+            var object = $scope.placingObject;
             if(!gameUtility.validLocation(userID, localObjects, object.type, 
                 [$scope.overPixel.x,$scope.overPixel.y])) { return; }
             dimPixel(); // Dim the pixel being drawn on
             // Add the object in firebase
             fireRef.child('objects/'+$scope.overPixel.x + ':' + $scope.overPixel.y).set(
                 {
-                    owner: userID, type: object.type, color: object.color, created: null,
+                    owner: userID, type: object.type, color: object.color, created: new Date().getTime(),
                     contents: object.contents ? object.contents : [], life: 100, 
                     grid: $scope.overPixel.x + ':' + $scope.overPixel.y
                 }
@@ -316,7 +335,7 @@ angular.module('Geographr.controllers', [])
                 fireUser.child('camp').update($scope.camp);
             }
             if(object.type == 'energy' && tutorialStep == 6) { tutorial('next'); }
-            $scope.addingObject = {};
+            $scope.placingObject = {};
             jQuery(zoomHighCanvas).unbind('mousedown');
             jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
         };
@@ -405,7 +424,11 @@ angular.module('Geographr.controllers', [])
             jQuery(zoomHighCanvas).unbind('mousedown');
             jQuery(zoomHighCanvas).unbind('mouseup');
             jQuery(zoomHighCanvas).mousemove(zoomOnMouseMove);
-            jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
+            if($scope.placingObject) {
+                jQuery(zoomHighCanvas).mousedown(placeObject);
+            } else {
+                jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
+            }
         };
         // When panning the full view
         var fullViewPan = function(e) {
@@ -446,8 +469,8 @@ angular.module('Geographr.controllers', [])
             
             // If an object is selected, but is not clicked, clear the selected object
             if($scope.selectedObject) { if($scope.selectedObject.grid != x + ':' + y) { 
-                $timeout(function() { $scope.selectedObject = null; }); return; } }
-            
+                $timeout(function() { $scope.selectedObject = null; dimPixel(); }); return; } }
+            if(!$scope.editTerrain) { return; } // If terrain edit mode is off, we're done here
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
@@ -496,7 +519,7 @@ angular.module('Geographr.controllers', [])
                     $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
                     var coords = [$scope.overPixel.x-$scope.zoomPosition[0],
                         $scope.overPixel.y-$scope.zoomPosition[1]];
-                    canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize);
+                    canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'cursor');
                     if(e.which == 1 || e.which == 3) {
                         zoomOnMouseDown(e);
                     }
@@ -519,10 +542,18 @@ angular.module('Geographr.controllers', [])
             return false;
         };
         var scrollTimer; // Timer to prevent scroll event firing twice in a row
-        
+
+        // Draw selection box around selected cell
+        var drawSelect = function() {
+            if(!$scope.selectedObject) { return; }
+            var coords = $scope.selectedObject.grid.split(':');
+            coords = [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]];
+            canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'object');
+        };
         // Dim the pixel after leaving it
         var dimPixel = function() {
             canvasUtility.fillCanvas(zoomHighContext,'erase');
+            drawSelect();
         };
         // When the mouse leaves the zoomed view
         var zoomOnMouseOut = function() {
@@ -562,10 +593,14 @@ angular.module('Geographr.controllers', [])
                 { delete localTerrain[coords.join(':')]; }
             canvasUtility.drawThing(zoomTerrainContext,localTerrain,coords,
                 $scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawThing(fullTerrainContext,localTerrain,coords,0,0);
+             canvasUtility.drawThing(fullTerrainContext,localTerrain,coords,0,0);
+        };
+        $scope.drawIso = function() {
+            canvasUtility.drawIso(fullTerrainContext,localTerrain);
         };
         // Draw an object, whether adding, changing, or removing
         var drawObject = function(coords,value) {
+            if(!$scope.showObjects) { return; }
             if(value) { localObjects[coords.join(':')] = value; } else { 
                 delete localObjects[coords.join(':')]; 
                 canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
@@ -576,6 +611,7 @@ angular.module('Geographr.controllers', [])
         };
         // Draw labels
         var drawLabel = function(coords,text) {
+            if(!$scope.showLabels) { return; }
             localLabels[coords.join(':')] = text;
             canvasUtility.drawLabel(zoomPingContext,
                 [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],text,zoomPixSize);

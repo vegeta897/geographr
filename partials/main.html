@@ -2,7 +2,7 @@
     <div class="container">
         <div class="navbar-header">
             <h1><a href="#"><span class="geographr-color">Geographr</span></a>  <small>v{{ version }} - "{{ versionName }}"
-            &nbsp;&mdash;&nbsp;Server status: 
+                &emsp;&mdash;&emsp;Server status: 
                 <strong ng-class="{'text-success': serverStatus == 'Online', 'text-danger': serverStatus != 'Online'}">{{ serverStatus | capitalize }}</strong></small></h1>
         </div>
         <div class="navbar-collapse collapse">
@@ -30,6 +30,16 @@
         </canvas>
         <div class="col-xs-2 pull-left hard-left coords">
             {{ zoomPosition[0] }} , {{ zoomPosition[1] }}
+        </div>
+        <div class="col-xs-4 text-right pull-right coords">
+            <div class="checkbox-inline text-muted"><label>
+                <input ng-change="refresh()" ng-model="showLabels" type="checkbox"> Show Map Labels
+            </label></div>
+        </div>
+        <div class="col-xs-3 text-right pull-right coords">
+            <div class="checkbox-inline text-muted"><label>
+                <input ng-change="refresh(true)" ng-model="showObjects" type="checkbox"> Show Objects
+            </label></div>
         </div>
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
@@ -67,21 +77,32 @@
                 </div>
             </div>
             <div class="row form-group">
-                <div class="col-xs-4">
-                <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
-                </div>
-                <div class="col-xs-6 hard-left">
+                <div class="col-xs-12">
                     <div class="checkbox-inline"><label>
-                        <input ng-model="lockElevation" type="checkbox"> Fixed Elevation
+                        <input ng-model="editTerrain" type="checkbox"> Terrain Edit Mode
                     </label></div>
                 </div>
             </div>
-            <div class="row form-group">
-                <div class="col-xs-12">
-                    Size: {{ brushSize * 2 + 1 }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+            <div ng-show="editTerrain" class="well">
+                <div class="row form-group">
+                    <div class="col-xs-4">
+                        <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
+                    </div>
+                    <div class="col-xs-6 hard-left">
+                        <div class="checkbox-inline"><label>
+                            <input ng-model="lockElevation" type="checkbox"> Fixed Elevation
+                        </label></div>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-xs-12">
+                        Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+                    </div>
                 </div>
             </div>
+            
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
+            <button class="btn btn-warning" ng-click="drawIso()">Draw Iso</button>
         </div>
         <div id="inventory" class="col-xs-3">
             <h2>Inventory</h2>
@@ -102,7 +123,7 @@
             <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
                 {{ selectedObject.type | itemDisplay }}&emsp;
                 <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
-                <span class="text-muted">Age</span>&emsp;{{ heartbeats - selectedObject.created }}
+                <span class="text-muted">Age</span>&emsp;{{ theTime - selectedObject.created | timeUnits }}&nbsp; <small class="text-muted">minutes</small>
             </p>
             <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row">
                 <div class="col-xs-4 hard-right">
@@ -123,7 +144,7 @@
             </div>
             <p ng-show="selectedObject.output">
                 <span class="text-muted">Output</span>
-                &emsp;{{ selectedObject.output }}&nbsp;&nbsp;<small class="text-muted">health</small>
+                &emsp;{{ selectedObject.output }}&emsp;<small class="text-muted">health</small>
             </p>
             <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
                 <h3>Contents</h3>
@@ -150,9 +171,11 @@
                 </li>
             </ul>
             <h2>Scoreboard</h2>
-            <table class="table unstyled">
-                <tr ng-repeat="user in scoreBoard | limitTo:10"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
-            </table>
+            <div class="col-xs-10">
+                <table class="table unstyled">
+                    <tr ng-repeat="user in scoreBoard | limitTo:10"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
+                </table>
+            </div>
         </div>
     </div>
 </div>

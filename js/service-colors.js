@@ -117,7 +117,7 @@ angular.module('Geographr.colors', [])
                     case 'camp':
                         hsv = {
                             hue: Math.floor(Math.random()*290+145), // Not green
-                            sat: Math.round(Math.random()*20 + 75)/100,
+                            sat: Math.round(Math.random()*20 + 65)/100,
                             val: Math.round(Math.random()*20 + 75)/100
                         }; break;
                     case 'somatic': // Dimmer duller brain color

@@ -118,6 +118,21 @@ angular.module('Geographr.canvas', [])
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
                 context[method](x*pixSize,y*pixSize,size[0]*pixSize,size[1]*pixSize);
             },
+            drawIso: function(context,terrain) {
+                for(var i = 0; i < 300; i++) {
+                    for(var ii = 299; ii >= 0; ii--) {
+                        //if(terrain.hasOwnProperty(ii+':'+i)) {
+                        var thisCoord = [ii,i];
+                        var nearThis = listNear(thisCoord);
+                        var color = surveyTerrain(nearThis,terrain);
+                        var x = parseInt(thisCoord[0]), y = parseInt(thisCoord[1]);
+                        context.fillStyle = color;
+                        var height = terrain.hasOwnProperty(ii+':'+i) ? terrain[ii+':'+i] : 0;
+                        context.fillRect((x+y)*2,(600+(y-x))/3,2,(height+4)/-2);
+                        //}
+                    }
+                }
+            },
             drawThing: function(context,things,coords,zoomPosition,zoomPixSize) {
                 var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
                 var drawType = context.canvas.id.substr(4,1); // Object or terrain?
@@ -144,18 +159,31 @@ angular.module('Geographr.canvas', [])
                         canvasPixSize,canvasPixSize);
                 }
             },
-            drawSelect: function(context,coords,zoomPixSize) {
+            drawSelect: function(context,coords,zoomPixSize,type) {
                 var x = coords[0], y = coords[1];
                 var thickness = zoomPixSize < 16 ? 1 : zoomPixSize < 31 ? 2 : 3;
                 context.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 context.fillRect(x * zoomPixSize-thickness, y * zoomPixSize-thickness, // Outer box
                     zoomPixSize+thickness*2, zoomPixSize+thickness*2);
-                context.clearRect(x * zoomPixSize+2*thickness, y * zoomPixSize-thickness, // Vertical
-                    zoomPixSize-4*thickness, zoomPixSize+thickness*2);
-                context.clearRect(x * zoomPixSize-thickness, y * zoomPixSize+2*thickness, // Horizontal
-                    zoomPixSize+thickness*2, zoomPixSize-4*thickness);
+                if(type == 'object') {
+                    context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    for(var i = 0; i < zoomPixSize; i++) {
+                        if(i/2 == parseInt(i/2)) { // If even number
+                            context.fillRect(x * zoomPixSize+i, y * zoomPixSize-thickness,
+                                1, zoomPixSize+thickness*2);
+                            context.fillRect(x * zoomPixSize-thickness, y * zoomPixSize+i,
+                                zoomPixSize+thickness*2, 1);
+                        }
+                    }
+                }
                 context.clearRect(x * zoomPixSize, y * zoomPixSize, // Inner box
-                    zoomPixSize, zoomPixSize);
+                        zoomPixSize, zoomPixSize);
+                if(type == 'cursor') {
+                    context.clearRect(x * zoomPixSize+2*thickness, y * zoomPixSize-thickness, 
+                        zoomPixSize-4*thickness, zoomPixSize+thickness*2); // Vertical
+                    context.clearRect(x * zoomPixSize-thickness, y * zoomPixSize+2*thickness, 
+                        zoomPixSize+thickness*2, zoomPixSize-4*thickness); // Horizontal
+                }
             },
             drawLabel: function(context,coords,text,zoomPixSize) {
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);
