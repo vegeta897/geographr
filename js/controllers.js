@@ -3,9 +3,10 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
+        var getMap = true; // Disable getting terrain on each page load for debugging/bandwidth purposes
         $scope.version = 0.06; $scope.versionName = 'Rival Hypothesis'; $scope.needUpdate = false;
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
-        $scope.overPixel = ['-','-']; // Tracking your coordinates
+        $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
         $scope.authStatus = ''; $scope.helpText = '';
         $scope.localUsers = {};
@@ -305,6 +306,7 @@ angular.module('Geographr.controllers', [])
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
                     $scope.selectedObject = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
                     $scope.selectedObject.ownerNick = $scope.localUsers[$scope.selectedObject.owner].nick;
+                    $scope.overPixel.object = $scope.selectedObject;
                 } else { $scope.selectedObject = null; }
                 dimPixel(); // Will draw select box
                 if(!$scope.selectedObject) { return; }
@@ -361,27 +363,6 @@ angular.module('Geographr.controllers', [])
                 }
             }
         };
-
-        // teaching raz stuff
-        
-        var json = {};
-        
-        var data = {};
-        for(var key in json) {
-            if(json.hasOwnProperty(key)) {
-                var x = key.split(':')[0], y = key.split(':')[1];
-                data[key] = {
-                    elevation: json[key],
-                    x: x, y: y,
-                    northDiff: json.hasOwnProperty(x + ':' + (y - 1)) ? json[key] - json[x + ':' + (y - 1)] : json[key],
-                    eastDiff: json.hasOwnProperty((x + 1) + ':' + y) ? json[key] - json[(x + 1) + ':' + y] : json[key],
-                    southDiff: json.hasOwnProperty(x + ':' + (y + 1)) ? json[key] - json[x + ':' + (y + 1)] : json[key],
-                    westDiff: json.hasOwnProperty((x - 1) + ':' + y) ? json[key] - json[(x - 1) + ':' + y] : json[key]
-                }
-            }
-        }
-        
-        // end teaching raz stuff
         
         var changeZoomPosition = function(x,y) {
             canvasUtility.fillMainArea(fullHighContext,'erase',lastZoomPosition,zoomSize);
@@ -469,8 +450,9 @@ angular.module('Geographr.controllers', [])
             
             // If an object is selected, but is not clicked, clear the selected object
             if($scope.selectedObject) { if($scope.selectedObject.grid != x + ':' + y) { 
-                $timeout(function() { $scope.selectedObject = null; dimPixel(); }); return; } }
-            if(!$scope.editTerrain) { return; } // If terrain edit mode is off, we're done here
+                $timeout(function() { $scope.selectedObject = null; dimPixel(); delete $scope.overPixel.object; }); 
+                return; }}
+            if(!$scope.editTerrain || !getMap) { return; } // If terrain hidden or edit mode is off, we're done here
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
@@ -515,6 +497,7 @@ angular.module('Geographr.controllers', [])
                     $scope.overPixel.x = (x+$scope.zoomPosition[0]); 
                     $scope.overPixel.y = (y+$scope.zoomPosition[1]);
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
+                    $scope.overPixel.object = $scope.selectedObject ? $scope.selectedObject : localObjects[grid];
                     $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
                     $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
                     var coords = [$scope.overPixel.x-$scope.zoomPosition[0],
@@ -690,9 +673,11 @@ angular.module('Geographr.controllers', [])
         };
 
         // Firebase listeners
-        fireRef.child('terrain').on('child_added', addTerrain);
-        fireRef.child('terrain').on('child_changed', addTerrain);
-        fireRef.child('terrain').on('child_removed', removeTerrain);
+        if(getMap) {
+            fireRef.child('terrain').on('child_added', addTerrain);
+            fireRef.child('terrain').on('child_changed', addTerrain);
+            fireRef.child('terrain').on('child_removed', removeTerrain);
+        }
         fireRef.child('labels').on('child_added', addLabel);
         fireRef.child('labels').on('child_removed', removeLabel);
         fireRef.child('objects').on('child_added', addObject);

@@ -52,8 +52,25 @@ canvas { position: relative; }
 
 #info h2 { color: #c8c8c8; font-size: 20px }
 
-#log ul { font-size: 11px; }
-#log ul li { margin-bottom: 0; }
+#gridView {
+    width: 274px;
+    height: 274px;
+    border: 1px solid #7a8288;
+    text-align: center;
+    border-collapse: separate;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#gridView td { border: 1px solid #50575c; width: 91px; height: 91px; cursor: pointer; }
+#gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
+
+ul#log { font-size: 11px; }
+ul#log li { margin-bottom: 0; }
 
 #uiContainer li { margin-bottom: 3px; }
 #uiContainer li button {

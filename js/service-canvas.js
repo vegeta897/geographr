@@ -22,11 +22,11 @@ angular.module('Geographr.canvas', [])
             var landNear = 0;
             var nearHeight = 0;
             for(var i = 0; i < near.length; i++) {
-                if(terrain.hasOwnProperty(near[i])) {
+                var x = near[i].split(':')[0], y = near[i].split(':')[1];
                     if(terrain[near[i]] > 0) {
-                        if(i == 0 || i == 2 || i == 6 || i == 8) {
+                        if(i == 0 || i == 2 || i == 6 || i == 8) { // NW NE SE SW
                             landNear += 10;
-                        } else if(i == 1 || i == 3 || i == 5 || i == 7) {
+                        } else if(i == 1 || i == 3 || i == 5 || i == 7) { // N E S W
                             landNear += 15;
                             if(i == 1 || i == 3) {
                                 nearHeight += terrain[near[i]] - terrain[near[4]];
@@ -34,8 +34,9 @@ angular.module('Geographr.canvas', [])
                                 nearHeight -= terrain[near[i]] - terrain[near[4]];
                             }
                         }
+                    } else if(x < 0 || x > 299 || y < 0 || y > 299) {
+                        landNear +=10; // If land on border, pretend there's land out of bounds
                     }
-                }
             }
             if(type > 0) {
                 if(landNear >= 95) { color = {r:60,g:93,b:44}; }
