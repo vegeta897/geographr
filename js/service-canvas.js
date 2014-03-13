@@ -2,8 +2,8 @@
 
 angular.module('Geographr.canvas', [])
 .factory('canvasUtility', function(colorUtility) {
-        var mainPixSize = 2;
-        var mainPixOff = mainPixSize/2;
+        var fullPixSize = 2;
+        var fullPixOff = fullPixSize/2;
         
         // Return a list of coordinates surrounding and including the input coords
         var listNear = function(coords) {
@@ -110,8 +110,8 @@ angular.module('Geographr.canvas', [])
             fillMainArea: function(context,color,coords,size) {
                 var method = color == 'erase' ? 'clearRect' : 'fillRect';
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
-                context[method](coords[0]*mainPixSize,coords[1]*mainPixSize,
-                    size[0]*mainPixSize,size[1]*mainPixSize);
+                context[method](coords[0]*fullPixSize,coords[1]*fullPixSize,
+                    size[0]*fullPixSize,size[1]*fullPixSize);
             },
             drawPixel: function(context,color,coords,size) {
                 var method = color == 'erase' ? 'clearRect' : 'fillRect';
@@ -145,7 +145,7 @@ angular.module('Geographr.canvas', [])
                     (canvasType == 'zoom' && y-1 > zoomPosition[1]+(600/zoomPixSize))) {
                     return;
                 }
-                var canvasPixSize = canvasType == 'full' ? mainPixSize : zoomPixSize;
+                var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 var affected = listNear(coords);
                 for(var i = 0; i < affected.length; i++) {
@@ -159,6 +159,23 @@ angular.module('Geographr.canvas', [])
                     context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
                         canvasPixSize,canvasPixSize);
                 }
+            },
+            drawAllTerrain: function(context,terrain) { for(var key in terrain) {
+                if(terrain.hasOwnProperty(key)) {
+                    var coord = key.split(':');
+                    var affected = listNear(coord);
+                    for(var i = 0; i < affected.length; i++) {
+                        // If not drawing center pixel, only draw if it's water
+                        if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }
+                        var thisCoord = affected[i].split(':');
+                        var nearThis = listNear(thisCoord);
+                        var color = surveyTerrain(nearThis,terrain);
+                        var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
+                        context.fillStyle = color;
+                        context.fillRect(thisX*fullPixSize,thisY*fullPixSize,
+                            fullPixSize,fullPixSize);
+                    }
+                }}
             },
             drawSelect: function(context,coords,zoomPixSize,type) {
                 var x = coords[0], y = coords[1];
@@ -202,8 +219,8 @@ angular.module('Geographr.canvas', [])
             },
             drawPing: function(context,coords) {
                 var pingGradient = context.createRadialGradient(
-                    coords[0]*mainPixSize + mainPixSize/2, coords[1]*mainPixSize + mainPixSize/2, 5,
-                    coords[0]*mainPixSize + mainPixSize/2, coords[1]*mainPixSize + mainPixSize/2, 0
+                    coords[0]*fullPixSize + fullPixSize/2, coords[1]*fullPixSize + fullPixSize/2, 5,
+                    coords[0]*fullPixSize + fullPixSize/2, coords[1]*fullPixSize + fullPixSize/2, 0
                 );
                 pingGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
                 pingGradient.addColorStop(0.2, "rgba(255, 255, 255, 1)");
@@ -211,15 +228,15 @@ angular.module('Geographr.canvas', [])
                 pingGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
                 context.fillStyle = pingGradient;
                 context.beginPath();
-                context.arc(coords[0]*mainPixSize + mainPixOff,
-                    coords[1]*mainPixSize +mainPixOff, 5, 0, 2 * Math.PI, false);
+                context.arc(coords[0]*fullPixSize + fullPixOff,
+                    coords[1]*fullPixSize +fullPixOff, 5, 0, 2 * Math.PI, false);
                 var cycle = 0;
                 function fadePing() {
                     if(Math.round(cycle/2) == cycle/2) {
                         context.fill();
                     } else {
-                        context.clearRect(coords[0] * mainPixSize - 15 + mainPixOff,
-                            coords[1] * mainPixSize - 15 + mainPixOff, 30, 30);
+                        context.clearRect(coords[0] * fullPixSize - 15 + fullPixOff,
+                            coords[1] * fullPixSize - 15 + fullPixOff, 30, 30);
                     }
                     cycle++;
                     if(cycle >= 8) {
@@ -229,8 +246,8 @@ angular.module('Geographr.canvas', [])
                 var pingInt = setInterval(function(){fadePing()},200);
             },
             clearPing: function(context,coords) {
-                context.clearRect(coords[0] * mainPixSize - 15 + mainPixOff,
-                    coords[1] * mainPixSize - 15 + mainPixOff, 30, 30);
+                context.clearRect(coords[0] * fullPixSize - 15 + fullPixOff,
+                    coords[1] * fullPixSize - 15 + fullPixOff, 30, 30);
             }
         }
 });

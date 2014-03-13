@@ -603,7 +603,8 @@ angular.module('Geographr.controllers', [])
         };
         
         // When terrain is added/changed
-        var addTerrain = function(snap) { drawTerrain(snap.name().split(':'),snap.val()); };
+        var addTerrain = function(snap) { if(snap.val() != localTerrain[snap.name()]) 
+            drawTerrain(snap.name().split(':'),snap.val()); };
         // When terrain is removed
         var removeTerrain = function(snap) { drawTerrain(snap.name().split(':'),null); };
         // When an object is added/changed
@@ -675,10 +676,16 @@ angular.module('Geographr.controllers', [])
         };
 
         // Firebase listeners
-        if(getMap) {
-            fireRef.child('terrain').on('child_added', addTerrain);
-            fireRef.child('terrain').on('child_changed', addTerrain);
-            fireRef.child('terrain').on('child_removed', removeTerrain);
+        if(getMap) { // If we're getting the terrain
+            fireRef.child('terrain').once('value',function(snap) {
+                localTerrain = snap.val(); // Download the whole terrain object at once into localTerrain
+                canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
+                drawZoomCanvas();
+                fireRef.child('terrain').on('child_added', addTerrain); // Then set up listeners for future updates
+                fireRef.child('terrain').on('child_changed', addTerrain);
+                fireRef.child('terrain').on('child_removed', removeTerrain);
+
+            });
         }
         fireRef.child('labels').on('child_added', addLabel);
         fireRef.child('labels').on('child_removed', removeLabel);
