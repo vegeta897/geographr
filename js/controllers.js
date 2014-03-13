@@ -585,7 +585,8 @@ angular.module('Geographr.controllers', [])
         var drawObject = function(coords,value) {
             if(!$scope.showObjects) { return; }
             if(value) { localObjects[coords.join(':')] = value; } else { 
-                delete localObjects[coords.join(':')]; 
+                delete localObjects[coords.join(':')];
+                if($scope.selectedObject.grid == coords.join(':')) { $scope.selectedObject = {}; }
                 canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
             }
             canvasUtility.drawThing(zoomObjectContext,localObjects,coords,
@@ -609,7 +610,7 @@ angular.module('Geographr.controllers', [])
         // When an object is added/changed
         var addObject = function(snap) {
             if(!localObjects.hasOwnProperty(snap.name()) || snap.val().created != localObjects[snap.name()].created){
-                $scope.eventLog.push({
+                $scope.eventLog.unshift({
                     time: new Date().getTime(), user: $scope.localUsers[snap.val().owner].nick, 
                     type: snap.val().type, coords: snap.name().split(':')
                 });
@@ -622,13 +623,13 @@ angular.module('Geographr.controllers', [])
         // Adding and removing labels
         var addLabel = function(snap) { 
             if(localLabels[snap.name()] != snap.val()) {
-                $scope.eventLog.push({
+                $scope.eventLog.unshift({
                     time: new Date().getTime(), user: 'Someone', type: 'label', coords: snap.name().split(':')
                 });
                 drawLabel(snap.name().split(':'),snap.val());
             } 
         };
-        var removeLabel = function(snap) { delete localLabels[snap.name().split(':')]; drawZoomCanvas(); };
+        var removeLabel = function(snap) { delete localLabels[snap.name()]; drawZoomCanvas(); };
     
         var sortArrayByProperty = function(arr, sortby, descending) {
             if(arr[0].hasOwnProperty(sortby)) {

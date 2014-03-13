@@ -181,7 +181,7 @@
             <h2>Event Log</h2>
             <em ng-hide="eventLog.length > 0" class="text-muted">Only shows events occurring after opening this page.</em>
             <ul id="log" class="list-unstyled">
-                <li ng-repeat="event in eventLog">
+                <li ng-repeat="event in eventLog | limitTo:10">
                     <span class="text-muted">{{ event.time | date:'H:mm:ss' }}</span>&emsp; 
                     {{ event.user }} <span class="text-muted">added a</span> {{ event.type }} <span class="text-muted">at</span> 
                     {{ event.coords[0] + ', ' + event.coords[1] }}
@@ -190,7 +190,7 @@
             <h2>Scoreboard</h2>
             <div class="col-xs-10">
                 <table class="table unstyled">
-                    <tr ng-repeat="user in scoreBoard | limitTo:10"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
+                    <tr ng-repeat="user in scoreBoard | limitTo:5"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
                 </table>
             </div>
         </div>
