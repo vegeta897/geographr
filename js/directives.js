@@ -109,4 +109,9 @@ angular.module('Geographr.directives', [])
         else { return seconds > 172799 ? 'days' : 'day'; } // days
     }
 })
+.filter('iif', function () {
+    return function(input, trueValue, falseValue) {
+        return input ? trueValue : falseValue;
+    };
+})
 ;

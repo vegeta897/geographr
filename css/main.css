@@ -113,6 +113,10 @@ button .glyphicon {
     padding: 1px 5px 2px;
 }
 
+#commits { float: left; position: absolute; z-index: 9999; width: 800px; padding-top: 8px; }
+
+#commits table tr td { color: #C8C8C8; }
+
 /* --- Bootstrap Overrides --- */
 
 p { color: #999; }

@@ -5,7 +5,9 @@ angular.module('Geographr.controllers', [])
     
         var getMap = true; // Disable getting terrain on each page load for debugging/bandwidth purposes
         $scope.version = 0.06; $scope.versionName = 'Rival Hypothesis'; $scope.needUpdate = false;
+        $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
+        $scope.theTime = new Date().getTime();
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
         $scope.authStatus = ''; $scope.helpText = '';
@@ -468,8 +470,8 @@ angular.module('Geographr.controllers', [])
                         var newElevation = $scope.lockElevation || $scope.brushSize > 0 ? 
                             parseInt($scope.lockedElevation) : localPixel ? localPixel + 1 : 1;
                         // TODO: Check surrounding pixels to prevent too-steep cliffs
-                        // Send update to firebase only if new elevation is different
-                        if(localPixel != newElevation) {
+                        // Send update to firebase only if new elevation is different, and grid is in bounds
+                        if(localPixel != newElevation && x+j >= 0 && x+j < 300 && y+jj >= 0 && y+jj < 300) {
                             newElevation = newElevation > 0 ? newElevation : null;
                             fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
                         }
@@ -711,5 +713,18 @@ angular.module('Geographr.controllers', [])
         jQuery(window).keyup(function() { keyUpped = true; });
         $scope.changeZoom($scope.zoomLevel); // Apply initial zoom on load
         changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]); // Apply zoom position to full view
+
+        jQuery.ajax({ // Get last 8 commits from github
+            url: 'https://api.github.com/repos/vegeta897/geographr/commits',
+            dataType: 'jsonp',
+            success: function(results) {
+                for(var i = 0; i < results.data.length; i++) {
+                    $scope.commits.push({
+                        message:results.data[i].commit.message,date:Date.parse(results.data[i].commit.committer.date)
+                    });
+                    if($scope.commits.length > 7) { break; }
+                }
+            }
+        });
 }])
 ;

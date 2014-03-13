@@ -102,7 +102,13 @@
             </div>
             
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
-            <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Draw Iso</button>
+            <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>
+            <button class="btn btn-default btn-sm" ng-click="showCommits = !showCommits">{{ showCommits | iif : 'Hide' : 'Show' }} Changelog</button>
+            <div ng-show="showCommits" id="commits">
+                <table class="table">
+                    <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ theTime - commit.date | timeUnits }} {{ theTime - commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
+                </table>
+            </div>
         </div>
         <div id="inventory" class="col-xs-3">
             <h2>Inventory</h2>
