@@ -80,6 +80,7 @@ angular.module('Geographr.canvas', [])
             return 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',1)';
         };
         var surveyObjects = function(near,objects) {
+            if(!objects.hasOwnProperty(near[4])) { return 'erase'; }
             var color = '';
             var type = objects[near[4]] ? objects[near[4]].type : null;
             for(var i = 0; i < near.length; i++) {
@@ -149,15 +150,17 @@ angular.module('Geographr.canvas', [])
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 var affected = listNear(coords);
                 for(var i = 0; i < affected.length; i++) {
-                    if(drawType=='O' && !things.hasOwnProperty(affected[i])) { continue; }
+                    
+                    //if(drawType=='O' && !things.hasOwnProperty(affected[i])) { continue; }
                     var thisCoord = affected[i].split(':');
                     var nearThis = listNear(thisCoord);
                     var color = drawType == 'O' ? surveyObjects(nearThis,things) : 
                         surveyTerrain(nearThis,things);
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.fillStyle = color;
-                    context.fillRect((thisX - offset[0])*canvasPixSize,(thisY - offset[1])*canvasPixSize,
-                        canvasPixSize,canvasPixSize);
+                    var drawMethod = color == 'erase' ? 'clearRect' : 'fillRect';
+                    context[drawMethod]((thisX - offset[0])*canvasPixSize,
+                        (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
                 }
             },
             drawAllTerrain: function(context,terrain) { for(var key in terrain) {

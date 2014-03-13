@@ -106,7 +106,7 @@
             <button class="btn btn-default btn-sm" ng-click="showCommits = !showCommits">{{ showCommits | iif : 'Hide' : 'Show' }} Changelog</button>
             <div ng-show="showCommits" id="commits">
                 <table class="table">
-                    <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ theTime - commit.date | timeUnits }} {{ theTime - commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
+                    <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
                 </table>
             </div>
         </div>
@@ -129,7 +129,7 @@
             <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
                 {{ selectedObject.type | itemDisplay }}&emsp;
                 <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
-                <span class="text-muted">Age</span>&emsp;{{ theTime - selectedObject.created | timeUnits }}&nbsp; <small class="text-muted">{{ theTime - selectedObject.created | timeUnitsLabel }}</small>
+                <span class="text-muted">Age</span>&emsp;{{ selectedObject.created | timeUnits }}&nbsp; <small class="text-muted">{{ selectedObject.created | timeUnitsLabel }}</small>
             </p>
             <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row">
                 <div class="col-xs-4 hard-right">
@@ -179,13 +179,12 @@
                 <tr><td></td><td></td><td></td></tr>
             </table>
             <h2>Event Log</h2>
-            <!-- <em ng-hide="eventLog.length > 0" class="text-muted">Only shows events occurring after opening this page.</em> -->
-            <em ng-hide="eventLog.length > 0" class="text-muted">This feature hasn't been implemented yet.</em>
+            <em ng-hide="eventLog.length > 0" class="text-muted">Only shows events occurring after opening this page.</em>
             <ul id="log" class="list-unstyled">
                 <li ng-repeat="event in eventLog">
                     <span class="text-muted">{{ event.time | date:'H:mm:ss' }}</span>&emsp; 
-                    {{ event.user }} <span class="text-muted">{{ event.action }}</span>
-                    {{ event.coords }}
+                    {{ event.user }} <span class="text-muted">added a</span> {{ event.type }} <span class="text-muted">at</span> 
+                    {{ event.coords[0] + ', ' + event.coords[1] }}
                 </li>
             </ul>
             <h2>Scoreboard</h2>

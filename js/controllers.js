@@ -7,7 +7,6 @@ angular.module('Geographr.controllers', [])
         $scope.version = 0.06; $scope.versionName = 'Rival Hypothesis'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
-        $scope.theTime = new Date().getTime();
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
         $scope.authStatus = ''; $scope.helpText = '';
@@ -300,7 +299,6 @@ angular.module('Geographr.controllers', [])
         };
         // Selecting an object on the map
         var selectObject = function(e) {
-            $scope.theTime = new Date().getTime();
             if(e.which == 3) {  e.preventDefault(); return; } // If right click pressed
             if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
             if($scope.authStatus != 'logged') { return; } // If not authed
@@ -600,6 +598,7 @@ angular.module('Geographr.controllers', [])
             localLabels[coords.join(':')] = text;
             canvasUtility.drawLabel(zoomPingContext,
                 [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],text,zoomPixSize);
+            
         };
         
         // When terrain is added/changed
@@ -608,21 +607,28 @@ angular.module('Geographr.controllers', [])
         // When terrain is removed
         var removeTerrain = function(snap) { drawTerrain(snap.name().split(':'),null); };
         // When an object is added/changed
-        var addObject = function(snap) { drawObject(snap.name().split(':'),snap.val()); };
+        var addObject = function(snap) {
+            if(!localObjects.hasOwnProperty(snap.name()) || snap.val().created != localObjects[snap.name()].created){
+                $scope.eventLog.push({
+                    time: new Date().getTime(), user: $scope.localUsers[snap.val().owner].nick, 
+                    type: snap.val().type, coords: snap.name().split(':')
+                });
+                drawObject(snap.name().split(':'),snap.val());
+            }
+        };
         // When an object is removed
         var removeObject = function(snap) { drawObject(snap.name().split(':'),null); };
         
         // Adding and removing labels
-        var addLabel = function(snap) {
-            var coords = snap.name().split(':');
-            drawLabel(coords,snap.val());
-            canvasUtility.drawLabel(zoomPingContext,
-                [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],snap.val());
+        var addLabel = function(snap) { 
+            if(localLabels[snap.name()] != snap.val()) {
+                $scope.eventLog.push({
+                    time: new Date().getTime(), user: 'Someone', type: 'label', coords: snap.name().split(':')
+                });
+                drawLabel(snap.name().split(':'),snap.val());
+            } 
         };
-        var removeLabel = function(snap) {
-            delete localLabels[snap.name().split(':')];
-            drawZoomCanvas();
-        };
+        var removeLabel = function(snap) { delete localLabels[snap.name().split(':')]; drawZoomCanvas(); };
     
         var sortArrayByProperty = function(arr, sortby, descending) {
             if(arr[0].hasOwnProperty(sortby)) {
@@ -687,11 +693,22 @@ angular.module('Geographr.controllers', [])
 
             });
         }
-        fireRef.child('labels').on('child_added', addLabel);
-        fireRef.child('labels').on('child_removed', removeLabel);
-        fireRef.child('objects').on('child_added', addObject);
-        fireRef.child('objects').on('child_changed', addObject);
-        fireRef.child('objects').on('child_removed', removeObject);
+        fireRef.child('labels').once('value',function(snap) {
+            localLabels = snap.val();
+            drawZoomCanvas();
+            fireRef.child('labels').on('child_added', addLabel);
+            fireRef.child('labels').on('child_removed', removeLabel);
+        });
+        fireRef.child('objects').once('value',function(snap) {
+            localObjects = snap.val();
+            for(var key in localObjects) { if(localObjects.hasOwnProperty(key)) {
+                canvasUtility.drawThing(fullObjectContext, localObjects, key.split(':'), 0, 0)
+            }}
+            drawZoomCanvas();
+            fireRef.child('objects').on('child_added', addObject);
+            fireRef.child('objects').on('child_changed', addObject);
+            fireRef.child('objects').on('child_removed', removeObject);
+        });
         fireRef.child('meta/pings').on('child_added', drawPing);
         fireRef.child('meta/pings').on('child_removed', hidePing);
         fireRef.child('status').on('value', onServerStatus);
