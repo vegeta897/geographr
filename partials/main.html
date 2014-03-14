@@ -90,13 +90,20 @@
                     </div>
                     <div class="col-xs-6 hard-left">
                         <div class="checkbox-inline"><label>
-                            <input ng-model="lockElevation" type="checkbox"> Fixed Elevation
+                            <input ng-disabled="brushSize > 0" ng-model="lockElevation" type="checkbox"> Fixed Elevation
                         </label></div>
                     </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-xs-12">
                         Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-xs-12">
+                        <div class="checkbox-inline"><label>
+                            <input ng-disabled="brushSize < 1" ng-model="smoothTerrain" type="checkbox"> Smooth Area
+                        </label></div>
                     </div>
                 </div>
             </div>

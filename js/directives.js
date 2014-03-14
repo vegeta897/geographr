@@ -57,6 +57,7 @@ angular.module('Geographr.directives', [])
         link: function(scope, element) {
             var changeBrush = function() {
                 if(element.val()){ scope.changeBrush(parseInt(element.val())); }
+                if(element.val() == 0){ scope.lockElevation = false; scope.smoothTerrain = false; }
             };
             element.slider().slider('setValue',scope.brushSize).on('slide', changeBrush);
         }

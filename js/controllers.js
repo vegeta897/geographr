@@ -18,7 +18,7 @@ angular.module('Geographr.controllers', [])
         $scope.brushSize = 0;
         $scope.eventLog = [];
         $scope.placingObject = {};
-        $scope.lockElevation = false; $scope.lockedElevation = 1;
+        $scope.lockElevation = false; $scope.lockedElevation = 1; $scope.smoothTerrain = false;
         var mainPixSize = 2, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
@@ -462,16 +462,39 @@ angular.module('Geographr.controllers', [])
                     }
                 }
             } else if (e.which == 1) {
+                var avgElevation = [0,0];
                 for(var j = $scope.brushSize*-1; j < $scope.brushSize+1; j++) {
                     for(var jj = $scope.brushSize*-1; jj < $scope.brushSize+1; jj++) {
                         var localPixel = localTerrain[(x + j) + ':' + (y + jj)];
+                        avgElevation[0] += localPixel || 0; avgElevation[1]++;
+                        if($scope.smoothTerrain) { continue; }
                         var newElevation = $scope.lockElevation || $scope.brushSize > 0 ? 
                             parseInt($scope.lockedElevation) : localPixel ? localPixel + 1 : 1;
-                        // TODO: Check surrounding pixels to prevent too-steep cliffs
+                        var nearElevation = (localTerrain[(x + j) - 1 + ':' + (y + jj)] || 0) +
+                            (localTerrain[((x + j) + 1) + ':' + (y + jj)] || 0) +
+                            (localTerrain[(x + j) + ':' + (y + jj) - 1] || 0) +
+                            (localTerrain[(x + j) + ':' + ((y + jj) + 1)] || 0);
+                        newElevation = localPixel > nearElevation/4 + 5 ? parseInt(nearElevation/4) + 5 : newElevation;
+                        newElevation = localPixel < nearElevation/4 - 5 ? parseInt(nearElevation/4) - 5 : newElevation;
                         // Send update to firebase only if new elevation is different, and grid is in bounds
                         if(localPixel != newElevation && x+j >= 0 && x+j < 300 && y+jj >= 0 && y+jj < 300) {
                             newElevation = newElevation > 0 ? newElevation : null;
                             fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
+                        }
+                    }
+                }
+                if($scope.smoothTerrain) {
+                    avgElevation = avgElevation[0] / avgElevation[1];
+                    for(var k = $scope.brushSize*-1; k < $scope.brushSize+1; k++) {
+                        for(var kk = $scope.brushSize*-1; kk < $scope.brushSize+1; kk++) {
+                            localPixel = localTerrain[(x + k) + ':' + (y + kk)] || 0;
+                            var weight = ($scope.brushSize+1 - (Math.abs(k)+Math.abs(kk)) / 1.5) / $scope.brushSize;
+                            var weightedElevation = Math.round(localPixel + 
+                                (avgElevation-localPixel)*(weight/8));
+                            if(localPixel != weightedElevation && x+k >= 0 && x+k < 300 && y+kk >= 0 && y+kk < 300) {
+                                weightedElevation = weightedElevation > 0 ? weightedElevation : null;
+                                fireRef.child('terrain/' + (x+k) + ':' + (y+kk)).set(weightedElevation);
+                            }
                         }
                     }
                 }
@@ -492,7 +515,6 @@ angular.module('Geographr.controllers', [])
                 $scope.overPixel.y != y + $scope.zoomPosition[1]) {
                 zoomHighCanvas.style.cursor = 'default'; // Show cursor
                 dimPixel(); // Dim the previous pixel
-                var drawColor = 'rgba(255, 255, 255, 0.2)';
                 $timeout(function() {
                     $scope.overPixel.x = (x+$scope.zoomPosition[0]); 
                     $scope.overPixel.y = (y+$scope.zoomPosition[1]);
@@ -502,7 +524,8 @@ angular.module('Geographr.controllers', [])
                     $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
                     var coords = [$scope.overPixel.x-$scope.zoomPosition[0],
                         $scope.overPixel.y-$scope.zoomPosition[1]];
-                    canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'cursor');
+                    var cursorType = $scope.editTerrain ? 'terrain' + $scope.brushSize : 'cursor';
+                    canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,cursorType);
                     if(e.which == 1 || e.which == 3) {
                         zoomOnMouseDown(e);
                     }

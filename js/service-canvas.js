@@ -60,7 +60,7 @@ angular.module('Geographr.canvas', [])
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
             if(terrain[near[4]] > 6) { // Draw white peaks
-                coef = (terrain[near[4]]-9)/8;
+                coef = (terrain[near[4]]-7)/8;
                 diff = {r:color.r - 144,g:color.g - 144, b:color.b - 145};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
@@ -184,8 +184,17 @@ angular.module('Geographr.canvas', [])
                 var x = coords[0], y = coords[1];
                 var thickness = zoomPixSize < 16 ? 1 : zoomPixSize < 31 ? 2 : 3;
                 context.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                context.fillRect(x * zoomPixSize-thickness, y * zoomPixSize-thickness, // Outer box
-                    zoomPixSize+thickness*2, zoomPixSize+thickness*2);
+                if(type.substr(0,7) == 'terrain') {
+                    var brushSize = parseInt(type.substr(7,1));
+                    context.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    context.fillRect(x * zoomPixSize-thickness - brushSize*zoomPixSize, 
+                        y * zoomPixSize-thickness - brushSize*zoomPixSize,
+                        zoomPixSize+thickness*2 + brushSize*2*zoomPixSize, 
+                        zoomPixSize+thickness*2 + brushSize*2*zoomPixSize);
+                } else {
+                    context.fillRect(x * zoomPixSize-thickness, y * zoomPixSize-thickness, // Outer box
+                        zoomPixSize+thickness*2, zoomPixSize+thickness*2);
+                }
                 if(type == 'object') {
                     context.fillStyle = 'rgba(0, 0, 0, 0.7)';
                     for(var i = 0; i < zoomPixSize; i++) {
@@ -197,8 +206,14 @@ angular.module('Geographr.canvas', [])
                         }
                     }
                 }
-                context.clearRect(x * zoomPixSize, y * zoomPixSize, // Inner box
+                if(type.substr(0,7) == 'terrain') {
+                    context.clearRect(x * zoomPixSize - brushSize*zoomPixSize, 
+                        y * zoomPixSize - brushSize*zoomPixSize,
+                        zoomPixSize + brushSize*2*zoomPixSize, zoomPixSize + brushSize*2*zoomPixSize);
+                } else {
+                    context.clearRect(x * zoomPixSize, y * zoomPixSize, // Inner box
                         zoomPixSize, zoomPixSize);
+                }
                 if(type == 'cursor') {
                     context.clearRect(x * zoomPixSize+2*thickness, y * zoomPixSize-thickness, 
                         zoomPixSize-4*thickness, zoomPixSize+thickness*2); // Vertical
