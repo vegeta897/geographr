@@ -59,9 +59,14 @@ angular.module('Geographr.canvas', [])
                 diff = {r:color.r - 88,g:color.g - 93, b:color.b - 70};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
-            if(terrain[near[4]] > 6) { // Draw white peaks
-                coef = (terrain[near[4]]-7)/8;
+            if(terrain[near[4]] > 8) { // Draw grey heights
+                coef = (terrain[near[4]]-8)/10;
                 diff = {r:color.r - 144,g:color.g - 144, b:color.b - 145};
+                color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
+            }
+            if(terrain[near[4]] > 18) { // Draw whiter peaks
+                coef = (terrain[near[4]]-18)/30;
+                diff = {r:color.r - 255,g:color.g - 255, b:color.b - 255};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
             if(terrain[near[4]] > 0) {
@@ -77,6 +82,7 @@ angular.module('Geographr.canvas', [])
             }
             
             color = {r:parseInt(color.r),g:parseInt(color.g),b:parseInt(color.b)}; // Int-ify
+            if(color.g <0 || color.r <0 || color.b <0) console.log(color);
             return 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',1)';
         };
         var surveyObjects = function(near,objects) {
