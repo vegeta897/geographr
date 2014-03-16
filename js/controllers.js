@@ -483,12 +483,12 @@ angular.module('Geographr.controllers', [])
                         if($scope.smoothTerrain) { continue; }
                         var newElevation = $scope.lockElevation || $scope.brushSize > 0 ? 
                             parseInt($scope.lockedElevation) : localPixel ? localPixel + 1 : 1;
-                        var nearElevation = (localTerrain[((x + j) - 1) + ':' + (y + jj)] || 0) +
-                            (localTerrain[((x + j) + 1) + ':' + (y + jj)] || 0) +
-                            (localTerrain[(x + j) + ':' + ((y + jj) - 1)] || 0) +
-                            (localTerrain[(x + j) + ':' + ((y + jj) + 1)] || 0);
-                        newElevation = localPixel > nearElevation/4 + 5 ? parseInt(nearElevation/4) + 5 : newElevation;
-                        newElevation = localPixel < nearElevation/4 - 5 ? parseInt(nearElevation/4) - 5 : newElevation;
+                        var nearElevation = (localTerrain[((x + j) - 1) + ':' + (y + jj)] || newElevation) +
+                            (localTerrain[((x + j) + 1) + ':' + (y + jj)] || newElevation) +
+                            (localTerrain[(x + j) + ':' + ((y + jj) - 1)] || newElevation) +
+                            (localTerrain[(x + j) + ':' + ((y + jj) + 1)] || newElevation);
+                        newElevation = localPixel > nearElevation/4 + 4 ? parseInt(nearElevation/4) + 4 : newElevation;
+                        newElevation = localPixel < nearElevation/4 - 4 ? parseInt(nearElevation/4) - 4 : newElevation;
                         // Update only if new elevation is different, and grid is in bounds
                         if(localPixel != newElevation && x+j >= 0 && x+j < 300 && y+jj >= 0 && y+jj < 300) {
                             newElevation = newElevation > 0 ? newElevation : null;
@@ -659,13 +659,13 @@ angular.module('Geographr.controllers', [])
         // Adding and removing labels
         var addLabel = function(snap) { 
             if(localLabels[snap.name()] != snap.val()) {
-                if($scope.localUsers.hasOwnProperty(snap.val().user)) { $timeout(function() {
+                $timeout(function() {
                     $scope.eventLog.unshift({
                         time: new Date().getTime(), user: 'Someone', type: 'added a label', 
                         coords: snap.name().split(':')
                     });
-                    drawLabel(snap.name().split(':'),snap.val());
-                });}
+                });
+                drawLabel(snap.name().split(':'),snap.val());
             } 
         };
         var removeLabel = function(snap) { delete localLabels[snap.name()]; drawZoomCanvas(); };
