@@ -483,9 +483,9 @@ angular.module('Geographr.controllers', [])
                         if($scope.smoothTerrain) { continue; }
                         var newElevation = $scope.lockElevation || $scope.brushSize > 0 ? 
                             parseInt($scope.lockedElevation) : localPixel ? localPixel + 1 : 1;
-                        var nearElevation = (localTerrain[(x + j) - 1 + ':' + (y + jj)] || 0) +
+                        var nearElevation = (localTerrain[((x + j) - 1) + ':' + (y + jj)] || 0) +
                             (localTerrain[((x + j) + 1) + ':' + (y + jj)] || 0) +
-                            (localTerrain[(x + j) + ':' + (y + jj) - 1] || 0) +
+                            (localTerrain[(x + j) + ':' + ((y + jj) - 1)] || 0) +
                             (localTerrain[(x + j) + ':' + ((y + jj) + 1)] || 0);
                         newElevation = localPixel > nearElevation/4 + 5 ? parseInt(nearElevation/4) + 5 : newElevation;
                         newElevation = localPixel < nearElevation/4 - 5 ? parseInt(nearElevation/4) - 5 : newElevation;
