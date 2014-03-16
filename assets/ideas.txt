@@ -11,4 +11,4 @@ fog of war? visibility based on elevation.
 each pixel has a temperature that gets updated every X minutes, seed-based, influenced by elevation and weather
 
 find random tribe camps that have seed-generated desire levels for different goods/resources
-    
+    set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons

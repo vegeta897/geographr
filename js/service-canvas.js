@@ -2,7 +2,7 @@
 
 angular.module('Geographr.canvas', [])
 .factory('canvasUtility', function(colorUtility) {
-        var fullPixSize = 2;
+        var fullPixSize = 1;
         var fullPixOff = fullPixSize/2;
         
         // Return a list of coordinates surrounding and including the input coords
@@ -54,18 +54,18 @@ angular.module('Geographr.canvas', [])
                 else { color = {r:44,g:61,b:75}; }
             }
             var coef = 0, diff = {};
-            if(terrain[near[4]] > 1) { // Draw brown mountains
-                coef = (terrain[near[4]]-1)/8;
+            if(terrain[near[4]] > 4) { // Draw brown mountains
+                coef = (terrain[near[4]]-4)/12;
                 diff = {r:color.r - 88,g:color.g - 93, b:color.b - 70};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
-            if(terrain[near[4]] > 8) { // Draw grey heights
-                coef = (terrain[near[4]]-8)/10;
+            if(terrain[near[4]] > 16) { // Draw grey heights
+                coef = (terrain[near[4]]-16)/10;
                 diff = {r:color.r - 144,g:color.g - 144, b:color.b - 145};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
-            if(terrain[near[4]] > 18) { // Draw whiter peaks
-                coef = (terrain[near[4]]-18)/30;
+            if(terrain[near[4]] > 26) { // Draw whiter peaks
+                coef = (terrain[near[4]]-26)/30;
                 diff = {r:color.r - 255,g:color.g - 255, b:color.b - 255};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
@@ -171,7 +171,7 @@ angular.module('Geographr.canvas', [])
             },
             drawAllTerrain: function(context,terrain) {
                 context.fillStyle = 'rgb(44,61,75)'; // Clear canvas first
-                context.fillRect(0,0,600,600);
+                context.fillRect(0,0,300,300);
                 for(var key in terrain) {
                     if(terrain.hasOwnProperty(key)) {
                         var coord = key.split(':');
@@ -182,6 +182,14 @@ angular.module('Geographr.canvas', [])
                             var thisCoord = affected[i].split(':');
                             var nearThis = listNear(thisCoord);
                             var color = surveyTerrain(nearThis,terrain);
+//                            if(terrain.hasOwnProperty(affected[i])) { // Random camp test
+//                                var elevation = terrain[affected[i]];
+//                                Math.seedrandom(affected[i]);
+//                                var campChance = elevation == 1 ? 0.01 : (15 - elevation) / 1000;
+//                                if(Math.random() > 1-campChance) {
+//                                    color = 'hsl(' + Math.floor(Math.random()*360) + ',100%,50%)';
+//                                }
+//                            }
                             var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                             context.fillStyle = color;
                             context.fillRect(thisX*fullPixSize,thisY*fullPixSize,

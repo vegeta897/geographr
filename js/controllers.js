@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.07; $scope.versionName = 'Fashionable Polymer'; $scope.needUpdate = false;
+        $scope.version = 0.08; $scope.versionName = 'Immune Frontier'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -18,10 +18,10 @@ angular.module('Geographr.controllers', [])
         $scope.eventLog = [];
         $scope.placingObject = {};
         $scope.lockElevation = false; $scope.lockedElevation = 1; $scope.smoothTerrain = false;
-        var mainPixSize = 2, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
+        var mainPixSize = 1, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
-            localLabels = {}, addingLabel = false, zoomLevels = [4,5,6,8,12,20,40,60], fireInventory, tutorialStep = 0;
+            localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, tutorialStep = 0;
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -199,7 +199,7 @@ angular.module('Geographr.controllers', [])
             $scope.zoomLevel = parseInt(val);
             localStorageService.set('zoomLevel',$scope.zoomLevel);
             zoomPixSize = zoomLevels[$scope.zoomLevel];
-            zoomSize = [600/zoomPixSize,600/zoomPixSize];
+            zoomSize = [900/zoomPixSize,600/zoomPixSize];
             var offset = [oldZoom[0]-zoomSize[0],oldZoom[1]-zoomSize[1]];
             if(!viewCenter) {
                 viewCenter = [$scope.zoomPosition[0] + zoomSize[0]/2,
@@ -261,8 +261,9 @@ angular.module('Geographr.controllers', [])
         };
         $scope.saveTerrain = function() { // Save terrain to firebase, notify clients to update terrain
             fireRef.child('terrain').update(updatedTerrain, function() {
+                updatedTerrain = {}; // Clear updated terrain object
                 $scope.lastTerrainUpdate = new Date().getTime();
-                fireRef.child('terrainUpdates').push($scope.lastTerrainUpdate);
+                fireRef.child('terrainUpdates').push({user: userID, time:$scope.lastTerrainUpdate});
             });
         };
 
@@ -349,7 +350,7 @@ angular.module('Geographr.controllers', [])
 
         var drawZoomCanvas = function() {
             zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
-                $scope.zoomPosition[1]*mainPixSize, 1200/zoomPixSize, 1200/zoomPixSize, 0, 0, 600, 600);
+                $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
             
             var coords = [];
             
@@ -462,7 +463,6 @@ angular.module('Geographr.controllers', [])
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
                         if(localTerrain[(x + i) + ':' + (y + ii)]) { // If something is there to erase
-                            //fireRef.child('terrain/' + (x + i) + ':' + (y + ii)).set(null);
                             updatedTerrain[(x+i) + ':' + (y+ii)] = null;
                             drawTerrain([(x+i),(y+ii)],null);
                         }
@@ -483,10 +483,9 @@ angular.module('Geographr.controllers', [])
                             (localTerrain[(x + j) + ':' + ((y + jj) + 1)] || 0);
                         newElevation = localPixel > nearElevation/4 + 5 ? parseInt(nearElevation/4) + 5 : newElevation;
                         newElevation = localPixel < nearElevation/4 - 5 ? parseInt(nearElevation/4) - 5 : newElevation;
-                        // Send update to firebase only if new elevation is different, and grid is in bounds
+                        // Update only if new elevation is different, and grid is in bounds
                         if(localPixel != newElevation && x+j >= 0 && x+j < 300 && y+jj >= 0 && y+jj < 300) {
                             newElevation = newElevation > 0 ? newElevation : null;
-                            //fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
                             updatedTerrain[(x+j) + ':' + (y+jj)] = newElevation;
                             localTerrain[(x+j) + ':' + (y+jj)] = newElevation;
                             drawTerrain([(x+j),(y+jj)],newElevation);
@@ -503,7 +502,6 @@ angular.module('Geographr.controllers', [])
                                 (avgElevation-localPixel)*(weight/8));
                             if(localPixel != weightedElevation && x+k >= 0 && x+k < 300 && y+kk >= 0 && y+kk < 300) {
                                 weightedElevation = weightedElevation > 0 ? weightedElevation : null;
-                                //fireRef.child('terrain/' + (x+k) + ':' + (y+kk)).set(weightedElevation);
                                 updatedTerrain[(x+k) + ':' + (y+kk)] = weightedElevation;
                                 localTerrain[(x+k) + ':' + (y+kk)] = weightedElevation;
                                 drawTerrain([(x+k),(y+kk)],weightedElevation);
@@ -637,18 +635,12 @@ angular.module('Geographr.controllers', [])
                 [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],text,zoomPixSize);
             
         };
-        
-        // When terrain is added/changed
-        var addTerrain = function(snap) { if(snap.val() != localTerrain[snap.name()]) 
-            drawTerrain(snap.name().split(':'),snap.val()); };
-        // When terrain is removed
-        var removeTerrain = function(snap) { drawTerrain(snap.name().split(':'),null); };
         // When an object is added/changed
         var addObject = function(snap) {
             if(!localObjects.hasOwnProperty(snap.name()) || snap.val().created != localObjects[snap.name()].created){
                 $scope.eventLog.unshift({
                     time: new Date().getTime(), user: $scope.localUsers[snap.val().owner].nick, 
-                    type: snap.val().type, coords: snap.name().split(':')
+                    type: 'added a '+snap.val().type, coords: snap.name().split(':')
                 });
                 drawObject(snap.name().split(':'),snap.val());
             }
@@ -660,7 +652,7 @@ angular.module('Geographr.controllers', [])
         var addLabel = function(snap) { 
             if(localLabels[snap.name()] != snap.val()) {
                 $scope.eventLog.unshift({
-                    time: new Date().getTime(), user: 'Someone', type: 'label', coords: snap.name().split(':')
+                    time: new Date().getTime(), user: 'Someone', type: 'added a label', coords: snap.name().split(':')
                 });
                 drawLabel(snap.name().split(':'),snap.val());
             } 
@@ -713,6 +705,7 @@ angular.module('Geographr.controllers', [])
         
         var onClientAction = function(snap) {
             // When a client action is received
+            
             // Delete the action
             fireRef.child('clients/actions'+snap.name()).set(null);
             
@@ -725,11 +718,8 @@ angular.module('Geographr.controllers', [])
                 canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                 drawZoomCanvas();
                 $scope.lastTerrainUpdate = new Date().getTime();
-                localStorageService.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
+                localStorageService.set('lastTerrainUpdate',{user: userID, time: $scope.lastTerrainUpdate});
                 localStorageService.set('terrain',localTerrain);
-//                fireRef.child('terrain').on('child_added', addTerrain); // Then set up listeners for future updates
-//                fireRef.child('terrain').on('child_changed', addTerrain);
-//                fireRef.child('terrain').on('child_removed', removeTerrain);
 
             });
         };
@@ -738,13 +728,13 @@ angular.module('Geographr.controllers', [])
         
         if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
             fireRef.child('terrainUpdates').once('value',function(snap) {
-                var needUpdate = false;
+                var needUpdate = true;
                 if(snap.val()) {
                     for(var i = 0; i < snap.val().length; i++) {
-                        if(snap.val()[i] > $scope.lastTerrainUpdate) {
+                        if(snap.val()[i].time > $scope.lastTerrainUpdate) {
                             needUpdate = true;
                             break;
-                        }
+                        } else { needUpdate = false; }
                     }
                 }
                 if(needUpdate) { downloadTerrain(); } else { 
@@ -756,7 +746,12 @@ angular.module('Geographr.controllers', [])
         } else { downloadTerrain(); }
         
         fireRef.child('terrainUpdates').on('child_added', function(snap) { // Download new terrain when update found
-            if($scope.lastTerrainUpdate && snap.val() > $scope.lastTerrainUpdate) { downloadTerrain(); }
+            if($scope.lastTerrainUpdate && snap.val().time > $scope.lastTerrainUpdate) {
+                $scope.eventLog.unshift({
+                    time: snap.val().time, user: $scope.localUsers[snap.val().user].nick, type: 'updated the terrain'
+                });
+                downloadTerrain(); 
+            }
         });
         
         fireRef.child('labels').once('value',function(snap) {
@@ -793,9 +788,7 @@ angular.module('Geographr.controllers', [])
             if(!keyUpped) { return; }
             keyUpped = false;
             switch (e.which) {
-                case 65: // A
-                    ping();
-                    break;
+                case 65: ping(); break; // A
             }
         };
     

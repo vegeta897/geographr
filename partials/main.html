@@ -21,43 +21,56 @@
     </div>
 </div>
 <div id="mainContainer" class="container">
-    <div class="canvas-container"> <!-- Left side canvases -->
-        <canvas id="fullTerrainCanvas" width="600" height="600"></canvas> <!-- Terrain canvas -->
-        <canvas id="fullObjectCanvas" width="600" height="600"></canvas> <!-- Object canvas -->
-        <canvas id="fullPingCanvas" width="600" height="600"></canvas> <!-- Ping canvas -->
-        <canvas id="fullHighCanvas" width="600" height="600"> <!-- Highlight canvas -->
+    <div class="canvas-container minimap"> <!-- Minimap canvases -->
+        <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
+        <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
+        <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
+        <canvas id="fullHighCanvas" width="300" height="300"> <!-- Highlight canvas -->
             Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
         </canvas>
-        <div class="col-xs-2 pull-left hard-left coords">
+        <div class="coords">
             {{ zoomPosition[0] }} , {{ zoomPosition[1] }}
         </div>
-        <div class="col-xs-4 text-right pull-right coords">
-            <div class="checkbox-inline text-muted"><label>
-                <input ng-change="refresh()" ng-model="showLabels" type="checkbox"> Show Map Labels
-            </label></div>
+        <div>
+            <table id="gridView">
+                <tr><td></td><td></td><td></td></tr>
+                <tr>
+                    <td></td>
+                    <td ng-style="{'border-color': '#'+overPixel.object.color.hex}">
+                        {{ overPixel.object.type | itemDisplay }}
+                    </td>
+                    <td></td>
+                </tr>
+                <tr><td></td><td></td><td></td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="canvas-container"> <!-- Right side canvases -->
+        <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
+        <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
+        <canvas id="zoomPingCanvas" width="900" height="600"></canvas> <!-- Ping canvas -->
+        <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
+        <div class="col-xs-1 text-right hard-right pull-right coords">
+            {{ overPixel.x }} , {{ overPixel.y }}
         </div>
         <div class="col-xs-3 text-right pull-right coords">
+            <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
+                   data-slider-max="6" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
+        </div>
+        <div class="col-xs-2 text-right pull-right coords">
+            <div class="checkbox-inline text-muted"><label>
+                <input ng-change="refresh()" ng-model="showLabels" type="checkbox"> Show Labels
+            </label></div>
+        </div>
+        <div class="col-xs-2 text-right pull-right hard-right coords">
             <div class="checkbox-inline text-muted"><label>
                 <input ng-change="refresh(true)" ng-model="showObjects" type="checkbox"> Show Objects
             </label></div>
         </div>
-    </div>
-    <div class="canvas-container"> <!-- Right side canvases -->
-        <canvas id="zoomTerrainCanvas" width="600" height="600"></canvas> <!-- Terrain canvas -->
-        <canvas id="zoomObjectCanvas" width="600" height="600"></canvas> <!-- Object canvas -->
-        <canvas id="zoomPingCanvas" width="600" height="600"></canvas> <!-- Ping canvas -->
-        <canvas id="zoomHighCanvas" width="600" height="600"></canvas> <!-- Highlight canvas -->
-        <div class="col-xs-2 text-right hard-right pull-right coords">
-            {{ overPixel.x }} , {{ overPixel.y }}
-        </div>
-        <div class="col-xs-4 text-right pull-right coords">
-            <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
-                   data-slider-max="7" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
-        </div>
-        <div class="col-xs-3 hard-left pull-left coords">
+        <div class="col-xs-2 hard-left pull-left coords">
             <span class="text-muted">Terrain:</span> {{ overPixel.type | capitalize }}
         </div>
-        <div class="col-xs-3 hard-left pull-left coords">
+        <div class="col-xs-2 hard-left pull-left coords">
             <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
         </div>
     </div>
@@ -178,25 +191,13 @@
             </div>
         </div>
         <div class="col-xs-3">
-            <h2>Grid View</h2>
-            <table id="gridView">
-                <tr><td></td><td></td><td></td></tr>
-                <tr>
-                    <td></td>
-                    <td ng-style="{'border-color': '#'+overPixel.object.color.hex}">
-                        {{ overPixel.object.type | itemDisplay }}
-                    </td>
-                    <td></td>
-                </tr>
-                <tr><td></td><td></td><td></td></tr>
-            </table>
             <h2>Event Log</h2>
             <em ng-hide="eventLog.length > 0" class="text-muted">Only shows events occurring after opening this page.</em>
             <ul id="log" class="list-unstyled">
                 <li ng-repeat="event in eventLog | limitTo:10">
                     <span class="text-muted">{{ event.time | date:'H:mm:ss' }}</span>&emsp; 
-                    {{ event.user }} <span class="text-muted">added a</span> {{ event.type }} <span class="text-muted">at</span> 
-                    {{ event.coords[0] + ', ' + event.coords[1] }}
+                    {{ event.user }} {{ event.type }}<span ng-show="event.coords" class="text-muted"> at</span> 
+                    {{ event.coords[0]}}<span ng-show="event.coords" class="text-muted">, </span>{{ event.coords[1] }}
                 </li>
             </ul>
             <h2>Scoreboard</h2>

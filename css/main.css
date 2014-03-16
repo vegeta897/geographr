@@ -29,27 +29,24 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 }
 
 .canvas-container {
-    width: 602px;
+    width: 902px;
     float: left;
 }
+.minimap { width: 302px; }
+.minimap .coords { margin: -2px 0 2px; }
 
 canvas { position: relative; }
 #fullPingCanvas, #fullHighCanvas, #fullObjectCanvas, 
     #zoomPingCanvas, #zoomHighCanvas, #zoomObjectCanvas { position: absolute; top: -5000px; }
 
-.coords .checkbox-inline {
-    padding-top: 0;
-}
-.coords .checkbox-inline label {
-    font-weight: normal;
-}
+.coords .checkbox-inline { padding-top: 0; }
+.coords .checkbox-inline label { font-weight: normal; }
 
 .hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
 
 #uiContainer { top: 0; }
 
 #info { margin-bottom: 10px; }
-
 #info h2 { color: #c8c8c8; font-size: 20px }
 
 #gridView {
