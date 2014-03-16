@@ -260,6 +260,12 @@ angular.module('Geographr.controllers', [])
             addingLabel = true;
         };
         $scope.saveTerrain = function() { // Save terrain to firebase, notify clients to update terrain
+            $timeout(function() {
+                $scope.eventLog.unshift({
+                    time: new Date().getTime(), user: 'You',
+                    type: 'updated the terrain'
+                });
+            });
             fireRef.child('terrain').update(updatedTerrain, function() {
                 updatedTerrain = {}; // Clear updated terrain object
                 $scope.lastTerrainUpdate = new Date().getTime();
@@ -747,10 +753,13 @@ angular.module('Geographr.controllers', [])
         
         fireRef.child('terrainUpdates').on('child_added', function(snap) { // Download new terrain when update found
             if($scope.lastTerrainUpdate && snap.val().time > $scope.lastTerrainUpdate) {
-                $scope.eventLog.unshift({
-                    time: snap.val().time, user: $scope.localUsers[snap.val().user].nick, type: 'updated the terrain'
+                $timeout(function() {
+                    $scope.eventLog.unshift({
+                        time: snap.val().time, user: $scope.localUsers[snap.val().user].nick, 
+                        type: 'updated the terrain'
+                    });
+                    downloadTerrain();
                 });
-                downloadTerrain(); 
             }
         });
         
