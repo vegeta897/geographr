@@ -269,7 +269,7 @@ angular.module('Geographr.controllers', [])
             fireRef.child('terrain').update(updatedTerrain, function() {
                 updatedTerrain = {}; // Clear updated terrain object
                 $scope.lastTerrainUpdate = new Date().getTime();
-                fireRef.child('terrainUpdates').push({user: userID, time:$scope.lastTerrainUpdate});
+                fireRef.child('lastTerrainUpdate').set({user: userID, time:$scope.lastTerrainUpdate});
             });
         };
 
@@ -644,11 +644,13 @@ angular.module('Geographr.controllers', [])
         // When an object is added/changed
         var addObject = function(snap) {
             if(!localObjects.hasOwnProperty(snap.name()) || snap.val().created != localObjects[snap.name()].created){
-                $scope.eventLog.unshift({
-                    time: new Date().getTime(), user: $scope.localUsers[snap.val().owner].nick, 
-                    type: 'added a '+snap.val().type, coords: snap.name().split(':')
-                });
-                drawObject(snap.name().split(':'),snap.val());
+                if($scope.localUsers.hasOwnProperty(snap.val().owner)) { $timeout(function() {
+                    $scope.eventLog.unshift({
+                        time: new Date().getTime(), user: $scope.localUsers[snap.val().owner].nick, 
+                        type: 'added a '+snap.val().type, coords: snap.name().split(':')
+                    });
+                    drawObject(snap.name().split(':'),snap.val());
+                });}
             }
         };
         // When an object is removed
@@ -657,10 +659,13 @@ angular.module('Geographr.controllers', [])
         // Adding and removing labels
         var addLabel = function(snap) { 
             if(localLabels[snap.name()] != snap.val()) {
-                $scope.eventLog.unshift({
-                    time: new Date().getTime(), user: 'Someone', type: 'added a label', coords: snap.name().split(':')
-                });
-                drawLabel(snap.name().split(':'),snap.val());
+                if($scope.localUsers.hasOwnProperty(snap.val().user)) { $timeout(function() {
+                    $scope.eventLog.unshift({
+                        time: new Date().getTime(), user: 'Someone', type: 'added a label', 
+                        coords: snap.name().split(':')
+                    });
+                    drawLabel(snap.name().split(':'),snap.val());
+                });}
             } 
         };
         var removeLabel = function(snap) { delete localLabels[snap.name()]; drawZoomCanvas(); };
@@ -724,7 +729,7 @@ angular.module('Geographr.controllers', [])
                 canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                 drawZoomCanvas();
                 $scope.lastTerrainUpdate = new Date().getTime();
-                localStorageService.set('lastTerrainUpdate',{user: userID, time: $scope.lastTerrainUpdate});
+                localStorageService.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
                 localStorageService.set('terrain',localTerrain);
 
             });
@@ -733,15 +738,10 @@ angular.module('Geographr.controllers', [])
         // Firebase listeners
         
         if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
-            fireRef.child('terrainUpdates').once('value',function(snap) {
+            fireRef.child('lastTerrainUpdate').once('value',function(snap) {
                 var needUpdate = true;
                 if(snap.val()) {
-                    for(var i = 0; i < snap.val().length; i++) {
-                        if(snap.val()[i].time > $scope.lastTerrainUpdate) {
-                            needUpdate = true;
-                            break;
-                        } else { needUpdate = false; }
-                    }
+                    if(snap.val().time <= $scope.lastTerrainUpdate) { needUpdate = false; }
                 }
                 if(needUpdate) { downloadTerrain(); } else { 
                     localTerrain = localStorageService.get('terrain');
@@ -751,15 +751,15 @@ angular.module('Geographr.controllers', [])
             });
         } else { downloadTerrain(); }
         
-        fireRef.child('terrainUpdates').on('child_added', function(snap) { // Download new terrain when update found
+        fireRef.child('lastTerrainUpdate').on('value', function(snap) { // Download new terrain when update found
             if($scope.lastTerrainUpdate && snap.val().time > $scope.lastTerrainUpdate) {
-                $timeout(function() {
+                if($scope.localUsers.hasOwnProperty(snap.val().user)) { $timeout(function() {
                     $scope.eventLog.unshift({
-                        time: snap.val().time, user: $scope.localUsers[snap.val().user].nick, 
+                        time: snap.val().time, user: $scope.localUsers[snap.val().user].nick,
                         type: 'updated the terrain'
                     });
-                    downloadTerrain();
-                });
+                });}
+                downloadTerrain();
             }
         });
         
