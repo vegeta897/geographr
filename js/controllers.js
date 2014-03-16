@@ -3,13 +3,12 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        var getMap = true; // Disable getting terrain on each page load for debugging/bandwidth purposes
-        $scope.version = 0.06; $scope.versionName = 'Rival Hypothesis'; $scope.needUpdate = false;
+        $scope.version = 0.07; $scope.versionName = 'Fashionable Polymer'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
-        $scope.authStatus = ''; $scope.helpText = '';
+        $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0;
         $scope.localUsers = {};
         $scope.zoomLevel = 6;
         $scope.showLabels = true;
@@ -21,8 +20,8 @@ angular.module('Geographr.controllers', [])
         $scope.lockElevation = false; $scope.lockedElevation = 1; $scope.smoothTerrain = false;
         var mainPixSize = 2, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
-            pinging = false, userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {}, tutorialStep = 0,
-            addingLabel = false, zoomLevels = [4,5,6,8,12,20,40,60], fireInventory;
+            pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
+            localLabels = {}, addingLabel = false, zoomLevels = [4,5,6,8,12,20,40,60], fireInventory, tutorialStep = 0;
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -110,7 +109,7 @@ angular.module('Geographr.controllers', [])
         };
     
         // Attempt to get these variables from localstorage
-        var localStores = ['zoomPosition','zoomLevel'];
+        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate'];
         for(var i = 0; i < localStores.length; i++) {
             if(localStorageService.get(localStores[i])) {
                 $scope[localStores[i]] = localStorageService.get(localStores[i]);
@@ -230,7 +229,7 @@ angular.module('Geographr.controllers', [])
             $scope.camp.color = colorUtility.generate('camp',{hsv:true});
             fireUser.child('camp').set(angular.copy($scope.camp));
             fireInventory.push({
-                type: 'camp', color: $scope.camp.color
+                type: 'camp', color: $scope.camp.color, workers: 5, food: 10
             //    contents: [ 'somatic', 'somatic', 'somatic', 'somatic' ]
             });
         };
@@ -259,6 +258,12 @@ angular.module('Geographr.controllers', [])
         };
         $scope.addLabel = function(val) {
             addingLabel = true;
+        };
+        $scope.saveTerrain = function() { // Save terrain to firebase, notify clients to update terrain
+            fireRef.child('terrain').update(updatedTerrain, function() {
+                $scope.lastTerrainUpdate = new Date().getTime();
+                fireRef.child('terrainUpdates').push($scope.lastTerrainUpdate);
+            });
         };
 
         var updateInventory = function(snapshot) {
@@ -343,8 +348,8 @@ angular.module('Geographr.controllers', [])
         };
 
         var drawZoomCanvas = function() {
-            zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*2, 
-                $scope.zoomPosition[1]*2, 1200/zoomPixSize, 1200/zoomPixSize, 0, 0, 600, 600);
+            zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
+                $scope.zoomPosition[1]*mainPixSize, 1200/zoomPixSize, 1200/zoomPixSize, 0, 0, 600, 600);
             
             var coords = [];
             
@@ -430,8 +435,8 @@ angular.module('Geographr.controllers', [])
             e.preventDefault(); if(dragPanning) { return; } panMouseDown = true; fullViewPan(e);
         };
         var panOnMouseMove = function(e) { if(!panMouseDown || e.which == 0) { return; } fullViewPan(e); };
-        
         var onMouseUp = function(e) { panMouseDown = dragPanning = false; };
+        
         // Clicking in zoomed view
         var zoomOnMouseDown = function(e) {
             e.preventDefault();
@@ -452,12 +457,14 @@ angular.module('Geographr.controllers', [])
             if($scope.selectedObject) { if($scope.selectedObject.grid != x + ':' + y) { 
                 $timeout(function() { $scope.selectedObject = null; dimPixel(); delete $scope.overPixel.object; }); 
                 return; }}
-            if(!$scope.editTerrain || !getMap) { return; } // If terrain hidden or edit mode is off, we're done here
+            if(!$scope.editTerrain) { return; } // If terrain hidden or edit mode is off, we're done here
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
                     for(var ii = -1; ii < 2; ii++) {
                         if(localTerrain[(x + i) + ':' + (y + ii)]) { // If something is there to erase
-                            fireRef.child('terrain/' + (x + i) + ':' + (y + ii)).set(null);
+                            //fireRef.child('terrain/' + (x + i) + ':' + (y + ii)).set(null);
+                            updatedTerrain[(x+i) + ':' + (y+ii)] = null;
+                            drawTerrain([(x+i),(y+ii)],null);
                         }
                     }
                 }
@@ -479,7 +486,10 @@ angular.module('Geographr.controllers', [])
                         // Send update to firebase only if new elevation is different, and grid is in bounds
                         if(localPixel != newElevation && x+j >= 0 && x+j < 300 && y+jj >= 0 && y+jj < 300) {
                             newElevation = newElevation > 0 ? newElevation : null;
-                            fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
+                            //fireRef.child('terrain/' + (x+j) + ':' + (y+jj)).set(newElevation);
+                            updatedTerrain[(x+j) + ':' + (y+jj)] = newElevation;
+                            localTerrain[(x+j) + ':' + (y+jj)] = newElevation;
+                            drawTerrain([(x+j),(y+jj)],newElevation);
                         }
                     }
                 }
@@ -493,7 +503,10 @@ angular.module('Geographr.controllers', [])
                                 (avgElevation-localPixel)*(weight/8));
                             if(localPixel != weightedElevation && x+k >= 0 && x+k < 300 && y+kk >= 0 && y+kk < 300) {
                                 weightedElevation = weightedElevation > 0 ? weightedElevation : null;
-                                fireRef.child('terrain/' + (x+k) + ':' + (y+kk)).set(weightedElevation);
+                                //fireRef.child('terrain/' + (x+k) + ':' + (y+kk)).set(weightedElevation);
+                                updatedTerrain[(x+k) + ':' + (y+kk)] = weightedElevation;
+                                localTerrain[(x+k) + ':' + (y+kk)] = weightedElevation;
+                                drawTerrain([(x+k),(y+kk)],weightedElevation);
                             }
                         }
                     }
@@ -704,19 +717,48 @@ angular.module('Geographr.controllers', [])
             fireRef.child('clients/actions'+snap.name()).set(null);
             
         };
-
-        // Firebase listeners
-        if(getMap) { // If we're getting the terrain
+        // Download the map terrain data from firebase
+        var downloadTerrain = function() {
+            console.log('downloading terrain update');
             fireRef.child('terrain').once('value',function(snap) {
                 localTerrain = snap.val(); // Download the whole terrain object at once into localTerrain
                 canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                 drawZoomCanvas();
-                fireRef.child('terrain').on('child_added', addTerrain); // Then set up listeners for future updates
-                fireRef.child('terrain').on('child_changed', addTerrain);
-                fireRef.child('terrain').on('child_removed', removeTerrain);
+                $scope.lastTerrainUpdate = new Date().getTime();
+                localStorageService.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
+                localStorageService.set('terrain',localTerrain);
+//                fireRef.child('terrain').on('child_added', addTerrain); // Then set up listeners for future updates
+//                fireRef.child('terrain').on('child_changed', addTerrain);
+//                fireRef.child('terrain').on('child_removed', removeTerrain);
 
             });
-        }
+        };
+
+        // Firebase listeners
+        
+        if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
+            fireRef.child('terrainUpdates').once('value',function(snap) {
+                var needUpdate = false;
+                if(snap.val()) {
+                    for(var i = 0; i < snap.val().length; i++) {
+                        if(snap.val()[i] > $scope.lastTerrainUpdate) {
+                            needUpdate = true;
+                            break;
+                        }
+                    }
+                }
+                if(needUpdate) { downloadTerrain(); } else { 
+                    localTerrain = localStorageService.get('terrain');
+                    canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
+                    drawZoomCanvas();
+                }
+            });
+        } else { downloadTerrain(); }
+        
+        fireRef.child('terrainUpdates').on('child_added', function(snap) { // Download new terrain when update found
+            if($scope.lastTerrainUpdate && snap.val() > $scope.lastTerrainUpdate) { downloadTerrain(); }
+        });
+        
         fireRef.child('labels').once('value',function(snap) {
             localLabels = snap.val();
             drawZoomCanvas();

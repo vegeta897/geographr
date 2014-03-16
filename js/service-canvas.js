@@ -169,22 +169,26 @@ angular.module('Geographr.canvas', [])
                         (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
                 }
             },
-            drawAllTerrain: function(context,terrain) { for(var key in terrain) {
-                if(terrain.hasOwnProperty(key)) {
-                    var coord = key.split(':');
-                    var affected = listNear(coord);
-                    for(var i = 0; i < affected.length; i++) {
-                        // If not drawing center pixel, only draw if it's water
-                        if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }
-                        var thisCoord = affected[i].split(':');
-                        var nearThis = listNear(thisCoord);
-                        var color = surveyTerrain(nearThis,terrain);
-                        var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
-                        context.fillStyle = color;
-                        context.fillRect(thisX*fullPixSize,thisY*fullPixSize,
-                            fullPixSize,fullPixSize);
+            drawAllTerrain: function(context,terrain) {
+                context.fillStyle = 'rgb(44,61,75)'; // Clear canvas first
+                context.fillRect(0,0,600,600);
+                for(var key in terrain) {
+                    if(terrain.hasOwnProperty(key)) {
+                        var coord = key.split(':');
+                        var affected = listNear(coord);
+                        for(var i = 0; i < affected.length; i++) {
+                            // If not drawing center pixel, only draw if it's water
+                            if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }
+                            var thisCoord = affected[i].split(':');
+                            var nearThis = listNear(thisCoord);
+                            var color = surveyTerrain(nearThis,terrain);
+                            var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
+                            context.fillStyle = color;
+                            context.fillRect(thisX*fullPixSize,thisY*fullPixSize,
+                                fullPixSize,fullPixSize);
+                        }
                     }
-                }}
+                }
             },
             drawSelect: function(context,coords,zoomPixSize,type) {
                 var x = coords[0], y = coords[1];
