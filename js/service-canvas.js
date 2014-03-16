@@ -148,7 +148,7 @@ angular.module('Geographr.canvas', [])
                 // Don't draw on zoom canvas if pixel is out of bounds
                 if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
                     (canvasType == 'zoom' && y+1 < zoomPosition[1]) ||
-                    (canvasType == 'zoom' && x-1 > zoomPosition[0]+(600/zoomPixSize)) ||
+                    (canvasType == 'zoom' && x-1 > zoomPosition[0]+(900/zoomPixSize)) ||
                     (canvasType == 'zoom' && y-1 > zoomPosition[1]+(600/zoomPixSize))) {
                     return;
                 }
