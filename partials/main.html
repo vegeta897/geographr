@@ -89,7 +89,7 @@
                     <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button></span>
                 </div>
             </div>
-            <div class="row form-group">
+            <div ng-show="user.id < 3 || user.id == 20" class="row form-group">
                 <div class="col-xs-12">
                     <div class="checkbox-inline"><label>
                         <input ng-model="editTerrain" type="checkbox"> Terrain Edit Mode
@@ -136,6 +136,8 @@
             </div>
         </div>
         <div id="inventory" class="col-xs-3">
+            <h2 class="text-warning">Notice!</h2>
+            <p>Terrain editing is now locked. If you want to add or edit an island, get in touch with me.</p>
             <h2>Inventory</h2>
             <ul class="list-unstyled">
                 <li class="text-muted" ng-hide="inventory">No items</li>
