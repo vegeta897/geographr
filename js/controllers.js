@@ -3,14 +3,14 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.08; $scope.versionName = 'Immune Frontier'; $scope.needUpdate = false;
+        $scope.version = 0.09; $scope.versionName = 'Crazy Blood'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-';
-        $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0;
+        $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.localUsers = {};
-        $scope.zoomLevel = 6;
+        $scope.zoomLevel = 4;
         $scope.showLabels = true;
         $scope.showObjects = true;
         $scope.editTerrain = false;
@@ -18,14 +18,15 @@ angular.module('Geographr.controllers', [])
         $scope.eventLog = [];
         $scope.placingObject = {};
         $scope.lockElevation = false; $scope.lockedElevation = 1; $scope.smoothTerrain = false;
-        var mainPixSize = 1, zoomPixSize = 8, zoomSize = [50,50], lastZoomPosition = [0,0], viewCenter, panOrigin,
+        var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
-            localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, tutorialStep = 0;
+            localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, tutorialStep = 0,
+            nativeCamps = {}, visiblePixels = [];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
-        
+        var fireServer = fireRef.child('clients/actions');
         fireRef.parent().child('version').once('value', function(snap) { // Check version number
             if($scope.version >= snap.val()) {
                 // Create a reference to the auth service for our data
@@ -91,20 +92,24 @@ angular.module('Geographr.controllers', [])
                     $scope.userInit = true;
                     $scope.authStatus = 'logged';
                     $scope.camp = snapshot.val().camp;
-                    $scope.newUser = snapshot.val()['new'];
                     fireRef.child('users').on('child_added', updateUsers);
                     fireRef.child('users').on('child_changed', updateUsers);
-                    if(userID == 2) {
-                        createServerListeners();
-                    }
-                    if(!$scope.newUser) { return; }
-                    tutorialStep = -1;
-                    tutorial('next');
+                    if($scope.user.new) { tutorialStep = -1; tutorial('next'); }
+                    initTerrain();
+                    fireInventory = fireUser.child('inventory');
+                    fireInventory.on('child_added', updateInventory);
+                    fireInventory.on('child_changed', updateInventory);
+                    fireInventory.on('child_removed', removeInventory);
+                    fireUser.child('camp').on('value', function(snap) {
+                        if(!snap.val()) { return; }
+                        localObjects[snap.val()] ? localObjects[snap.val()].push('userCamp') :
+                            localObjects[snap.val()] = ['userCamp'];
+                        drawObject(snap.val().split(':'),localObjects[snap.val()]);
+                        $scope.user.camp = snap.val();
+                    });
+                    
+                    fireUser.child('location').on('value', movePlayer);
                 });
-                fireInventory = fireUser.child('inventory');
-                fireInventory.on('child_added', updateInventory);
-                fireInventory.on('child_changed', updateInventory);
-                fireInventory.on('child_removed', removeInventory);
             });
         };
     
@@ -119,23 +124,25 @@ angular.module('Geographr.controllers', [])
         // Set up our canvases
         var fullTerrainCanvas = document.getElementById('fullTerrainCanvas');
         var fullObjectCanvas = document.getElementById('fullObjectCanvas');
+        var fullFogCanvas = document.getElementById('fullFogCanvas');
         var fullPingCanvas = document.getElementById('fullPingCanvas');
         var fullHighCanvas = document.getElementById('fullHighCanvas');
         var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas');
         var zoomObjectCanvas = document.getElementById('zoomObjectCanvas');
-        var zoomPingCanvas = document.getElementById('zoomPingCanvas');
+        var zoomFogCanvas = document.getElementById('zoomFogCanvas');
         var zoomHighCanvas = document.getElementById('zoomHighCanvas');
         var fullTerrainContext = fullTerrainCanvas.getContext ? fullTerrainCanvas.getContext('2d') : null;
         var fullObjectContext = fullObjectCanvas.getContext ? fullObjectCanvas.getContext('2d') : null;
+        var fullFogContext = fullFogCanvas.getContext ? fullFogCanvas.getContext('2d') : null;
         var fullPingContext = fullPingCanvas.getContext ? fullPingCanvas.getContext('2d') : null;
         var fullHighContext = fullHighCanvas.getContext ? fullHighCanvas.getContext('2d') : null;
         var zoomTerrainContext = zoomTerrainCanvas.getContext ? zoomTerrainCanvas.getContext('2d') : null;
         var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
-        var zoomPingContext = zoomPingCanvas.getContext ? zoomPingCanvas.getContext('2d') : null;
+        var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
         $timeout(function(){ alignCanvases(); }, 500); // Align canvases half a second after load
-        canvasUtility.fillCanvas(fullTerrainContext,'2c3d4b');
-        canvasUtility.fillCanvas(zoomTerrainContext,'2c3d4b');
+        canvasUtility.fillCanvas(fullFogContext,'33393f');
+        canvasUtility.fillCanvas(zoomFogContext,'33393f');
 
         // Disable interpolation on zoom canvas
         zoomTerrainContext.mozImageSmoothingEnabled = false;
@@ -148,9 +155,11 @@ angular.module('Geographr.controllers', [])
             jQuery(fullPingCanvas).offset(jQuery(fullTerrainCanvas).offset());
             jQuery(fullObjectCanvas).offset(jQuery(fullTerrainCanvas).offset());
             jQuery(fullHighCanvas).offset(jQuery(fullTerrainCanvas).offset());
-            jQuery(zoomPingCanvas).offset(jQuery(zoomTerrainCanvas).offset());
+            jQuery(fullFogCanvas).offset(jQuery(fullTerrainCanvas).offset());
+            jQuery(zoomFogCanvas).offset(jQuery(zoomTerrainCanvas).offset());
             jQuery(zoomObjectCanvas).offset(jQuery(zoomTerrainCanvas).offset());
             jQuery(zoomHighCanvas).offset(jQuery(zoomTerrainCanvas).offset());
+            jQuery(zoomFogCanvas).offset(jQuery(zoomTerrainCanvas).offset());
         };
 
         // Prevent right-click on high canvases
@@ -161,20 +170,12 @@ angular.module('Geographr.controllers', [])
         fullHighCanvas.onselectstart = function() { return false; };
         zoomHighCanvas.onselectstart = function() { return false; };
     
-        // Reset all objects, clear map, reset scores
+        // Reset player
         $scope.reset = function() {
-            fireRef.once('value',function(snap) {
+            fireUser.once('value',function(snap) {
                 var cleaned = snap.val();
-                if(cleaned.hasOwnProperty('objects')) { delete cleaned.objects; }
-                if(cleaned.hasOwnProperty('terrain')) { delete cleaned.terrain; }
-                for(var key in cleaned.users) {
-                    if(cleaned.users.hasOwnProperty(key)) {
-                        var cleanUser = cleaned.users[key];
-                        cleanUser.score = 0;
-                        cleanUser.new = true;
-                    }
-                }
-                fireRef.set(cleaned);
+                cleaned.new = true;
+                fireUser.set(cleaned);
             });
         };
         
@@ -194,9 +195,8 @@ angular.module('Geographr.controllers', [])
 
         $scope.changeZoom = function(val) {
             if($scope.zoomLevel == val && viewCenter) { return; }
-            $timeout(function(){});
-            var oldZoom = zoomSize;
             $scope.zoomLevel = parseInt(val);
+            var oldZoom = zoomSize;
             localStorageService.set('zoomLevel',$scope.zoomLevel);
             zoomPixSize = zoomLevels[$scope.zoomLevel];
             zoomSize = [900/zoomPixSize,600/zoomPixSize];
@@ -222,15 +222,13 @@ angular.module('Geographr.controllers', [])
             drawZoomCanvas();
             dimPixel();
         };
-        // Add camp to inventory, newbie's first step
+        // Create player camp, newbie's first step
         $scope.createCamp = function() {
             tutorial('next');
-            $scope.camp = {};
-            $scope.camp.color = colorUtility.generate('camp',{hsv:true});
-            fireUser.child('camp').set(angular.copy($scope.camp));
-            fireInventory.push({
-                type: 'camp', color: $scope.camp.color, workers: 5, food: 10
-            //    contents: [ 'somatic', 'somatic', 'somatic', 'somatic' ]
+            $scope.user.new = false;
+            fireUser.child('new').set(false);
+            fireServer.push({
+                user: userID, action: 'createCamp'
             });
         };
         // Adding an object to the canvas
@@ -278,10 +276,6 @@ angular.module('Geographr.controllers', [])
             itemAdded.fireID = snapshot.name();
             $timeout(function(){
                 switch(itemAdded.type) {
-                    case 'camp':
-                        fireUser.child('new').set(false);
-                        $scope.newUser = false;
-                        break;
                     default:
                         break;
                 }
@@ -332,8 +326,6 @@ angular.module('Geographr.controllers', [])
             if(event.which == 3) { $scope.cancelAddObject(); event.preventDefault(); return; } // If right click pressed
             if(event.which == 2) { startDragPanning(event); return; } // If middle click pressed
             var object = $scope.placingObject;
-            if(!gameUtility.validLocation(userID, localObjects, object.type, 
-                [$scope.overPixel.x,$scope.overPixel.y])) { return; }
             dimPixel(); // Dim the pixel being drawn on
             // Add the object in firebase
             fireRef.child('objects/'+$scope.overPixel.x + ':' + $scope.overPixel.y).set(
@@ -360,20 +352,21 @@ angular.module('Geographr.controllers', [])
             
             var coords = [];
             
-            canvasUtility.fillCanvas(zoomPingContext,'erase');
+            canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var labKey in localLabels) {
                 if(localLabels.hasOwnProperty(labKey)) {
                     coords = labKey.split(":");
                     drawLabel(coords,localLabels[labKey]);
                 }
             }
-            canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var objKey in localObjects) {
                 if(localObjects.hasOwnProperty(objKey)) {
                     coords = objKey.split(":");
                     drawObject(coords,localObjects[objKey]);
                 }
             }
+            //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
+            canvasUtility.drawFog(zoomFogContext,visiblePixels,$scope.zoomPosition,zoomPixSize);
         };
         
         var changeZoomPosition = function(x,y) {
@@ -525,8 +518,8 @@ angular.module('Geographr.controllers', [])
         // Check for mouse moving to new pixel
         var zoomOnMouseMove = function(e) {
             var offset = jQuery(zoomHighCanvas).offset(); // Get pixel location
-            var x = Math.floor((e.pageX - offset.left) / zoomPixSize),
-                y = Math.floor((e.pageY - offset.top) / zoomPixSize);
+            var x = e.pageX - offset.left < 0 ? 0 : Math.floor((e.pageX - offset.left) / zoomPixSize);
+            var y = e.pageY - offset.top < 0 ? 0 : Math.floor((e.pageY - offset.top) / zoomPixSize);
             // If the pixel location has changed
             if($scope.overPixel.x != x + $scope.zoomPosition[0] || 
                 $scope.overPixel.y != y + $scope.zoomPosition[1]) {
@@ -614,9 +607,10 @@ angular.module('Geographr.controllers', [])
         var drawTerrain = function(coords,value) {
             if(value) { localTerrain[coords.join(':')] = value; } else
                 { delete localTerrain[coords.join(':')]; }
-            canvasUtility.drawThing(zoomTerrainContext,localTerrain,coords,
+            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
                 $scope.zoomPosition,zoomPixSize);
-             canvasUtility.drawThing(fullTerrainContext,localTerrain,coords,0,0);
+            canvasUtility.fillCanvas(fullTerrainContext,'2c3d4b');
+            canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
         };
         $scope.drawIso = function() {
             canvasUtility.drawIso(fullTerrainContext,localTerrain);
@@ -624,37 +618,23 @@ angular.module('Geographr.controllers', [])
         // Draw an object, whether adding, changing, or removing
         var drawObject = function(coords,value) {
             if(!$scope.showObjects) { return; }
-            if(value) { localObjects[coords.join(':')] = value; } else { 
+            if(!value) { 
                 delete localObjects[coords.join(':')];
                 if($scope.selectedObject.grid == coords.join(':')) { $scope.selectedObject = {}; }
                 canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
             }
-            canvasUtility.drawThing(zoomObjectContext,localObjects,coords,
+            canvasUtility.drawObject(zoomObjectContext,value,coords,
                 $scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawThing(fullObjectContext,localObjects,coords,0,0);
+            canvasUtility.drawObject(fullObjectContext,value,coords,0,0);
         };
         // Draw labels
         var drawLabel = function(coords,text) {
             if(!$scope.showLabels) { return; }
             localLabels[coords.join(':')] = text;
-            canvasUtility.drawLabel(zoomPingContext,
+            canvasUtility.drawLabel(zoomObjectContext,
                 [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],text,zoomPixSize);
             
         };
-        // When an object is added/changed
-        var addObject = function(snap) {
-            if(!localObjects.hasOwnProperty(snap.name()) || snap.val().created != localObjects[snap.name()].created){
-                if($scope.localUsers.hasOwnProperty(snap.val().owner)) { $timeout(function() {
-                    $scope.eventLog.unshift({
-                        time: new Date().getTime(), user: $scope.localUsers[snap.val().owner].nick, 
-                        type: 'added a '+snap.val().type, coords: snap.name().split(':')
-                    });
-                    drawObject(snap.name().split(':'),snap.val());
-                });}
-            }
-        };
-        // When an object is removed
-        var removeObject = function(snap) { drawObject(snap.name().split(':'),null); };
         
         // Adding and removing labels
         var addLabel = function(snap) { 
@@ -696,6 +676,26 @@ angular.module('Geographr.controllers', [])
                 $scope.scoreBoard = sortArrayByProperty($scope.scoreBoard,'score',true);
             });
         };
+        
+        var movePlayer = function(snap) {
+            if(!snap.val()) { return; }
+            $scope.user.location = snap.val();
+            console.log('moving player to',snap.val());
+            visiblePixels = gameUtility.getVisibility(localTerrain,snap.val());
+            canvasUtility.drawFog(fullFogContext,visiblePixels,0,0);
+            $timeout(function(){
+                $scope.changeZoom(4);
+                $scope.zoomPosition = [snap.val().split(':')[0]-22,snap.val().split(':')[1]-14];
+                zoomSize = [45,30]; lastZoomPosition = $scope.zoomPosition;
+                viewCenter = [$scope.zoomPosition[0] + zoomSize[0]/2, $scope.zoomPosition[1] + zoomSize[1]/2];
+                localStorageService.set('zoomPosition',$scope.zoomPosition);
+                canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
+                canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
+                    lastZoomPosition,zoomSize);
+                drawZoomCanvas();
+                jQuery('.zoom-slider').slider('setValue',$scope.zoomLevel)
+            });
+        };
 
         var onServerStatus = function(snap) {
             // When the server status changes
@@ -716,52 +716,73 @@ angular.module('Geographr.controllers', [])
         
         var onClientAction = function(snap) {
             // When a client action is received
-            
+            switch(snap.val().action) {
+                case 'createCamp':
+                    var startGrid = gameUtility.createUserCamp(localTerrain,nativeCamps);
+                    fireRef.child('users/'+snap.val().user).update({
+                        camp: startGrid, location: startGrid
+                    });
+                    break;
+                default: break;
+            }
             // Delete the action
-            fireRef.child('clients/actions'+snap.name()).set(null);
+            fireServer.child(snap.name()).set(null);
             
         };
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
             console.log('downloading terrain update');
-            fireRef.child('terrain').once('value',function(snap) {
-                localTerrain = snap.val(); // Download the whole terrain object at once into localTerrain
+            jQuery.ajax({
+                url: document.domain == 'localhost' ? 'http://localhost/geographr/data/terrain.json' :
+                    'http://www.pixelatomy.com/geographr/data/terrain.json',
+                dataType: 'json'
+            }).done(function(results) {
+                console.log('done!');
+                localTerrain = results; // Download the whole terrain object at once into localTerrain
                 canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                 drawZoomCanvas();
                 $scope.lastTerrainUpdate = new Date().getTime();
                 localStorageService.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
                 localStorageService.set('terrain',localTerrain);
-
+                prepareTerrain();
             });
         };
 
         // Firebase listeners
         
-        if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
-            fireRef.child('lastTerrainUpdate').once('value',function(snap) {
-                var needUpdate = true;
-                if(snap.val()) {
-                    if(snap.val().time <= $scope.lastTerrainUpdate) { needUpdate = false; }
-                }
-                if(needUpdate) { downloadTerrain(); } else { 
-                    localTerrain = localStorageService.get('terrain');
-                    canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
-                    drawZoomCanvas();
-                }
-            });
-        } else { downloadTerrain(); }
+        var initTerrain = function() {
+            if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
+                fireRef.child('lastTerrainUpdate').once('value',function(snap) {
+                    var needUpdate = true;
+                    if(snap.val()) {
+                        if(snap.val().time <= $scope.lastTerrainUpdate) { needUpdate = false; }
+                    }
+                    if(needUpdate) { downloadTerrain(); } else {
+                        localTerrain = localStorageService.get('terrain');
+                        canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
+                        drawZoomCanvas();
+                        prepareTerrain();
+                    }
+                });
+            } else { downloadTerrain(); }
+        };
         
-        fireRef.child('lastTerrainUpdate').on('value', function(snap) { // Download new terrain when update found
-            if($scope.lastTerrainUpdate && snap.val().time > $scope.lastTerrainUpdate) {
-                if($scope.localUsers.hasOwnProperty(snap.val().user)) { $timeout(function() {
-                    $scope.eventLog.unshift({
-                        time: snap.val().time, user: $scope.localUsers[snap.val().user].nick,
-                        type: 'updated the terrain'
-                    });
-                });}
-                downloadTerrain();
-            }
-        });
+       var prepareTerrain = function() {
+           $scope.terrainReady = true;
+           nativeCamps = gameUtility.genNativeCamps(localTerrain);
+           
+           drawZoomCanvas();
+           if(userID == 2) { // If server
+               console.log('server ready!');
+               fireRef.child('clients/logged').on('child_added', addClient);
+               fireRef.child('clients/logged').on('child_changed', changeClient);
+               fireRef.child('clients/logged').on('child_removed', removeClient);
+               fireServer.on('child_added', onClientAction);
+               fireRef.child('status').set('online');
+               fireRef.child('status').onDisconnect().set('offline');
+           }
+           
+       };
         
         fireRef.child('labels').once('value',function(snap) {
             localLabels = snap.val();
@@ -769,29 +790,9 @@ angular.module('Geographr.controllers', [])
             fireRef.child('labels').on('child_added', addLabel);
             fireRef.child('labels').on('child_removed', removeLabel);
         });
-        fireRef.child('objects').once('value',function(snap) {
-            localObjects = snap.val();
-            for(var key in localObjects) { if(localObjects.hasOwnProperty(key)) {
-                canvasUtility.drawThing(fullObjectContext, localObjects, key.split(':'), 0, 0)
-            }}
-            drawZoomCanvas();
-            fireRef.child('objects').on('child_added', addObject);
-            fireRef.child('objects').on('child_changed', addObject);
-            fireRef.child('objects').on('child_removed', removeObject);
-        });
         fireRef.child('meta/pings').on('child_added', drawPing);
         fireRef.child('meta/pings').on('child_removed', hidePing);
         fireRef.child('status').on('value', onServerStatus);
-    
-        var createServerListeners = function() {
-            console.log('server booting up!');
-            fireRef.child('clients/logged').on('child_added', addClient);
-            fireRef.child('clients/logged').on('child_changed', changeClient);
-            fireRef.child('clients/logged').on('child_removed', removeClient);
-            fireRef.child('clients/actions').on('child_added', onClientAction);
-            fireRef.child('status').set('online');
-            fireRef.child('status').onDisconnect().set('offline');
-        };
     
         var onKeyDown = function(e) {
             if(!keyUpped) { return; }

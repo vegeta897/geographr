@@ -6,11 +6,11 @@ angular.module('Geographr.canvas', [])
         var fullPixOff = fullPixSize/2;
         
         // Return a list of coordinates surrounding and including the input coords
-        var listNear = function(coords) {
+        var listNear = function(coords,dist) {
             coords[0] = parseInt(coords[0]); coords[1] = parseInt(coords[1]);
             var near = [];
-            for(var i = -1; i < 2; i++) {
-                for(var ii = -1; ii < 2; ii++) {
+            for(var i = dist*-1; i < dist+1; i++) {
+                for(var ii = dist*-1; ii < dist+1; ii++) {
                     near.push((coords[0] + i) + ':' + (coords[1] + ii));
                 }
             }
@@ -131,7 +131,7 @@ angular.module('Geographr.canvas', [])
                     for(var ii = 299; ii >= 0; ii--) {
                         //if(terrain.hasOwnProperty(ii+':'+i)) {
                         var thisCoord = [ii,i];
-                        var nearThis = listNear(thisCoord);
+                        var nearThis = listNear(thisCoord,1);
                         var color = surveyTerrain(nearThis,terrain);
                         var x = parseInt(thisCoord[0]), y = parseInt(thisCoord[1]);
                         context.fillStyle = color;
@@ -141,7 +141,7 @@ angular.module('Geographr.canvas', [])
                     }
                 }
             },
-            drawThing: function(context,things,coords,zoomPosition,zoomPixSize) {
+            drawTerrain: function(context,terrain,coords,zoomPosition,zoomPixSize) {
                 var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
                 var drawType = context.canvas.id.substr(4,1); // Object or terrain?
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);
@@ -154,14 +154,14 @@ angular.module('Geographr.canvas', [])
                 }
                 var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
-                var affected = listNear(coords);
+                var affected = listNear(coords,1);
                 for(var i = 0; i < affected.length; i++) {
                     
                     //if(drawType=='O' && !things.hasOwnProperty(affected[i])) { continue; }
                     var thisCoord = affected[i].split(':');
-                    var nearThis = listNear(thisCoord);
-                    var color = drawType == 'O' ? surveyObjects(nearThis,things) : 
-                        surveyTerrain(nearThis,things);
+                    var nearThis = listNear(thisCoord,1);
+                    var color = drawType == 'O' ? surveyObjects(nearThis,terrain) : 
+                        surveyTerrain(nearThis,terrain);
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.fillStyle = color;
                     var drawMethod = color == 'erase' ? 'clearRect' : 'fillRect';
@@ -169,33 +169,83 @@ angular.module('Geographr.canvas', [])
                         (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
                 }
             },
+            drawObject: function(context,object,coords,zoomPosition,zoomPixSize) {
+                var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
+                var x = parseInt(coords[0]), y = parseInt(coords[1]);
+                // Don't draw on zoom canvas if pixel is out of bounds
+                if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
+                    (canvasType == 'zoom' && y+1 < zoomPosition[1]) ||
+                    (canvasType == 'zoom' && x-1 > zoomPosition[0]+(900/zoomPixSize)) ||
+                    (canvasType == 'zoom' && y-1 > zoomPosition[1]+(600/zoomPixSize))) {
+                    return;
+                }
+                var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
+                var offset = canvasType == 'full' ? [0,0] : zoomPosition;
+                for(var i = 0; i < object.length; i++) {
+                    switch(object[i]) {
+                        case 'userCamp': context.fillStyle = 'rgb(255,0,0)'; 
+                            context.beginPath();
+                            context.arc((x - offset[0])*canvasPixSize+canvasPixSize/2,
+                                (y - offset[1])*canvasPixSize+canvasPixSize/2, 
+                                canvasPixSize/3, 0, Math.PI*2);
+                            context.closePath();
+                            context.fill();
+                            break;
+                        case 'camp': context.fillStyle = 'rgb(100,100,100)';
+                            context.fillRect((x - offset[0])*canvasPixSize,
+                                (y - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                            break;
+                    }
+                }
+                
+            },
             drawAllTerrain: function(context,terrain) {
                 context.fillStyle = 'rgb(44,61,75)'; // Clear canvas first
                 context.fillRect(0,0,300,300);
                 for(var key in terrain) {
                     if(terrain.hasOwnProperty(key)) {
                         var coord = key.split(':');
-                        var affected = listNear(coord);
+                        var affected = listNear(coord,1);
                         for(var i = 0; i < affected.length; i++) {
                             // If not drawing center pixel, only draw if it's water
                             if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }
                             var thisCoord = affected[i].split(':');
-                            var nearThis = listNear(thisCoord);
+                            var nearThis = listNear(thisCoord,1);
                             var color = surveyTerrain(nearThis,terrain);
-//                            if(terrain.hasOwnProperty(affected[i])) { // Random camp test
-//                                var elevation = terrain[affected[i]];
-//                                Math.seedrandom(affected[i]);
-//                                var campChance = elevation == 1 ? 0.01 : (15 - elevation) / 1000;
-//                                if(Math.random() > 1-campChance) {
-//                                    color = 'hsl(' + Math.floor(Math.random()*360) + ',100%,50%)';
-//                                }
-//                            }
                             var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                             context.fillStyle = color;
                             context.fillRect(thisX*fullPixSize,thisY*fullPixSize,
                                 fullPixSize,fullPixSize);
                         }
                     }
+                }
+            },
+            drawCamps: function(context,camps,zoomPosition,zoomPixSize) {
+                for(var key in camps) {
+                    if(camps.hasOwnProperty(key)) {
+                        var x = parseInt(key.split(':')[0]), y = parseInt(key.split(':')[1]);
+                        if((x+1 < zoomPosition[0]) || (y+1 < zoomPosition[1]) ||
+                            (x-1 > zoomPosition[0]+(900/zoomPixSize)) ||
+                            (y-1 > zoomPosition[1]+(600/zoomPixSize))) {
+                            continue;
+                        }
+                        context.fillStyle = 'rgb(255,255,255)';
+                        context.fillRect((x - zoomPosition[0])*zoomPixSize,
+                            (y - zoomPosition[1])*zoomPixSize, zoomPixSize,zoomPixSize);
+                    }
+                }
+            },
+            drawFog: function(context,pixels,zoomPosition,zoomPixSize) {
+                var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
+                var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
+                var offset = canvasType == 'full' ? [0,0] : zoomPosition;
+                context.fillStyle = 'rgb(51,57,63)';
+                context.fillRect(0,0,900,600);
+                for(var i = 0; i < pixels.length; i++) {
+                    var thisCoord = pixels[i].split(':');
+                    var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
+                    context.clearRect((thisX - offset[0])*canvasPixSize,
+                        (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
                 }
             },
             drawSelect: function(context,coords,zoomPixSize,type) {

@@ -3,7 +3,7 @@
         <div class="navbar-header">
             <h1><a href="#"><span class="geographr-color">Geographr</span></a>  <small>v{{ version }} - "{{ versionName }}"
                 &emsp;&mdash;&emsp;Server status: 
-                <strong ng-class="{'text-success': serverStatus == 'Online', 'text-danger': serverStatus != 'Online'}">{{ serverStatus | capitalize }}</strong></small></h1>
+                <strong ng-class="{'text-success': serverStatus == 'online', 'text-danger': serverStatus != 'online'}">{{ serverStatus | capitalize }}</strong></small></h1>
         </div>
         <div class="navbar-collapse collapse">
             <p ng-show="needUpdate" class="navbar-right text-warning">Your version is <strong>out of date!</strong> Please press <strong>shift+F5</strong>. <small>If that doesn't work, Vegeta probably locked the app.</small></p>
@@ -24,6 +24,7 @@
     <div class="canvas-container minimap"> <!-- Minimap canvases -->
         <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
         <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
+        <canvas id="fullFogCanvas" width="300" height="300"></canvas> <!-- Fog canvas -->
         <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
         <canvas id="fullHighCanvas" width="300" height="300"> <!-- Highlight canvas -->
             Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
@@ -48,14 +49,14 @@
     <div class="canvas-container"> <!-- Right side canvases -->
         <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
         <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
-        <canvas id="zoomPingCanvas" width="900" height="600"></canvas> <!-- Ping canvas -->
+        <canvas id="zoomFogCanvas" width="900" height="600"></canvas> <!-- Fog canvas -->
         <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
         <div class="col-xs-1 text-right hard-right pull-right coords">
             {{ overPixel.x }} , {{ overPixel.y }}
         </div>
         <div class="col-xs-3 text-right pull-right coords">
             <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
-                   data-slider-max="6" data-slider-selection="none" data-slider-value="3" data-slider-tooltip="hide">
+                   data-slider-max="6" data-slider-selection="none" data-slider-value="4" data-slider-tooltip="hide">
         </div>
         <div class="col-xs-2 text-right pull-right coords">
             <div class="checkbox-inline text-muted"><label>
@@ -75,13 +76,13 @@
         </div>
     </div>
 </div>
-<div id="uiContainer" ng-show="userInit" class="container">
+<div id="uiContainer" ng-show="userInit && terrainReady" class="container">
     <div class="row">
         <div id="info" class="col-xs-3">
             <h2>Welcome to <span class="geographr-color">Geographr</span>!</h2>
             <div class="well" ng-show="helpText">
                 <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
-                <button ng-show="newUser" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
+                <button ng-show="user.new" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
             </div>
             <div class="row form-group">
                 <div class="input-group input-group-sm col-xs-8">

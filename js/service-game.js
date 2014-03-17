@@ -20,15 +20,40 @@ angular.module('Geographr.game', [])
     var getNeighbors = function(loc,dist) { // Check a diamond area around x,y
         var neighbors = [];
         loc = [parseInt(loc[0]),parseInt(loc[1])];
-        for(var i = dist*-1; i <= dist; i++) {
-            for(var ii = dist*-1; ii <= dist; ii++) {
-                var total = Math.abs(i)+Math.abs(ii);
-                if(total <= dist && total > 0) {
+        for(var i = dist*-1; i <= dist; i++) {                      // pattern
+            for(var ii = dist*-1; ii <= dist; ii++) {               //    0
+                var total = Math.abs(i)+Math.abs(ii);               //   123
+                if(total <= dist) {                                 //    4
                     neighbors.push((loc[0]+i)+':'+(loc[1]+ii));
                 }
             }
         }
         return neighbors;
+    };
+    var getCircle = function(loc,dist) { // Check circular area around x,y
+        var neighbors = [];
+        loc = [parseInt(loc[0]),parseInt(loc[1])];
+        for(var i = dist*-1; i <= dist; i++) {
+            for(var ii = dist*-1; ii <= dist; ii++) {
+                if(dist*dist > i*i + ii*ii) {
+                    neighbors.push((loc[0]+i)+':'+(loc[1]+ii));
+                }
+            }
+        }
+        return neighbors;
+    };
+    var isCampNear = function(camps,loc,dist) { // Check a diamond area around x,y for a camp
+        var neighbors = [];
+        loc = [parseInt(loc[0]),parseInt(loc[1])];
+        for(var i = dist*-1; i <= dist; i++) {
+            for(var ii = dist*-1; ii <= dist; ii++) {
+                var total = Math.abs(i)+Math.abs(ii);
+                if(total <= dist && total > 0) {
+                    if(camps.hasOwnProperty((loc[0]+i)+':'+(loc[1]+ii))) { return true; }
+                }
+            }
+        }
+        return false;
     };
     var getBoxNeighbors = function(nodes,x,y,dist) { // Check a box area around x,y
         var neighbors = [];
@@ -37,19 +62,6 @@ angular.module('Geographr.game', [])
             for(var ii = dist*-1; ii <= dist; ii++) {
                 var nx = (x+i), ny = (y+ii);
                 if(nodes.hasOwnProperty(nx+':'+ny)) {neighbors.push(nx+':'+ny); }
-            }
-        }
-        return neighbors;
-    };
-    var getCircle = function(nodes,x,y,dist) { // Check circular area around x,y
-        var neighbors = [];
-        x = parseInt(x); y = parseInt(y);
-        for(var i = dist*-1; i <= dist; i++) {
-            for(var ii = dist*-1; ii <= dist; ii++) {
-                var nx = (x+i), ny = (y+ii);
-                if(dist*dist > i*i + ii*ii && nodes.hasOwnProperty(nx+':'+ny)) {
-                    neighbors.push(nx+':'+ny); 
-                }
             }
         }
         return neighbors;
@@ -73,62 +85,62 @@ angular.module('Geographr.game', [])
         return false;
     };
     return {
-        validLocation: function(user, objects, objectType, loc) {
-            var neighbors, ownObjectsFound = 0, specialFound = false;
-            switch(objectType) {
-                case 'camp': // Can't be placed on another object
-                    return !objects.hasOwnProperty(loc.join(':'));
-                    break;
-                case 'somatic': // Can't be placed on another cell, must be next to brain or energy
-                    neighbors = getNeighbors(loc, 1);
-                    for (var i = 0; i < neighbors.length; i++) {
-                        if(objects.hasOwnProperty(neighbors[i])) {
-                            if(jQuery.inArray(objects[neighbors[i]].type,['brain','energy','germ']) > -1 &&
-                                objects[neighbors[i]].owner == user) {
-                                specialFound = true; break; }
-                        }
-                    }
-                    return specialFound && !objects.hasOwnProperty(loc.join(':'));
-                    break;
-                case 'energy': // Can't be on another cell, must be next to owner's cell
-                    neighbors = getNeighbors(loc, 1);
-                    for (var j = 0; j < neighbors.length; j++) {
-                        if(objects.hasOwnProperty(neighbors[j]) && objects[neighbors[j]].owner == user) {
-                            ownObjectsFound++; break;
-                        }
-                    }
-                    return ownObjectsFound > 0 && !objects.hasOwnProperty(loc.join(':'));
-                    break;
-                case 'germ': // Can't be on another cell, must be next to owner's cell
-                    neighbors = getNeighbors(loc, 1);
-                    for (var k = 0; k < neighbors.length; k++) {
-                        if(objects.hasOwnProperty(neighbors[k]) && objects[neighbors[k]].owner == user) {
-                            ownObjectsFound++; break;
-                        }
-                    }
-                    return ownObjectsFound > 0 && !objects.hasOwnProperty(loc.join(':'));
-                    break;
-                default: return false; break; // Can't place unknown cell type!
+        getVisibility: function(terrain,coords) {
+            var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);
+            var inRange = getCircle([x,y],4);
+            var remove = [];
+            for(var i = remove.length-1; i > -1; i--) { // Delete grids in remove array from inRange array
+                inRange.splice(remove[i],1);
             }
+            return inRange;
         },
-        newMap: function() {
-            var map = {};
-            for(var i = 0; i < 240; i++) {
-                for(var ii = 0; ii < 150; ii++) {
-                    map[i + ':' + ii] = 'water-deep';
+        createUserCamp: function(terrain,camps) {
+            Math.seedrandom();
+            for(var i = 0; i < 5000; i++) {
+                var x = randomIntRange(0,299), y = randomIntRange(0,299);
+                if(terrain[x+':'+y] && !camps[x+':'+y] && terrain[x+':'+y] < 10) { 
+                    return x+':'+y; 
                 }
             }
-            return map;
+            return false;
         },
-        someGameFunction: function(ox,oy) { // ox and oy are the clicked coords
-           // Placeholder game function!
+        genNativeCamps: function(terrain) {
+            var camps = {};
+            for(var tKey in terrain) {
+                if(terrain.hasOwnProperty(tKey)) {
+                    var x = parseInt(tKey.split(':')[0]), y = parseInt(tKey.split(':')[1]);
+                    var area = parseInt(x/20) * 20 + ':' + parseInt(y/20) * 20;
+                    Math.seedrandom(area);
+                    var minRange = randomIntRange(8,14);
+                    if(Math.random() < 0.10) { minRange = randomIntRange(3,8) }
+                    if(isCampNear(camps,tKey.split(':'),minRange)) {
+                        continue; // If camp nearby, veto this grid
+                    }
+                    var nearGrids = getNeighbors(tKey.split(':'),2);
+                    var nearStats = { water: 0, avgElevation: 0 };
+                    for(var i = 0; i < nearGrids.length; i++) {
+                        nearStats.water += terrain[nearGrids[i]] ? 0 : 1;
+                        nearStats.avgElevation += terrain[nearGrids[i]] ? terrain[nearGrids[i]] : 0;
+                        if(i == nearGrids.length - 1) {
+                            nearStats.avgElevation /= 13 - nearStats.water;
+                        }
+                    }
+                    var campChance = nearStats.water > 7 ? 0.03 : (12-nearStats.water) / 100;
+                    campChance -= nearStats.avgElevation / 80; // Lower chance the higher elevation
+                    Math.seedrandom(tKey);
+                    if(Math.random() < campChance) {
+                        camps[tKey] = { name: Chance(x*1000 + y).word() };
+                    }
+                }
+            }
+            return camps;
         },
         tutorial: function(step) {
             var text = '';
             switch(parseInt(step)) {
                 case 0:
                     text = 'Middle mouse to pan around, scroll wheel to zoom.\n' +
-                        'Begin your empire by creating your starting camp!';
+                        'Begin your journey by creating your camp!';
                     break;
             }
             return text;
