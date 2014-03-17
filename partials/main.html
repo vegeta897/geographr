@@ -195,7 +195,7 @@
         </div>
         <div class="col-xs-3">
             <h2>Event Log</h2>
-            <em ng-hide="eventLog.length > 0" class="text-muted">Only shows events occurring after opening this page.</em>
+            <em ng-hide="eventLog.length > 0" class="text-muted">Nothing&nbsp;&nbsp;yet</em>
             <ul id="log" class="list-unstyled">
                 <li ng-repeat="event in eventLog | limitTo:10">
                     <span class="text-muted">{{ event.time | date:'H:mm:ss' }}</span>&emsp; 

@@ -22,7 +22,7 @@ angular.module('Geographr.controllers', [])
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
             localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, tutorialStep = 0,
-            nativeCamps = {}, visiblePixels = [];
+            nativeCamps = {}, visiblePixels = {};
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -107,7 +107,6 @@ angular.module('Geographr.controllers', [])
                         drawObject(snap.val().split(':'),localObjects[snap.val()]);
                         $scope.user.camp = snap.val();
                     });
-                    
                     fireUser.child('location').on('value', movePlayer);
                 });
             });
@@ -194,7 +193,6 @@ angular.module('Geographr.controllers', [])
         };
 
         $scope.changeZoom = function(val) {
-            if($scope.zoomLevel == val && viewCenter) { return; }
             $scope.zoomLevel = parseInt(val);
             var oldZoom = zoomSize;
             localStorageService.set('zoomLevel',$scope.zoomLevel);
@@ -366,6 +364,7 @@ angular.module('Geographr.controllers', [])
                 }
             }
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
+            if(!$scope.user) { return; }
             canvasUtility.drawFog(zoomFogContext,visiblePixels,$scope.zoomPosition,zoomPixSize);
         };
         
@@ -524,8 +523,8 @@ angular.module('Geographr.controllers', [])
             if($scope.overPixel.x != x + $scope.zoomPosition[0] || 
                 $scope.overPixel.y != y + $scope.zoomPosition[1]) {
                 zoomHighCanvas.style.cursor = 'default'; // Show cursor
-                dimPixel(); // Dim the previous pixel
                 $timeout(function() {
+                    dimPixel(); // Dim the previous pixel
                     $scope.overPixel.x = (x+$scope.zoomPosition[0]); 
                     $scope.overPixel.y = (y+$scope.zoomPosition[1]);
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
@@ -676,30 +675,30 @@ angular.module('Geographr.controllers', [])
                 $scope.scoreBoard = sortArrayByProperty($scope.scoreBoard,'score',true);
             });
         };
-        
+        // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
             $scope.user.location = snap.val();
             console.log('moving player to',snap.val());
-            visiblePixels = gameUtility.getVisibility(localTerrain,snap.val());
-            canvasUtility.drawFog(fullFogContext,visiblePixels,0,0);
+            visiblePixels = localStorageService.get('visiblePixels') ? 
+                localStorageService.get('visiblePixels') : visiblePixels;
+            visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
+            localStorageService.set('visiblePixels',visiblePixels);
             $timeout(function(){
-                $scope.changeZoom(4);
-                $scope.zoomPosition = [snap.val().split(':')[0]-22,snap.val().split(':')[1]-14];
+                canvasUtility.drawFog(fullFogContext,visiblePixels,0,0);
+                var x = snap.val().split(':')[0], y = snap.val().split(':')[1];
+                var offX = x > 277 ? 277 - x : x < 22 ? 22 - x : 0; // Keep zoom view in-bounds
+                var offY = y > 284 ? 284 - y : y < 14 ? 14 - y : 0;
+                $scope.zoomPosition = [x - 22 + offX, y - 14 + offY];
                 zoomSize = [45,30]; lastZoomPosition = $scope.zoomPosition;
                 viewCenter = [$scope.zoomPosition[0] + zoomSize[0]/2, $scope.zoomPosition[1] + zoomSize[1]/2];
                 localStorageService.set('zoomPosition',$scope.zoomPosition);
                 canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
                 canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
                     lastZoomPosition,zoomSize);
-                drawZoomCanvas();
+                $scope.changeZoom(4);
                 jQuery('.zoom-slider').slider('setValue',$scope.zoomLevel)
             });
-        };
-
-        var onServerStatus = function(snap) {
-            // When the server status changes
-            $timeout(function() { $scope.serverStatus = snap.val(); });
         };
             
         var addClient = function(snap) {
@@ -716,6 +715,7 @@ angular.module('Geographr.controllers', [])
         
         var onClientAction = function(snap) {
             // When a client action is received
+            console.log(snap.val().action,'from',$scope.localUsers[snap.val().user].nick);
             switch(snap.val().action) {
                 case 'createCamp':
                     var startGrid = gameUtility.createUserCamp(localTerrain,nativeCamps);
@@ -731,16 +731,14 @@ angular.module('Geographr.controllers', [])
         };
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
-            console.log('downloading terrain update');
             jQuery.ajax({
                 url: document.domain == 'localhost' ? 'http://localhost/geographr/data/terrain.json' :
                     'http://www.pixelatomy.com/geographr/data/terrain.json',
                 dataType: 'json'
             }).done(function(results) {
-                console.log('done!');
+                console.log('new terrain downloaded');
                 localTerrain = results; // Download the whole terrain object at once into localTerrain
                 canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
-                drawZoomCanvas();
                 $scope.lastTerrainUpdate = new Date().getTime();
                 localStorageService.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
                 localStorageService.set('terrain',localTerrain);
@@ -760,7 +758,6 @@ angular.module('Geographr.controllers', [])
                     if(needUpdate) { downloadTerrain(); } else {
                         localTerrain = localStorageService.get('terrain');
                         canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
-                        drawZoomCanvas();
                         prepareTerrain();
                     }
                 });
@@ -770,8 +767,6 @@ angular.module('Geographr.controllers', [])
        var prepareTerrain = function() {
            $scope.terrainReady = true;
            nativeCamps = gameUtility.genNativeCamps(localTerrain);
-           
-           drawZoomCanvas();
            if(userID == 2) { // If server
                console.log('server ready!');
                fireRef.child('clients/logged').on('child_added', addClient);
@@ -779,6 +774,12 @@ angular.module('Geographr.controllers', [])
                fireRef.child('clients/logged').on('child_removed', removeClient);
                fireServer.on('child_added', onClientAction);
                fireRef.child('status').set('online');
+               var stayAwake = function() {
+                   fireRef.child('status').set('online');
+                   awakeTimer = setTimeout(stayAwake, 300000);
+               };
+               var awakeTimer;
+               awakeTimer = setTimeout(stayAwake, 300000); // Remind firebase server is still online every 5 min
                fireRef.child('status').onDisconnect().set('offline');
            }
            
@@ -786,13 +787,14 @@ angular.module('Geographr.controllers', [])
         
         fireRef.child('labels').once('value',function(snap) {
             localLabels = snap.val();
-            drawZoomCanvas();
             fireRef.child('labels').on('child_added', addLabel);
             fireRef.child('labels').on('child_removed', removeLabel);
         });
         fireRef.child('meta/pings').on('child_added', drawPing);
         fireRef.child('meta/pings').on('child_removed', hidePing);
-        fireRef.child('status').on('value', onServerStatus);
+        fireRef.child('status').on('value', function(snap) { // When the server status changes
+            $timeout(function() { $scope.serverStatus = snap.val(); });
+        });
     
         var onKeyDown = function(e) {
             if(!keyUpped) { return; }
@@ -804,8 +806,8 @@ angular.module('Geographr.controllers', [])
     
         jQuery(window).keydown(onKeyDown);
         jQuery(window).keyup(function() { keyUpped = true; });
-        $scope.changeZoom($scope.zoomLevel); // Apply initial zoom on load
-        changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]); // Apply zoom position to full view
+        //$scope.changeZoom($scope.zoomLevel); // Apply initial zoom on load
+        //changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]); // Apply zoom position to full view
 
         jQuery.ajax({ // Get last 8 commits from github
             url: 'https://api.github.com/repos/vegeta897/geographr/commits',

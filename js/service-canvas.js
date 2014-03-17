@@ -241,11 +241,17 @@ angular.module('Geographr.canvas', [])
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 context.fillStyle = 'rgb(51,57,63)';
                 context.fillRect(0,0,900,600);
-                for(var i = 0; i < pixels.length; i++) {
-                    var thisCoord = pixels[i].split(':');
+                for(var key in pixels) {
+                    if(!pixels.hasOwnProperty(key)) { continue; }
+                    var thisCoord = key.split(':');
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.clearRect((thisX - offset[0])*canvasPixSize,
                         (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                    if(pixels[key] == 2) { // If explored pixel
+                        context.fillStyle = 'rgba(51,57,63,50)';
+                        context.fillRect((thisX - offset[0])*canvasPixSize,
+                            (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                    }
                 }
             },
             drawSelect: function(context,coords,zoomPixSize,type) {

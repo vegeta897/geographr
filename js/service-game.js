@@ -85,19 +85,25 @@ angular.module('Geographr.game', [])
         return false;
     };
     return {
-        getVisibility: function(terrain,coords) {
+        getVisibility: function(terrain,visible,coords) {
             var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);
             var inRange = getCircle([x,y],4);
-            var remove = [];
-            for(var i = remove.length-1; i > -1; i--) { // Delete grids in remove array from inRange array
-                inRange.splice(remove[i],1);
+            for(var key in visible) { // Set all pixels to explored
+                if(visible.hasOwnProperty(key)) { visible[key] = 2; }
             }
-            return inRange;
+            for(var i = 0; i < inRange.length; i++) { // Set in-range pixels to visible
+                visible[inRange[i]] = 1;
+            }
+            var remove = [];
+            for(var j = remove.length-1; j > -1; j--) { // Delete grids in remove array from inRange array
+                inRange.splice(remove[j],1);
+            }
+            return visible;
         },
         createUserCamp: function(terrain,camps) {
             Math.seedrandom();
             for(var i = 0; i < 5000; i++) {
-                var x = randomIntRange(0,299), y = randomIntRange(0,299);
+                var x = randomIntRange(20,279), y = randomIntRange(20,279);
                 if(terrain[x+':'+y] && !camps[x+':'+y] && terrain[x+':'+y] < 10) { 
                     return x+':'+y; 
                 }
