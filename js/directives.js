@@ -71,11 +71,12 @@ angular.module('Geographr.directives', [])
 })
 .filter('itemDisplay', function() {
     return function(input) {
-        if(!input) { return input; }
-        var cellTypes = ['brain','somatic','energy','germ'];
-        input = jQuery.inArray(input,cellTypes) >= 0 ? input + ' Cell' : input;
-        input = input.charAt(0).toUpperCase() + input.slice(1);
-        return input.substring(0,1).toUpperCase()+input.substring(1);
+        if(!input || !input.hasOwnProperty('type')) { return input; }
+        if(input.type == 'userCamp') { input.type = 'camp'; }
+        var type = input.type.substring(0,1).toUpperCase()+input.type.substring(1); // Capitalize type
+        var owner = '';
+        if(input.hasOwnProperty('ownerNick')) { owner = input.ownerNick + '\'s '; }
+        return owner+type;
     }
 })
 .filter('grid', function() {

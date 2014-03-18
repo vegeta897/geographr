@@ -34,15 +34,22 @@
         </div>
         <div>
             <table id="gridView">
-                <tr><td></td><td></td><td></td></tr>
+                <!-- TODO: Generate this with ng-repeat -->
                 <tr>
-                    <td></td>
-                    <td ng-style="{'border-color': '#'+overPixel.object.color.hex}">
-                        {{ overPixel.object.type | itemDisplay }}
-                    </td>
-                    <td></td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[5] == selectedObject}" ng-click="selectObject(5)">{{ overPixel.objects[5] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[3] == selectedObject}" ng-click="selectObject(3)">{{ overPixel.objects[3] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[6] == selectedObject}" ng-click="selectObject(6)">{{ overPixel.objects[6] | itemDisplay }}</td>
                 </tr>
-                <tr><td></td><td></td><td></td></tr>
+                <tr>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[2] == selectedObject}" ng-click="selectObject(2)">{{ overPixel.objects[2] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[0] == selectedObject}" ng-click="selectObject(0)">{{ overPixel.objects[0] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[1] == selectedObject}" ng-click="selectObject(1)">{{ overPixel.objects[1] | itemDisplay }}</td>
+                </tr>
+                <tr>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[7] == selectedObject}" ng-click="selectObject(7)">{{ overPixel.objects[7] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[4] == selectedObject}" ng-click="selectObject(4)">{{ overPixel.objects[4] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && overPixel.objects[8] == selectedObject}" ng-click="selectObject(8)">{{ overPixel.objects[8] | itemDisplay }}</td>
+                </tr>
             </table>
         </div>
     </div>
@@ -153,32 +160,10 @@
         </div>
         <div id="objectInfoSpacer" ng-hide="selectedObject" class="col-xs-3"></div>
         <div id="objectInfo" ng-show="selectedObject" class="col-xs-3">
-            <h2>Object Info<small>{{ selectedObject.ownerNick }}</small></h2>
+            <h2>Object Info<!--<small>{{ selectedGrid.ownerNick }}</small>--></h2>
             <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
-                {{ selectedObject.type | itemDisplay }}&emsp;
+                {{ selectedObject | itemDisplay }}&emsp;
                 <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
-                <span class="text-muted">Age</span>&emsp;{{ selectedObject.created | timeUnits }}&nbsp; <small class="text-muted">{{ selectedObject.created | timeUnitsLabel }}</small>
-            </p>
-            <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row">
-                <div class="col-xs-4 hard-right">
-                    <p><span class="text-muted">Health</span>&emsp;{{ selectedObject.life }}</p>
-                </div>
-                <div class="col-xs-8">
-                    <div class="progress">
-                        <div class="progress-bar" ng-style="{width: selectedObject.life+'%'}"></div>
-                    </div>
-                </div>
-            </div>
-            <div ng-show="selectedObject.type == 'somatic' || selectedObject.type == 'germ'" class="row attach-top">
-                <div class="col-xs-12"><p>
-                    <span class="text-muted">Decay</span>&emsp;
-                    {{ (heartbeats - selectedObject.created)/2 | number:0 }} -
-                    {{ (heartbeats - selectedObject.created)*1.5 | number:0 }}
-                </p></div>
-            </div>
-            <p ng-show="selectedObject.output">
-                <span class="text-muted">Output</span>
-                &emsp;{{ selectedObject.output }}&emsp;<small class="text-muted">health</small>
             </p>
             <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
                 <h3>Contents</h3>

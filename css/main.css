@@ -65,6 +65,8 @@ canvas { position: relative; }
 
 #gridView td { border: 1px solid #50575c; width: 91px; height: 91px; cursor: pointer; }
 #gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
+#gridView td.selected { border: 2px solid #909ea8; background-color: #30363d; }
+#gridView td.selected:hover { border: 2px solid #778187; background-color: #3d434c; }
 
 ul#log { font-size: 11px; }
 ul#log li { margin-bottom: 0; }

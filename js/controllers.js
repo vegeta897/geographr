@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.09; $scope.versionName = 'Crazy Blood'; $scope.needUpdate = false;
+        $scope.version = 0.10; $scope.versionName = 'Brilliant Optimism'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -27,10 +27,14 @@ angular.module('Geographr.controllers', [])
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
         var fireServer = fireRef.child('clients/actions');
+        var auth; // Create a reference to the auth service for our data
         fireRef.parent().child('version').once('value', function(snap) { // Check version number
             if($scope.version >= snap.val()) {
-                // Create a reference to the auth service for our data
-                var auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
+                auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
+                    if(userID == 2) {
+                        console.log('server re-authed!');
+                        return;
+                    }
                     $timeout(function() {
                         if(error) {
                             console.log(error, $scope.loginEmail, $scope.loginPassword);
@@ -102,8 +106,10 @@ angular.module('Geographr.controllers', [])
                     fireInventory.on('child_removed', removeInventory);
                     fireUser.child('camp').on('value', function(snap) {
                         if(!snap.val()) { return; }
-                        localObjects[snap.val()] ? localObjects[snap.val()].push('userCamp') :
-                            localObjects[snap.val()] = ['userCamp'];
+                        var userCamp = { type: 'userCamp', owner: userID, 
+                            ownerNick: $scope.user.nick, grid: snap.val() };
+                        localObjects[snap.val()] ? localObjects[snap.val()].push(userCamp) :
+                            localObjects[snap.val()] = [userCamp];
                         drawObject(snap.val().split(':'),localObjects[snap.val()]);
                         $scope.user.camp = snap.val();
                     });
@@ -245,6 +251,12 @@ angular.module('Geographr.controllers', [])
                 jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
             });
         };
+        $scope.selectObject = function(objectIndex) {
+            if(!$scope.selectedGrid[objectIndex]) { return; }
+            $timeout(function() {
+                $scope.selectedObject = $scope.selectedGrid[objectIndex];
+            });
+        };
         
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -302,20 +314,17 @@ angular.module('Geographr.controllers', [])
             });
         };
         // Selecting an object on the map
-        var selectObject = function(e) {
+        var selectGrid = function(e) {
             if(e.which == 3) {  e.preventDefault(); return; } // If right click pressed
             if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
             if($scope.authStatus != 'logged') { return; } // If not authed
             $timeout(function() {
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
-                    $scope.selectedObject = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
-                    $scope.selectedObject.ownerNick = $scope.localUsers[$scope.selectedObject.owner].nick;
-                    $scope.overPixel.object = $scope.selectedObject;
-                } else { $scope.selectedObject = null; }
+                    $scope.selectedGrid = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
+                    $scope.overPixel.objects = $scope.selectedGrid;
+                    if($scope.selectedGrid.length == 1) { $scope.selectedObject = $scope.selectedGrid[0]; }
+                } else { $scope.selectedGrid = null; }
                 dimPixel(); // Will draw select box
-                if(!$scope.selectedObject) { return; }
-                if($scope.selectedObject.type == 'camp' && $scope.selectedObject.owner == userID
-                    && tutorialStep == 2) { tutorial('next'); }
             });
         };
         // Placing an object on the map
@@ -450,12 +459,14 @@ angular.module('Geographr.controllers', [])
                 addingLabel = false;
                 return;
             }
-            if(localObjects.hasOwnProperty(x+':'+y)) { selectObject(e); return; } // If selecting an object
+            if(localObjects.hasOwnProperty(x+':'+y)) { selectGrid(e); return; } // If selecting an object
             
             // If an object is selected, but is not clicked, clear the selected object
-            if($scope.selectedObject) { if($scope.selectedObject.grid != x + ':' + y) { 
-                $timeout(function() { $scope.selectedObject = null; dimPixel(); delete $scope.overPixel.object; }); 
-                return; }}
+            if($scope.selectedGrid[0]) { if($scope.selectedGrid[0].grid != x + ':' + y) { 
+                $timeout(function() { 
+                    $scope.selectedGrid = null; dimPixel(); 
+                    delete $scope.overPixel.objects; delete $scope.selectedGrid; delete $scope.selectedObject;
+                }); return; }}
             if(!$scope.editTerrain) { return; } // If terrain hidden or edit mode is off, we're done here
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
@@ -528,9 +539,11 @@ angular.module('Geographr.controllers', [])
                     $scope.overPixel.x = (x+$scope.zoomPosition[0]); 
                     $scope.overPixel.y = (y+$scope.zoomPosition[1]);
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
-                    $scope.overPixel.object = $scope.selectedObject ? $scope.selectedObject : localObjects[grid];
-                    $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
-                    $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
+                    if(visiblePixels.hasOwnProperty(grid)) { // If grid is visible or explored
+                        $scope.overPixel.objects = $scope.selectedGrid ? $scope.selectedGrid : localObjects[grid];
+                        $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
+                        $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
+                    } else { $scope.overPixel.type = $scope.overPixel.elevation = '-' }
                     var coords = [$scope.overPixel.x-$scope.zoomPosition[0],
                         $scope.overPixel.y-$scope.zoomPosition[1]];
                     var cursorType = $scope.editTerrain ? 'terrain' + $scope.brushSize : 'cursor';
@@ -560,8 +573,8 @@ angular.module('Geographr.controllers', [])
 
         // Draw selection box around selected cell
         var drawSelect = function() {
-            if(!$scope.selectedObject) { return; }
-            var coords = $scope.selectedObject.grid.split(':');
+            if(!$scope.selectedGrid || !$scope.selectedGrid[0].grid) { return; }
+            var coords = $scope.selectedGrid[0].grid.split(':');
             coords = [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]];
             canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'object');
         };
@@ -619,7 +632,8 @@ angular.module('Geographr.controllers', [])
             if(!$scope.showObjects) { return; }
             if(!value) { 
                 delete localObjects[coords.join(':')];
-                if($scope.selectedObject.grid == coords.join(':')) { $scope.selectedObject = {}; }
+                if($scope.selectedGrid[0].grid == coords.join(':')) { 
+                    delete $scope.selectedGrid; delete $scope.selectedObject; }
                 canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
             }
             canvasUtility.drawObject(zoomObjectContext,value,coords,
@@ -774,12 +788,13 @@ angular.module('Geographr.controllers', [])
                fireRef.child('clients/logged').on('child_removed', removeClient);
                fireServer.on('child_added', onClientAction);
                fireRef.child('status').set('online');
+               var loginEmail = localStorageService.get('serverLoginEmail');
+               var loginPassword = localStorageService.get('serverLoginPassword');
                var stayAwake = function() {
-                   fireRef.child('status').set('online');
-                   awakeTimer = setTimeout(stayAwake, 300000);
+                   auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
+                   awakeTimer = setTimeout(stayAwake, 3600000); // Re-authenticate every hour
                };
-               var awakeTimer;
-               awakeTimer = setTimeout(stayAwake, 300000); // Remind firebase server is still online every 5 min
+               var awakeTimer = setTimeout(stayAwake, 3600000);
                fireRef.child('status').onDisconnect().set('offline');
            }
            

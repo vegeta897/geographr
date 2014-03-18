@@ -182,7 +182,7 @@ angular.module('Geographr.canvas', [])
                 var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 for(var i = 0; i < object.length; i++) {
-                    switch(object[i]) {
+                    switch(object[i].type) {
                         case 'userCamp': context.fillStyle = 'rgb(255,0,0)'; 
                             context.beginPath();
                             context.arc((x - offset[0])*canvasPixSize+canvasPixSize/2,
@@ -197,7 +197,6 @@ angular.module('Geographr.canvas', [])
                             break;
                     }
                 }
-                
             },
             drawAllTerrain: function(context,terrain) {
                 context.fillStyle = 'rgb(44,61,75)'; // Clear canvas first
