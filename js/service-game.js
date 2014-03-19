@@ -153,6 +153,14 @@ angular.module('Geographr.game', [])
         },
         capitalize: function(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
+        },
+        terrain180: function(terrain) {
+            var output = {};
+            for(var key in terrain) { if(terrain.hasOwnProperty(key)) {
+                var x = key.split(':')[0], y = key.split(':')[1];
+                output[((x-299)*-1) + ':' + ((y-299)*-1)] = terrain[key];
+            }}
+            return output;
         }
     }
 });

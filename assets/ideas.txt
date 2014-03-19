@@ -5,8 +5,9 @@ travelling between pixels takes a while.. long enough that you can do other acti
 need food/water to survive. hunt, forage, etc. full stats skills and inventory system like an RPG
     - if run out of food/water while travelling, stop and wait for player input
     
-fog of war? visibility based on elevation.
-    - weather? moves across map in bands, server-controlled
+fog of war - visibility based on elevation.
+
+weather? moves across map in bands, server-controlled
     
 each pixel has a temperature that gets updated every X minutes, seed-based, influenced by elevation and weather
 

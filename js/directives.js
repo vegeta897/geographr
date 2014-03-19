@@ -72,8 +72,9 @@ angular.module('Geographr.directives', [])
 .filter('itemDisplay', function() {
     return function(input) {
         if(!input || !input.hasOwnProperty('type')) { return input; }
-        if(input.type == 'userCamp') { input.type = 'camp'; }
-        var type = input.type.substring(0,1).toUpperCase()+input.type.substring(1); // Capitalize type
+        var type = input.type;
+        if(input.type == 'userCamp') { type = 'camp'; }
+        type = type.substring(0,1).toUpperCase()+type.substring(1); // Capitalize type
         var owner = '';
         if(input.hasOwnProperty('ownerNick')) { owner = input.ownerNick + '\'s '; }
         return owner+type;
