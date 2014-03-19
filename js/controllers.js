@@ -738,10 +738,14 @@ angular.module('Geographr.controllers', [])
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
             console.log(document.domain);
+            var url;
+            switch(document.domain) {
+                case 'localhost': url = 'http://localhost/geographr/data/terrain.json'; break;
+                case 'pixelatomy.com': url = 'http://pixelatomy.com/geographr/data/terrain.json'; break;
+                case 'www.pixelatomy.com': url = 'http://www.pixelatomy.com/geographr/data/terrain.json'; break;
+            }
             jQuery.ajax({
-                url: document.domain == 'localhost' ? 'http://localhost/geographr/data/terrain.json' :
-                    'http://pixelatomy.com/geographr/data/terrain.json',
-                dataType: 'json'
+                url: url, dataType: 'json'
             }).done(function(results) {
                 console.log('new terrain downloaded');
                 localTerrain = results; // Download the whole terrain object at once into localTerrain
