@@ -34,7 +34,7 @@
         </div>
         <div>
             <table id="gridView">
-                <!-- TODO: Generate this with ng-repeat -->
+                <!-- TODO: Generate this with ng-repeat or a directive -->
                 <tr>
                     <td ng-class="{selected: selectedObject != null && overPixel.objects[5] == selectedObject}" ng-click="selectObject(5)">{{ overPixel.objects[5] | itemDisplay }}</td>
                     <td ng-class="{selected: selectedObject != null && overPixel.objects[3] == selectedObject}" ng-click="selectObject(3)">{{ overPixel.objects[3] | itemDisplay }}</td>
@@ -80,6 +80,16 @@
         </div>
         <div class="col-xs-2 hard-left pull-left coords">
             <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
+        </div>
+        <div ng-show="userInit && terrainReady" id="controls">
+            <button ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
+                <i class="glyphicon glyphicon-arrow-up"></i></button>
+            <button ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
+                <i class="glyphicon glyphicon-arrow-left"></i></button>
+            <button ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
+                <i class="glyphicon glyphicon-arrow-right"></i></button>
+            <button ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
+                <i class="glyphicon glyphicon-arrow-down"></i></button>
         </div>
     </div>
 </div>
@@ -144,8 +154,6 @@
             </div>
         </div>
         <div id="inventory" class="col-xs-3">
-            <h2 class="text-warning">Notice!</h2>
-            <p>Terrain editing is now locked. If you want to add or edit an island, get in touch with me.</p>
             <h2>Inventory</h2>
             <ul class="list-unstyled">
                 <li class="text-muted" ng-hide="inventory">No items</li>

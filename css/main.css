@@ -35,23 +35,8 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 .minimap { width: 302px; }
 .minimap .coords { margin: -2px 0 2px; }
 
-canvas { position: relative; }
-#fullPingCanvas, #fullFogCanvas, #fullHighCanvas, #fullObjectCanvas, 
-    #zoomFogCanvas, #zoomHighCanvas, #zoomObjectCanvas { position: absolute; top: -5000px; }
-
-.coords .checkbox-inline { padding-top: 0; }
-.coords .checkbox-inline label { font-weight: normal; }
-
-.hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
-
-#uiContainer { top: 0; }
-
-#info { margin-bottom: 10px; }
-#info h2 { color: #c8c8c8; font-size: 20px }
-
 #gridView {
-    width: 274px;
-    height: 274px;
+    width: 274px; height: 274px;
     border: 1px solid #7a8288;
     text-align: center;
     border-collapse: separate;
@@ -67,6 +52,39 @@ canvas { position: relative; }
 #gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
 #gridView td.selected { border: 2px solid #909ea8; background-color: #30363d; }
 #gridView td.selected:hover { border: 2px solid #778187; background-color: #3d434c; }
+
+canvas { position: relative; }
+#fullPingCanvas, #fullFogCanvas, #fullHighCanvas, #fullObjectCanvas, 
+    #zoomFogCanvas, #zoomHighCanvas, #zoomObjectCanvas { position: absolute; top: -5000px; }
+
+.coords .checkbox-inline { padding-top: 0; }
+.coords .checkbox-inline label { font-weight: normal; }
+
+#controls {
+    width: 196px; height: 196px;
+    padding: 8px;
+    position: absolute;
+    right: 2px;
+    bottom: 29px;
+}
+
+#controls button { 
+    width: 60px; height: 60px;
+    float: left; 
+    font-size: 2em;
+    box-shadow: 1px 1px 4px 1px rgba(0,0,0,0.2);
+}
+#controls #moveUp, #controls #moveDown { margin: 0 60px; padding-top: 11px; }
+#controls #moveLeft { margin: 0 60px 0 0; padding-top: 11px; }
+#controls #moveRight { padding-left: 16px; padding-top: 11px; }
+#controls #moveDown { padding-left: 16px; padding-top: 13px; }
+
+.hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
+
+#uiContainer { top: 0; }
+
+#info { margin-bottom: 10px; }
+#info h2 { color: #c8c8c8; font-size: 20px }
 
 ul#log { font-size: 11px; }
 ul#log li { margin-bottom: 0; }
@@ -96,10 +114,6 @@ strong { color: #ccc; }
     position: relative;
     top: 3px;
     margin-right: 4px;
-}
-
-button .glyphicon {
-    margin-right: 3px;
 }
 
 .attach-top { position: relative; top: -6px; }
