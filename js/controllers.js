@@ -146,8 +146,8 @@ angular.module('Geographr.controllers', [])
         var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
         $timeout(function(){ alignCanvases(); }, 500); // Align canvases half a second after load
-        canvasUtility.fillCanvas(fullFogContext,'33393f');
-        canvasUtility.fillCanvas(zoomFogContext,'33393f');
+        canvasUtility.fillCanvas(fullFogContext,'2e3338');
+        canvasUtility.fillCanvas(zoomFogContext,'2e3338');
 
         // Disable interpolation on zoom canvases
         zoomTerrainContext.mozImageSmoothingEnabled = zoomFogContext.mozImageSmoothingEnabled = false;

@@ -275,7 +275,7 @@ angular.module('Geographr.canvas', [])
                 var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
                 var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
-                context.fillStyle = 'rgb(51,57,63)';
+                context.fillStyle = 'rgb(46,51,56)';
                 if(canvasType == 'full') { context.fillRect(0,0,900,600); }
                 for(var key in pixels) {
                     if(!pixels.hasOwnProperty(key)) { continue; }
@@ -286,12 +286,12 @@ angular.module('Geographr.canvas', [])
                     if(pixels[key] == 2 && canvasType == 'full') { // If explored pixel
                         var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
                         var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114);
-                        var diff = {r:(51-grey)*0.4,g:(57-grey)*0.4, b:(63-grey)*0.4};
-                        context.fillStyle = 'rgb('+(grey+parseInt(diff.r))+','
-                            +(grey+parseInt(diff.g))+','+(grey+parseInt(diff.b))+')';
+                        var greyed = {r:grey+(p[0]-grey)*0.3,g:grey+(p[1]-grey)*0.3, b:grey+(p[2]-grey)*0.3};
+                        var fogDiff = {r:(46-greyed.r)*0.2,g:(51-greyed.g)*0.2, b:(56-greyed.b)*0.2};
+                        context.fillStyle = 'rgb('+parseInt(greyed.r+fogDiff.r)+','
+                            +parseInt(greyed.g+fogDiff.g)+','+parseInt(greyed.b+fogDiff.b)+')';
                         context.fillRect((thisX - offset[0])*canvasPixSize,
                             (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
-                        //context.fillStyle = 'rgba(51,57,63,0.4)';
                     }
                 }
             },
