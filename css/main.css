@@ -126,10 +126,10 @@ strong { color: #ccc; }
     padding: 1px 5px 2px;
 }
 
-#commits { float: left; position: absolute; z-index: 9999; width: 880px; padding-top: 8px; }
+#commits { float: left; position: absolute; z-index: 9999; width: 900px; padding-top: 8px; }
 
 #commits table tr td { color: #C8C8C8; }
-#commits table tr td:first-child { width: 110px; }
+#commits table tr td:first-child { width: 120px; }
 
 /* --- Bootstrap Overrides --- */
 

@@ -90,12 +90,13 @@ angular.module('Geographr.controllers', [])
         tutorial('init');
     
         var initUser = function() {
-            fireUser.once('value', function(snapshot) {
+            fireUser.once('value', function(snap) {
                 $timeout(function() {
-                    $scope.user = snapshot.val();
+                    $scope.user = snap.val();
                     $scope.userInit = true;
                     $scope.authStatus = 'logged';
-                    $scope.camp = snapshot.val().camp;
+                    $scope.camp = snap.val().camp;
+                    visiblePixels = snap.val().hasOwnProperty('visiblePixels') ? snap.val().visiblePixels : {};
                     fireRef.child('users').on('child_added', updateUsers);
                     fireRef.child('users').on('child_changed', updateUsers);
                     if($scope.user.new) { tutorialStep = -1; tutorial('next'); }
@@ -125,6 +126,7 @@ angular.module('Geographr.controllers', [])
                 $scope[localStores[i]] = localStorageService.get(localStores[i]);
             }
         }
+        if(localStorageService.get('visiblePixels')) { localStorageService.remove('visiblePixels'); } // Delete me
     
         // Set up our canvases
         var fullTerrainCanvas = document.getElementById('fullTerrainCanvas');
@@ -694,10 +696,8 @@ angular.module('Geographr.controllers', [])
             if(!snap.val()) { return; }
             $scope.user.location = snap.val();
             console.log('moving player to',snap.val());
-            visiblePixels = localStorageService.get('visiblePixels') ? 
-                localStorageService.get('visiblePixels') : visiblePixels;
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
-            localStorageService.set('visiblePixels',visiblePixels);
+            fireUser.child('visiblePixels').set(visiblePixels);
             $timeout(function(){
                 canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0);
                 canvasUtility.drawPlayer(fullObjectContext,snap.val().split(':'),0,0);
@@ -775,6 +775,7 @@ angular.module('Geographr.controllers', [])
 //                        fireRef.child('lastTerrainUpdate').set({time: new Date().getTime(), user: '1'});
 //                        var labels180 = gameUtility.terrain180(localLabels);
 //                        fireRef.child('labels').set(labels180);
+                        // TODO: Don't draw all terrain, just visible. Draw new visible pixels as they come.
                         canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                         prepareTerrain();
                     }
@@ -784,7 +785,7 @@ angular.module('Geographr.controllers', [])
         
        var prepareTerrain = function() {
            $scope.terrainReady = true;
-           nativeCamps = gameUtility.genNativeCamps(localTerrain);
+           //nativeCamps = gameUtility.genNativeCamps(localTerrain); TODO: Re-enable this when the time comes
            if(userID == 2) { // If server
                console.log('server ready!');
                fireRef.child('clients/logged').on('child_added', addClient);
