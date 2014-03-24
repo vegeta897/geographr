@@ -75,9 +75,12 @@ canvas { position: relative; }
     box-shadow: 1px 1px 4px 1px rgba(0,0,0,0.2);
 }
 #controls #moveUp, #controls #moveDown { margin: 0 60px; padding-top: 11px; }
-#controls #moveLeft { margin: 0 60px 0 0; padding-top: 11px; }
+#controls #moveLeft { margin: 0 10px 0 0; padding-top: 11px; }
+#controls #moveStartStop { width: 40px; height: 40px; margin: 10px 10px 0 0; padding: 8px 0; font-size: 1em; }
 #controls #moveRight { padding-left: 16px; padding-top: 11px; }
-#controls #moveDown { padding-left: 16px; padding-top: 13px; }
+#controls #moveDown { padding-left: 16px; padding-top: 13px; margin-right: 20px; }
+#controls #moveClear { padding-left: 6px; padding-top: 1px; width: 40px; height: 20px; margin-top: 40px; 
+    font-size: 0.8em; }
 
 .hard-left { padding-left: 0; } .hard-right { padding-right: 0; }
 

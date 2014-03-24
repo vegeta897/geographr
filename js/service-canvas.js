@@ -182,7 +182,7 @@ angular.module('Geographr.canvas', [])
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
                 for(var i = 0; i < object.length; i++) {
                     switch(object[i].type) {
-                        case 'userCamp': context.fillStyle = 'rgba(93,84,68,0.8)';
+                        case 'userCamp': context.fillStyle = 'rgba(73,68,39,0.8)';
                             if(canvasType == 'full') {
                                 context.fillRect((x - offset[0]),(y - offset[1]),1,1); break;
                             }
@@ -285,7 +285,7 @@ angular.module('Geographr.canvas', [])
                         (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
                     if(pixels[key] == 2 && canvasType == 'full') { // If explored pixel
                         var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
-                        var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114);
+                        var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114)-15;
                         var greyed = {r:grey+(p[0]-grey)*0.3,g:grey+(p[1]-grey)*0.3, b:grey+(p[2]-grey)*0.3};
                         var fogDiff = {r:(46-greyed.r)*0.2,g:(51-greyed.g)*0.2, b:(56-greyed.b)*0.2};
                         context.fillStyle = 'rgb('+parseInt(greyed.r+fogDiff.r)+','
@@ -335,6 +335,40 @@ angular.module('Geographr.canvas', [])
                     context.clearRect(x * zoomPixSize-thickness, y * zoomPixSize+2*thickness, 
                         zoomPixSize+thickness*2, zoomPixSize-4*thickness); // Horizontal
                 }
+            },
+            drawPath: function(context,start,path,zoomPosition,zoomPixSize,moving) {
+                var startCoords = [parseInt(start.split(':')[0]),parseInt(start.split(':')[1])];
+                var lastCoord, thisCoord;
+                context.strokeStyle = context.fillStyle = moving ? 'rgb(0,255,50)' : 'rgb(255,255,255)';
+                context.lineWidth = zoomPixSize % 2 ? 0.5 : 1;
+                context.beginPath();
+                context.moveTo((startCoords[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
+                    (startCoords[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
+                for(var i = 0; i < path.length; i++) {
+                    lastCoord = thisCoord ? thisCoord : startCoords;
+                    thisCoord = [parseInt(path[i].split(':')[0]),parseInt(path[i].split(':')[1])];
+                    context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
+                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
+                }
+                context.stroke();
+                context.beginPath(); // Arrowhead
+                if(thisCoord[0] != lastCoord[0]) { // Left/Right arrow
+                    var offX = thisCoord[0] < lastCoord[0] ? zoomPixSize/3 : 0;
+                    context.moveTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/3+offX,
+                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2-zoomPixSize/4);
+                    context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/3+offX,
+                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2+zoomPixSize/4);
+                } else { // Up/Down arrow
+                    var offY = thisCoord[1] < lastCoord[1] ? zoomPixSize/3 : 0;
+                    context.moveTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2-zoomPixSize/4,
+                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/3+offY);
+                    context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2+zoomPixSize/4,
+                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/3+offY);
+                }
+                context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
+                    (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
+                context.closePath();
+                context.fill();
             },
             drawLabel: function(context,coords,text,zoomPixSize) {
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);

@@ -23,8 +23,8 @@
 <div id="mainContainer" class="container">
     <div class="canvas-container minimap"> <!-- Minimap canvases -->
         <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
-        <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
         <canvas id="fullFogCanvas" width="300" height="300"></canvas> <!-- Fog canvas -->
+        <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
         <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
         <canvas id="fullHighCanvas" width="300" height="300"> <!-- Highlight canvas -->
             Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
@@ -55,8 +55,8 @@
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
         <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
-        <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
         <canvas id="zoomFogCanvas" width="900" height="600"></canvas> <!-- Fog canvas -->
+        <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
         <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
         <div class="col-xs-1 text-right hard-right pull-right coords">
             {{ overPixel.x }} , {{ overPixel.y }}
@@ -86,10 +86,14 @@
                 <i class="glyphicon glyphicon-arrow-up"></i></button>
             <button ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
                 <i class="glyphicon glyphicon-arrow-left"></i></button>
+            <button ng-disabled="movePath.length == 0" ng-click="movePlayer('startStop')" 
+                    class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go'}}</button>
             <button ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
                 <i class="glyphicon glyphicon-arrow-right"></i></button>
             <button ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
                 <i class="glyphicon glyphicon-arrow-down"></i></button>
+            <button ng-disabled="movePath.length == 0" ng-click="movePlayer('clear')"
+                    class="btn btn-default btn-sm" id="moveClear">Clear</button>
         </div>
     </div>
 </div>

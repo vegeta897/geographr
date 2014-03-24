@@ -1,7 +1,7 @@
 /* Controllers */
 
 angular.module('Geographr.controllers', [])
-.controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorageService, colorUtility, canvasUtility, gameUtility) {
+.controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, gameUtility) {
     
         $scope.version = 0.11; $scope.versionName = 'Liquid Aim'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
@@ -17,12 +17,13 @@ angular.module('Geographr.controllers', [])
         $scope.brushSize = 0;
         $scope.eventLog = [];
         $scope.placingObject = {};
+        $scope.movePath = [];
         $scope.lockElevation = false; $scope.lockedElevation = 1; $scope.smoothTerrain = false;
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
-            localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, tutorialStep = 0,
-            nativeCamps = {}, visiblePixels = {};
+            localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, 
+            tutorialStep = 0, nativeCamps = {}, visiblePixels = {}, moveTimers = {};
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -78,13 +79,13 @@ angular.module('Geographr.controllers', [])
     
         var tutorial = function(action) {
             if(action == 'init') {
-                if(localStorageService.get('tutorialStep')) {
-                    tutorialStep = localStorageService.get('tutorialStep');
+                if(localStorage.get('tutorialStep')) {
+                    tutorialStep = localStorage.get('tutorialStep');
                 } else { tutorialStep = 0; }
             } else { tutorialStep++; }
             $timeout(function() {
                 $scope.helpText = gameUtility.tutorial(tutorialStep);
-                localStorageService.set('tutorialStep',tutorialStep);
+                localStorage.set('tutorialStep',tutorialStep);
             });
         };
         tutorial('init');
@@ -122,11 +123,11 @@ angular.module('Geographr.controllers', [])
         // Attempt to get these variables from localstorage
         var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate'];
         for(var i = 0; i < localStores.length; i++) {
-            if(localStorageService.get(localStores[i])) {
-                $scope[localStores[i]] = localStorageService.get(localStores[i]);
+            if(localStorage.get(localStores[i])) {
+                $scope[localStores[i]] = localStorage.get(localStores[i]);
             }
         }
-        if(localStorageService.get('visiblePixels')) { localStorageService.remove('visiblePixels'); } // Delete me
+        if(localStorage.get('visiblePixels')) { localStorage.remove('visiblePixels'); } // Delete me
     
         // Set up our canvases
         var fullTerrainCanvas = document.getElementById('fullTerrainCanvas');
@@ -206,7 +207,7 @@ angular.module('Geographr.controllers', [])
         $scope.changeZoom = function(val) {
             $scope.zoomLevel = parseInt(val);
             var oldZoom = zoomSize;
-            localStorageService.set('zoomLevel',$scope.zoomLevel);
+            localStorage.set('zoomLevel',$scope.zoomLevel);
             zoomPixSize = zoomLevels[$scope.zoomLevel];
             zoomSize = [900/zoomPixSize,600/zoomPixSize];
             var offset = [oldZoom[0]-zoomSize[0],oldZoom[1]-zoomSize[1]];
@@ -224,7 +225,7 @@ angular.module('Geographr.controllers', [])
             if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
             if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
             $scope.zoomPosition = lastZoomPosition = [x,y];
-            localStorageService.set('zoomPosition',$scope.zoomPosition);
+            localStorage.set('zoomPosition',$scope.zoomPosition);
             canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
             canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
                 lastZoomPosition,zoomSize);
@@ -259,15 +260,30 @@ angular.module('Geographr.controllers', [])
             });
         };
         $scope.movePlayer = function(dir) {
-            var destination = [parseInt($scope.user.location.split(':')[0]),
-                parseInt($scope.user.location.split(':')[1])];
-            switch(dir) {
+            if(dir == 'startStop') { // If starting or stopping movement
+                if($scope.moving) {
+                    fireServer.push({ user: userID, action: 'stop' });
+                    $scope.moving = false; dimPixel(); return;
+                } 
+                $scope.moving = true; dimPixel();
+                fireServer.push({ user: userID, action: 'move', path: $scope.movePath }); return;
+            }
+            if(dir == 'clear') { $timeout(function(){ $scope.movePath = []; dimPixel(); }); return; }
+            // If new path, use player location, otherwise use last path node
+            var destination = $scope.movePath.length == 0 ? [parseInt($scope.user.location.split(':')[0]),
+                parseInt($scope.user.location.split(':')[1])] : 
+                [parseInt($scope.movePath[$scope.movePath.length-1].split(':')[0]),
+                    parseInt($scope.movePath[$scope.movePath.length-1].split(':')[1])];
+            switch(dir) { // Apply move direction
                 case 0: destination[1] = (destination[1] - 1); break;
                 case 1: destination[0] = (destination[0] - 1); break;
                 case 2: destination[0] = (destination[0] + 1); break;
                 case 3: destination[1] = (destination[1] + 1); break;
             }
-            fireServer.push({ user: userID, action: 'move,' + destination.join(':') });
+            $timeout(function(){
+                $scope.movePath.push(destination.join(':'));
+                dimPixel();
+            });
         };
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -377,7 +393,7 @@ angular.module('Geographr.controllers', [])
                 }
             }
             for(var objKey in localObjects) {
-                if(localObjects.hasOwnProperty(objKey)) {
+                if(localObjects.hasOwnProperty(objKey) && visiblePixels.hasOwnProperty(objKey)) {
                     coords = objKey.split(":");
                     drawObject(coords,localObjects[objKey]);
                 }
@@ -395,7 +411,7 @@ angular.module('Geographr.controllers', [])
             canvasUtility.fillMainArea(fullHighContext,'erase',lastZoomPosition,zoomSize);
             $timeout(function(){});
             $scope.zoomPosition = [x,y];
-            if(viewCenter){ localStorageService.set('zoomPosition',$scope.zoomPosition); }
+            if(viewCenter){ localStorage.set('zoomPosition',$scope.zoomPosition); }
             lastZoomPosition = [x,y];
             drawZoomCanvas();
             if(viewCenter){ canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
@@ -580,16 +596,20 @@ angular.module('Geographr.controllers', [])
             event.preventDefault(); return false;
         };
         var scrollTimer; // Timer to prevent scroll event firing twice in a row
-
-        // Draw selection box around selected cell
-        var drawSelect = function() {
-            if(!$scope.selectedGrid || !$scope.selectedGrid[0].grid) { return; }
-            var coords = $scope.selectedGrid[0].grid.split(':');
-            coords = [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]];
-            canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'object');
-        };
+        
         // Dim the pixel after leaving it
-        var dimPixel = function() { canvasUtility.fillCanvas(zoomHighContext,'erase'); drawSelect(); };
+        var dimPixel = function() {
+            canvasUtility.fillCanvas(zoomHighContext,'erase');
+            if($scope.movePath.length > 0) { // Draw movement path
+                canvasUtility.drawPath(zoomHighContext,$scope.user.location,
+                    $scope.movePath,$scope.zoomPosition,zoomPixSize,$scope.moving);
+            }
+            if($scope.selectedGrid && $scope.selectedGrid[0].grid) { // Draw selection box around selected cell
+                var coords = $scope.selectedGrid[0].grid.split(':');
+                coords = [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]];
+                canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'object');
+            }
+        };
         // When the mouse leaves the zoomed view
         var zoomOnMouseOut = function() {
             dimPixel();
@@ -694,6 +714,8 @@ angular.module('Geographr.controllers', [])
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
+            $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
+            if($scope.movePath.length == 0) { $scope.moving = false; }
             $scope.user.location = snap.val();
             console.log('moving player to',snap.val());
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
@@ -707,7 +729,7 @@ angular.module('Geographr.controllers', [])
                 $scope.zoomPosition = [x - 22 + offX, y - 14 + offY];
                 zoomSize = [45,30]; lastZoomPosition = $scope.zoomPosition;
                 viewCenter = [$scope.zoomPosition[0] + zoomSize[0]/2, $scope.zoomPosition[1] + zoomSize[1]/2];
-                localStorageService.set('zoomPosition',$scope.zoomPosition);
+                localStorage.set('zoomPosition',$scope.zoomPosition);
                 canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
                 canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
                     lastZoomPosition,zoomSize);
@@ -735,7 +757,22 @@ angular.module('Geographr.controllers', [])
                     fireRef.child('users/'+snap.val().user).update({
                         camp: startGrid, location: startGrid
                     }); break;
-                case 'move': fireRef.child('users/'+snap.val().user).update({ location: action[1] }); break;
+                case 'move':
+                    var moveCount = 0, totalMoves = snap.val().path.length;
+                    var move = function() {
+                        fireRef.child('users/'+snap.val().user).update({ location: snap.val().path[moveCount] });
+                        moveCount++;
+                        if(moveCount >= totalMoves) {
+                            clearTimeout(moveTimers[snap.val().user]);
+                        } else {
+                            moveTimers[snap.val().user] = setTimeout(move, 5000);
+                        }
+                    };
+                    moveTimers[snap.val().user] = setTimeout(move, 5000);
+                    break;
+                case 'stop':
+                    clearTimeout(moveTimers[snap.val().user]);
+                    break;
                 default: break;
             }
             fireServer.child(snap.name()).set(null); // Delete the action
@@ -756,8 +793,8 @@ angular.module('Geographr.controllers', [])
                 localTerrain = results; // Download the whole terrain object at once into localTerrain
                 canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                 $scope.lastTerrainUpdate = new Date().getTime();
-                localStorageService.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
-                localStorageService.set('terrain',localTerrain);
+                localStorage.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
+                localStorage.set('terrain',localTerrain);
                 prepareTerrain();
             });
         };
@@ -768,7 +805,7 @@ angular.module('Geographr.controllers', [])
                     var needUpdate = true;
                     if(snap.val().time <= $scope.lastTerrainUpdate) { needUpdate = false; }
                     if(needUpdate) { downloadTerrain(); } else {
-                        localTerrain = localStorageService.get('terrain');
+                        localTerrain = localStorage.get('terrain');
                         // Turn terrain and labels 180 degrees
 //                        var terrain180 = gameUtility.terrain180(localTerrain);
 //                        fireRef.child('terrain').set(terrain180);
@@ -785,7 +822,8 @@ angular.module('Geographr.controllers', [])
         
        var prepareTerrain = function() {
            $scope.terrainReady = true;
-           //nativeCamps = gameUtility.genNativeCamps(localTerrain); TODO: Re-enable this when the time comes
+           /* TODO: Re-enable this when the time comes. Perhaps store camp locations on firebase, but generate                  everything else about them locally and deterministically */
+           //nativeCamps = gameUtility.genNativeCamps(localTerrain); 
            if(userID == 2) { // If server
                console.log('server ready!');
                fireRef.child('clients/logged').on('child_added', addClient);
@@ -793,8 +831,8 @@ angular.module('Geographr.controllers', [])
                fireRef.child('clients/logged').on('child_removed', removeClient);
                fireServer.on('child_added', onClientAction);
                fireRef.child('status').set('online');
-               var loginEmail = localStorageService.get('serverLoginEmail');
-               var loginPassword = localStorageService.get('serverLoginPassword');
+               var loginEmail = localStorage.get('serverLoginEmail');
+               var loginPassword = localStorage.get('serverLoginPassword');
                var stayAwake = function() {
                    fireRef.child('status').set('online');
                    fireRef.child('serverTest').set('test');
