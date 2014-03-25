@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.11; $scope.versionName = 'Liquid Aim'; $scope.needUpdate = false;
+        $scope.version = 0.12; $scope.versionName = 'Premier Giant'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -280,10 +280,10 @@ angular.module('Geographr.controllers', [])
                 case 2: destination[0] = (destination[0] + 1); break;
                 case 3: destination[1] = (destination[1] + 1); break;
             }
-            $timeout(function(){
-                $scope.movePath.push(destination.join(':'));
-                dimPixel();
-            });
+            var destGrid = destination.join(':');
+            // Don't allow pathing into known water
+            if(visiblePixels.hasOwnProperty(destGrid) && !localTerrain.hasOwnProperty(destGrid)) { return; }
+            $timeout(function(){ $scope.movePath.push(destGrid); dimPixel(); });
         };
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -392,12 +392,14 @@ angular.module('Geographr.controllers', [])
                     drawLabel(coords,localLabels[labKey]);
                 }
             }
+            canvasUtility.fillCanvas(fullObjectContext,'erase');
             for(var objKey in localObjects) {
                 if(localObjects.hasOwnProperty(objKey) && visiblePixels.hasOwnProperty(objKey)) {
                     coords = objKey.split(":");
                     drawObject(coords,localObjects[objKey]);
                 }
             }
+            canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
             if(!$scope.user || userID == 2) { return; }
             canvasUtility.drawFog(zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize);
@@ -714,15 +716,22 @@ angular.module('Geographr.controllers', [])
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
-            $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
-            if($scope.movePath.length == 0) { $scope.moving = false; }
             $scope.user.location = snap.val();
             console.log('moving player to',snap.val());
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
+            $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
+            var firstWater;
+            for(var i = 0; i < $scope.movePath.length; i++) {
+                if(visiblePixels.hasOwnProperty($scope.movePath[i]) &&
+                    !localTerrain.hasOwnProperty($scope.movePath[i])) { // If water
+                    firstWater = $scope.movePath[i]; break; // End path just before the water
+                }
+            } // Get rid of rest of path from water
+            if(firstWater) { $scope.movePath.splice($scope.movePath.indexOf(firstWater),999); } 
+            if($scope.movePath.length == 0) { $scope.moving = false; }
             fireUser.child('visiblePixels').set(visiblePixels);
             $timeout(function(){
                 canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0);
-                canvasUtility.drawPlayer(fullObjectContext,snap.val().split(':'),0,0);
                 var x = snap.val().split(':')[0], y = snap.val().split(':')[1];
                 var offX = x > 277 ? 277 - x : x < 22 ? 22 - x : 0; // Keep zoom view in-bounds
                 var offY = y > 284 ? 284 - y : y < 14 ? 14 - y : 0;
@@ -759,6 +768,9 @@ angular.module('Geographr.controllers', [])
                     }); break;
                 case 'move':
                     var moveCount = 0, totalMoves = snap.val().path.length;
+                    for(var i = 0; i < totalMoves; i++) { // End path just before water
+                        if(!localTerrain.hasOwnProperty(snap.val().path[i])) { totalMoves = i; }
+                    }
                     var move = function() {
                         fireRef.child('users/'+snap.val().user).update({ location: snap.val().path[moveCount] });
                         moveCount++;
