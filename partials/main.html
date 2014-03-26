@@ -158,6 +158,13 @@
             </div>
         </div>
         <div id="inventory" class="col-xs-3">
+            <h2>Location <small>({{ user.location | grid }})</small></h2>
+            <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
+                <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
+            <p ng-hide="onPixel.objects" class="text-muted">Nothing here.</p>
+            <div class="well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects">
+                {{ object | itemDisplay }}
+            </div>
             <h2>Inventory</h2>
             <ul class="list-unstyled">
                 <li class="text-muted" ng-hide="inventory">No items</li>

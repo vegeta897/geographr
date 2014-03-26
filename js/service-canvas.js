@@ -199,9 +199,12 @@ angular.module('Geographr.canvas', [])
                             context.closePath();
                             context.fill();
                             break;
-                        case 'camp': context.fillStyle = 'rgb(100,100,100)';
-                            context.fillRect((x - offset[0])*canvasPixSize,
-                                (y - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                        case 'camp': context.fillStyle = 'rgb(140,140,140)';
+                            if(canvasType == 'full') { context.fillRect((x - offset[0])*canvasPixSize,
+                                    (y - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize); }
+                            context.fillRect((x - offset[0])*canvasPixSize+zoomPixSize/4,
+                                (y - offset[1])*canvasPixSize+zoomPixSize/4, 
+                                canvasPixSize-zoomPixSize/2,canvasPixSize-zoomPixSize/2);
                             break;
                     }
                 }

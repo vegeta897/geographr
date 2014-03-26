@@ -135,7 +135,7 @@ angular.module('Geographr.game', [])
                     campChance -= nearStats.avgElevation / 80; // Lower chance the higher elevation
                     Math.seedrandom(tKey);
                     if(Math.random() < campChance) {
-                        camps[tKey] = { name: Chance(x*1000 + y).word() };
+                        camps[tKey] = 1;
                     }
                 }
             }

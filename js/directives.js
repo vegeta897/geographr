@@ -75,9 +75,11 @@ angular.module('Geographr.directives', [])
         var type = input.type;
         if(input.type == 'userCamp') { type = 'camp'; }
         type = type.substring(0,1).toUpperCase()+type.substring(1); // Capitalize type
-        var owner = '';
+        var owner = '', name = '';
         if(input.hasOwnProperty('ownerNick')) { owner = input.ownerNick + '\'s '; }
-        return owner+type;
+        if(input.hasOwnProperty('name')) { name = ' ' + 
+            input.name.substring(0,1).toUpperCase()+input.name.substring(1); }
+        return owner+type+name;
     }
 })
 .filter('grid', function() {

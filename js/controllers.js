@@ -5,20 +5,17 @@ angular.module('Geographr.controllers', [])
     
         $scope.version = 0.12; $scope.versionName = 'Premier Giant'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
-        $scope.zoomPosition = [120,120]; // Tracking zoom window position
+        $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
-        $scope.overPixel.type = $scope.overPixel.elevation = '-';
+        $scope.overPixel.type = $scope.overPixel.elevation = '-'; $scope.onPixel = {};
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.localUsers = {};
-        $scope.zoomLevel = 4;
-        $scope.showLabels = true;
-        $scope.showObjects = true;
-        $scope.editTerrain = false;
-        $scope.brushSize = 0;
-        $scope.eventLog = [];
         $scope.placingObject = {};
+        $scope.showLabels = true; $scope.showObjects = true;
+        $scope.editTerrain = false; $scope.smoothTerrain = false;
+        $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
+        $scope.eventLog = [];
         $scope.movePath = [];
-        $scope.lockElevation = false; $scope.lockedElevation = 1; $scope.smoothTerrain = false;
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
@@ -115,7 +112,6 @@ angular.module('Geographr.controllers', [])
                         drawObject(snap.val().split(':'),localObjects[snap.val()]);
                         $scope.user.camp = snap.val();
                     });
-                    fireUser.child('location').on('value', movePlayer);
                 });
             });
         };
@@ -374,12 +370,12 @@ angular.module('Geographr.controllers', [])
                 $scope.camp.grid = $scope.overPixel.x + ':' + $scope.overPixel.y;
                 fireUser.child('camp').update($scope.camp);
             }
-            if(object.type == 'energy' && tutorialStep == 6) { tutorial('next'); }
             $scope.placingObject = {};
             jQuery(zoomHighCanvas).unbind('mousedown').mousedown(zoomOnMouseDown);
         };
 
         var drawZoomCanvas = function() {
+            if(!$scope.terrainReady) { return; }
             zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
                 $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
             
@@ -717,6 +713,10 @@ angular.module('Geographr.controllers', [])
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
             $scope.user.location = snap.val();
+            $scope.onPixel = { 
+                terrain: localTerrain[snap.val()] ? 'Land' : 'Water', objects: localObjects[snap.val()], 
+                elevation: (localTerrain[snap.val()] || 0)
+            };
             console.log('moving player to',snap.val());
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
             $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
@@ -743,7 +743,7 @@ angular.module('Geographr.controllers', [])
                 canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
                     lastZoomPosition,zoomSize);
                 $scope.changeZoom(4);
-                jQuery('.zoom-slider').slider('setValue',$scope.zoomLevel)
+                jQuery('.zoom-slider').slider('setValue',$scope.zoomLevel);
             });
         };
             
@@ -762,25 +762,29 @@ angular.module('Geographr.controllers', [])
             var action = snap.val().action.split(',');
             switch(action[0]) {
                 case 'createCamp':
-                    var startGrid = gameUtility.createUserCamp(localTerrain,nativeCamps);
+                    var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                     fireRef.child('users/'+snap.val().user).update({
                         camp: startGrid, location: startGrid
                     }); break;
                 case 'move':
+                    var baseMoveSpeed = 5000; // 5 seconds
                     var moveCount = 0, totalMoves = snap.val().path.length;
                     for(var i = 0; i < totalMoves; i++) { // End path just before water
-                        if(!localTerrain.hasOwnProperty(snap.val().path[i])) { totalMoves = i; }
+                        if(!localTerrain.hasOwnProperty(snap.val().path[i])) { totalMoves = i; break; }
                     }
+                    if(totalMoves == 0) { break; }
                     var move = function() {
                         fireRef.child('users/'+snap.val().user).update({ location: snap.val().path[moveCount] });
                         moveCount++;
                         if(moveCount >= totalMoves) {
                             clearTimeout(moveTimers[snap.val().user]);
                         } else {
-                            moveTimers[snap.val().user] = setTimeout(move, 5000);
+                            moveTimers[snap.val().user] = setTimeout(move, 
+                                baseMoveSpeed * (1 + localTerrain[snap.val().path[moveCount]] / 60));
                         }
                     };
-                    moveTimers[snap.val().user] = setTimeout(move, 5000);
+                    moveTimers[snap.val().user] = setTimeout(move, 
+                        baseMoveSpeed * (1 + localTerrain[snap.val().path[moveCount]] / 60));
                     break;
                 case 'stop':
                     clearTimeout(moveTimers[snap.val().user]);
@@ -834,8 +838,23 @@ angular.module('Geographr.controllers', [])
         
        var prepareTerrain = function() {
            $scope.terrainReady = true;
-           /* TODO: Re-enable this when the time comes. Perhaps store camp locations on firebase, but generate                  everything else about them locally and deterministically */
-           //nativeCamps = gameUtility.genNativeCamps(localTerrain); 
+           fireRef.child('camps').once('value',function(snap) {
+               if(!snap.val()) { // Generate camps if none on firebase
+                   var nativeLocations = gameUtility.genNativeCamps(localTerrain);
+                   fireRef.child('camps').set(nativeLocations); return;
+               } 
+               var camps = snap.val();
+               for(var key in camps) { // Generate camp details from locations
+                   if(camps.hasOwnProperty(key)) {
+                       Math.seedrandom(key);
+                       var x = key.split(':')[0], y = key.split(':')[1];
+                       var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: key };
+                       if(localObjects.hasOwnProperty(key)) { localObjects[key].push(camp); } 
+                       else { localObjects[key] = [camp]; }
+                   }
+               }
+               fireUser.child('location').on('value', movePlayer);
+           });
            if(userID == 2) { // If server
                console.log('server ready!');
                fireRef.child('clients/logged').on('child_added', addClient);
@@ -868,7 +887,16 @@ angular.module('Geographr.controllers', [])
         fireRef.child('meta/pings').on('child_added', drawPing);
         fireRef.child('meta/pings').on('child_removed', hidePing);
         fireRef.child('status').on('value', function(snap) { // When the server status changes
-            $timeout(function() { $scope.serverStatus = snap.val(); });
+            $timeout(function() { 
+                $scope.serverStatus = snap.val();
+                if(snap.val() == 'offline') {
+                    if($scope.moving) {
+                        $scope.eventLog.push({ time: new Date().getTime(),
+                            user: 'Server offline, movement cancelled.' })
+                    }
+                    $timeout(function() { $scope.moving = false; });
+                }
+            });
         });
     
         var onKeyDown = function(e) {
