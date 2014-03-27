@@ -187,18 +187,7 @@ angular.module('Geographr.controllers', [])
         };
         
         // Redraw zoom canvas
-        $scope.refresh = function(full) {
-            drawZoomCanvas();
-            if(full) { // If also refreshing the full view
-                canvasUtility.fillCanvas(fullObjectContext,'erase');
-                for(var objKey in localObjects) { // Draw objects
-                    if(localObjects.hasOwnProperty(objKey)) {
-                        var coords = objKey.split(":");
-                        drawObject(coords,localObjects[objKey]);
-                    }
-                }
-            }
-        };
+        $scope.refresh = function() { drawZoomCanvas(); };
 
         $scope.changeZoom = function(val) {
             $scope.zoomLevel = parseInt(val);
@@ -383,7 +372,7 @@ angular.module('Geographr.controllers', [])
             
             canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var labKey in localLabels) {
-                if(localLabels.hasOwnProperty(labKey)) {
+                if(localLabels.hasOwnProperty(labKey) && visiblePixels.hasOwnProperty(labKey)) {
                     coords = labKey.split(":");
                     drawLabel(coords,localLabels[labKey]);
                 }
@@ -714,7 +703,8 @@ angular.module('Geographr.controllers', [])
             if(!snap.val()) { return; }
             $scope.user.location = snap.val();
             $scope.onPixel = { 
-                terrain: localTerrain[snap.val()] ? 'Land' : 'Water', objects: localObjects[snap.val()], 
+                terrain: localTerrain[snap.val()] ? 'Land' : 'Water', 
+                objects: gameUtility.expandObjects(localObjects[snap.val()],snap.val(),localTerrain), 
                 elevation: (localTerrain[snap.val()] || 0)
             };
             console.log('moving player to',snap.val());

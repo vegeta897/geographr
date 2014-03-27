@@ -72,7 +72,7 @@
         </div>
         <div class="col-xs-2 text-right pull-right hard-right coords">
             <div class="checkbox-inline text-muted"><label>
-                <input ng-change="refresh(true)" ng-model="showObjects" type="checkbox"> Show Objects
+                <input ng-change="refresh()" ng-model="showObjects" type="checkbox"> Show Objects
             </label></div>
         </div>
         <div class="col-xs-2 hard-left pull-left coords">
@@ -162,8 +162,15 @@
             <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
                 <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
             <p ng-hide="onPixel.objects" class="text-muted">Nothing here.</p>
-            <div class="well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects">
+            <div class="well object-well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects">
                 {{ object | itemDisplay }}
+                <button class="btn btn-default btn-sm pull-right" ng-click="showEco = !showEco">Economy</button>
+                <table class="unstyled" ng-show="showEco">
+                    <tr><th>Resource</th><th>Supply</th><th>Demand</th></tr>
+                    <tr ng-repeat="(key,val) in object.economy">
+                        <td>{{ key | capitalize }}</td><td>{{ val.supply }}</td><td>{{ val.demand }}</td>
+                    </tr>
+                </table>
             </div>
             <h2>Inventory</h2>
             <ul class="list-unstyled">

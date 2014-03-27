@@ -2,6 +2,9 @@
 
 angular.module('Geographr.game', [])
 .factory('gameUtility', function(colorUtility) {
+    var resourceList = ['lumber', 'fish','fruit','vegetables', 'meat', 'salt', 'coal', 'iron', 
+        'wool', 'tools', 'weapons', 'spices'];
+    var valuePerWeight = [1,7,6,5,7,3,2,4,6,5,6,10]; // Base value per weight (carry capacity)
     var randomIntRange = function(min,max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
@@ -84,6 +87,21 @@ angular.module('Geographr.game', [])
         }
         return false;
     };
+    var genCampEconomy = function(grid,terrain) {
+        Math.seedrandom(grid);
+        var economy = {};
+        for(var i = 0; i < resourceList.length; i++) {
+            var res = resourceList[i];
+            // TODO: Supply and demands influenced by location & terrain 
+            // Create module functions with coefficient parameters to handle this
+            economy[res] = {};
+            economy[res].supply = parseInt(Math.random() * 100);
+            economy[res].demand = parseInt(100 - economy[res].supply + Math.random() * 30 - 20);
+            economy[res].demand = economy[res].demand > 100 ? 100 : // Keep in 0-100 range
+                economy[res].demand < 0 ? 0 : economy[res].demand;
+        }
+        return economy;
+    };
     return {
         getVisibility: function(terrain,visible,coords) {
             var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);
@@ -140,6 +158,19 @@ angular.module('Geographr.game', [])
                 }
             }
             return camps;
+        },
+        expandObjects: function(objects,grid,terrain) { // Generate traits and properties of objects
+            if(!objects || objects.length < 1) { return undefined; }
+            var expanded = [];
+            for(var i = 0; i < objects.length; i++) {
+                Math.seedrandom(grid); // Deterministic based on grid
+                var newObject = objects[i];
+                switch(objects[i].type) {
+                    case 'camp': newObject.economy = genCampEconomy(grid,terrain); break;
+                }
+                expanded.push(newObject);
+            }
+            return expanded;
         },
         tutorial: function(step) {
             var text = '';
