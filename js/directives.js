@@ -40,6 +40,22 @@ angular.module('Geographr.directives', [])
         }
     };
 })
+.directive('resource', function() {
+    return {
+        restrict: 'A',
+        scope: {
+            'resource': '&info' // Don't need this?
+        },
+        link: function(scope, element) {
+            var actions = element.parent().parent().next();
+            actions.hide();
+            element.on('click',function(e) {
+                actions.toggle(); // Show actions panel
+                e.preventDefault();
+            })
+        }
+    };
+})
 .directive('zoomSlider', function() {
     return {
         restrict: 'C',

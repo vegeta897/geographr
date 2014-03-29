@@ -52,7 +52,7 @@ angular.module('Geographr.game', [])
             for(var ii = dist*-1; ii <= dist; ii++) {
                 var total = Math.abs(i)+Math.abs(ii);
                 if(total <= dist && total > 0) {
-                    if(camps.hasOwnProperty((loc[0]+i)+':'+(loc[1]+ii))) { return true; }
+                    if(camps.indexOf((loc[0]+i)+':'+(loc[1]+ii)) >= 0) { return true; }
                 }
             }
         }
@@ -99,6 +99,7 @@ angular.module('Geographr.game', [])
             economy[res].demand = parseInt(100 - economy[res].supply + Math.random() * 30 - 20);
             economy[res].demand = economy[res].demand > 100 ? 100 : // Keep in 0-100 range
                 economy[res].demand < 0 ? 0 : economy[res].demand;
+            economy[res].valPerWeight = valuePerWeight[i];
         }
         return economy;
     };
@@ -129,7 +130,7 @@ angular.module('Geographr.game', [])
             return false;
         },
         genNativeCamps: function(terrain) {
-            var camps = {};
+            var camps = [];
             for(var tKey in terrain) {
                 if(terrain.hasOwnProperty(tKey)) {
                     var x = parseInt(tKey.split(':')[0]), y = parseInt(tKey.split(':')[1]);
@@ -153,11 +154,17 @@ angular.module('Geographr.game', [])
                     campChance -= nearStats.avgElevation / 80; // Lower chance the higher elevation
                     Math.seedrandom(tKey);
                     if(Math.random() < campChance) {
-                        camps[tKey] = 1;
+                        camps.push = tKey;
                     }
                 }
             }
             return camps;
+        },
+        expandCamp: function(grid,terrain) {
+            Math.seedrandom(grid); // Deterministic based on grid
+            var x = grid.split(':')[0], y = grid.split(':')[1];
+            return { economy: genCampEconomy(grid,terrain), type: 'camp', name: Chance(x*1000 + y).word(),
+                grid: grid }
         },
         expandObjects: function(objects,grid,terrain) { // Generate traits and properties of objects
             if(!objects || objects.length < 1) { return undefined; }
@@ -166,7 +173,7 @@ angular.module('Geographr.game', [])
                 Math.seedrandom(grid); // Deterministic based on grid
                 var newObject = objects[i];
                 switch(objects[i].type) {
-                    case 'camp': newObject.economy = genCampEconomy(grid,terrain); break;
+                    case 'animal': newObject.name = 'fox'; break;
                 }
                 expanded.push(newObject);
             }
@@ -192,6 +199,7 @@ angular.module('Geographr.game', [])
                 output[((x-299)*-1) + ':' + ((y-299)*-1)] = terrain[key];
             }}
             return output;
-        }
+        },
+        resourceList: resourceList, valuePerWeight: valuePerWeight
     }
 });

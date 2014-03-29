@@ -157,54 +157,79 @@
                 </table>
             </div>
         </div>
-        <div id="inventory" class="col-xs-3">
+        <div id="location" class="col-xs-3">
             <h2>Location <small>({{ user.location | grid }})</small></h2>
             <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
                 <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
-            <p ng-hide="onPixel.objects" class="text-muted">Nothing here.</p>
-            <div class="well object-well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects">
-                {{ object | itemDisplay }}
+            <p ng-hide="onPixel.objects || onPixel.camp" class="text-muted">Nothing here.</p>
+            <div class="well object-well" ng-show="onPixel.camp">
+                {{ onPixel.camp | itemDisplay }}
                 <button class="btn btn-default btn-sm pull-right" ng-click="showEco = !showEco">Economy</button>
                 <table class="unstyled" ng-show="showEco">
                     <tr><th>Resource</th><th>Supply</th><th>Demand</th></tr>
-                    <tr ng-repeat="(key,val) in object.economy">
-                        <td>{{ key | capitalize }}</td><td>{{ val.supply }}</td><td>{{ val.demand }}</td>
+                    <tr ng-repeat-start="(key,val) in onPixel.camp.economy">
+                        <td><a href="#" data-resource data-info="val">{{ key | capitalize }}</a></td>
+                        <td>{{ val.supply }}</td><td>{{ val.demand }}</td>
                     </tr>
+                    <tr ng-repeat-end><td colspan="3">
+                        <div class="well">
+                            <div class="row">
+                                <div class="input-group input-group-sm col-xs-6">
+                                    <input class="form-control input-sm" type="text" ng-model="buyAmount"
+                                        ng-init="buyAmount = 1" id="inputBuyAmount">
+                                    <span class="input-group-btn"><button class="btn btn-default btn-sm"
+                                        ng-click="buyResource(key,buyAmount)">Buy</button></span>
+                                </div>
+                                <div class=" col-xs-6">
+                                    <span class="text-muted">Cost:</span> {{ buyAmount * val.valPerWeight }}
+                                </div>
+                            </div>
+                        </div>
+                    </td></tr>
                 </table>
             </div>
+            <div class="well object-well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects && object.type != 'camp'">
+                {{ object | itemDisplay }}
+            </div>
+        </div>
+        <div id="inventory" class="col-xs-3">
             <h2>Inventory</h2>
+            <p><span class="text-muted">Gold:</span>&emsp;{{ user.money }}</p>
             <ul class="list-unstyled">
                 <li class="text-muted" ng-hide="inventory">No items</li>
                 <li ng-repeat="item in inventory">
-                    <button type="button" ng-disabled="item.adding" ng-click="addObject(item)"
+                    <!-- <button type="button" ng-disabled="item.adding" ng-click="addObject(item)"
                             class="btn btn-xs btn-default"><span class="glyphicon glyphicon-plus"></span>
                         <span ng-init="style={background: '#'+item.color.hex}" ng-style="style" class="item-color"></span>
                         {{ item.type | itemDisplay }}
-                    </button>
+                    </button> -->
+                    <div class="well well-sm" ng-show="item.type == 'resource'">
+                        <strong>{{ item.amount }}</strong>&emsp;<span class="text-muted">pounds of</span> 
+                        {{ item.name | capitalize }}
+                    </div>
                 </li>
             </ul>
         </div>
-        <div id="objectInfoSpacer" ng-hide="selectedObject" class="col-xs-3"></div>
-        <div id="objectInfo" ng-show="selectedObject" class="col-xs-3">
-            <h2>Object Info<!--<small>{{ selectedGrid.ownerNick }}</small>--></h2>
-            <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
-                {{ selectedObject | itemDisplay }}&emsp;
-                <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
-            </p>
-            <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
-                <h3>Contents</h3>
-                <ul class="list-unstyled">
-                    <li ng-repeat="item in selectedObject.contents">
-                        <button type="button" ng-click="harvestItem($index,item)" class="btn btn-xs btn-default">
-                            <span class="glyphicon glyphicon-arrow-left"></span>
-                            {{ item | itemDisplay }}
-                        </button>
-
-                    </li>
-                </ul>
-            </div>
-        </div>
         <div class="col-xs-3">
+            <div id="objectInfo" ng-show="selectedObject">
+                <h2>Selected Object<!--<small>{{ selectedGrid.ownerNick }}</small>--></h2>
+                <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
+                    {{ selectedObject | itemDisplay }}&emsp;
+                    <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
+                </p>
+                <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
+                    <h3>Contents</h3>
+                    <ul class="list-unstyled">
+                        <li ng-repeat="item in selectedObject.contents">
+                            <button type="button" ng-click="harvestItem($index,item)" class="btn btn-xs btn-default">
+                                <span class="glyphicon glyphicon-arrow-left"></span>
+                                {{ item | itemDisplay }}
+                            </button>
+
+                        </li>
+                    </ul>
+                </div>
+            </div>
             <h2>Event Log</h2>
             <em ng-hide="eventLog.length > 0" class="text-muted">Nothing&nbsp;&nbsp;yet</em>
             <ul id="log" class="list-unstyled">

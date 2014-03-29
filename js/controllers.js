@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.12; $scope.versionName = 'Premier Giant'; $scope.needUpdate = false;
+        $scope.version = 0.13; $scope.versionName = 'Intimate Prosperity'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -20,7 +20,7 @@ angular.module('Geographr.controllers', [])
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
             localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, 
-            tutorialStep = 0, nativeCamps = {}, visiblePixels = {}, moveTimers = {};
+            tutorialStep = 0, visiblePixels = {}, moveTimers = {}, campList = [];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -44,7 +44,7 @@ angular.module('Geographr.controllers', [])
                                             userID = createdUser.id;
                                             $scope.user = {id: createdUser.id, email: createdUser.email, score: 0,
                                                 nick: gameUtility.capitalize(createdUser.email.substr(0,
-                                                    createdUser.email.indexOf('@'))), new: true};
+                                                    createdUser.email.indexOf('@'))), new: true };
                                             fireRef.auth(createdUser.token, function() {
                                                 fireUser = fireRef.child('users/'+userID);
                                                 fireUser.set($scope.user,
@@ -291,6 +291,18 @@ angular.module('Geographr.controllers', [])
                 $scope.lastTerrainUpdate = new Date().getTime();
                 fireRef.child('lastTerrainUpdate').set({user: userID, time:$scope.lastTerrainUpdate});
             });
+        };
+        
+        $scope.buyResource = function(resource,amount) {
+            if(amount < 1 || amount > $scope.onPixel.camp.economy[resource].supply) { return; }
+            var valPerWeight = $scope.onPixel.camp.economy[resource].valPerWeight;
+            console.log('buying',amount,'at',valPerWeight,'gold per pound');
+            var newDelta = $scope.onPixel.camp.deltas[resource] - amount;
+            newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
+            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
+            $scope.user.money = parseInt($scope.user.money - amount * valPerWeight); // Deduct gold
+            fireUser.child('money').set($scope.user.money);
+            fireInventory.push({ type: 'resource', name: resource, amount: amount })
         };
 
         var updateInventory = function(snapshot) {
@@ -701,12 +713,34 @@ angular.module('Geographr.controllers', [])
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
+            if($scope.user.location) { 
+                fireRef.child('camps/' + $scope.user.location).off(); } // Stop listening to last grid
             $scope.user.location = snap.val();
             $scope.onPixel = { 
                 terrain: localTerrain[snap.val()] ? 'Land' : 'Water', 
-                objects: gameUtility.expandObjects(localObjects[snap.val()],snap.val(),localTerrain), 
-                elevation: (localTerrain[snap.val()] || 0)
+                objects: localObjects[snap.val()], elevation: (localTerrain[snap.val()] || 0)
             };
+            var onObjects = localObjects[snap.val()] ? localObjects[snap.val()] : [];
+            if(campList.indexOf(snap.val()) >= 0) { // If there is a camp here
+                fireRef.child('camps/' + snap.val()).on('value',function(campSnap) {
+                    //if(!campSnap.val()) { return; }
+                    var resourceList = gameUtility.resourceList;
+                    var campData = gameUtility.expandCamp(snap.val(),localTerrain);
+                    campData.deltas = {};
+                    for(var j = 0; j < resourceList.length; j++) {
+                        campData.deltas[resourceList[j]] = 0; // Default 0 delta
+                        if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
+                            && campSnap.val().deltas.hasOwnProperty(resourceList[j])) {
+                            // Apply delta against supply
+                            campData.economy[resourceList[j]].supply += campSnap.val().deltas[resourceList[j]];
+                            campData.deltas[resourceList[j]] = campSnap.val().deltas[resourceList[j]];
+                        }
+                    }
+                    $timeout(function(){
+                        $scope.onPixel.camp = campData;
+                    });
+                });
+            }
             console.log('moving player to',snap.val());
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
             $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
@@ -754,7 +788,7 @@ angular.module('Geographr.controllers', [])
                 case 'createCamp':
                     var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                     fireRef.child('users/'+snap.val().user).update({
-                        camp: startGrid, location: startGrid
+                        camp: startGrid, location: startGrid, money: 1000
                     }); break;
                 case 'move':
                     var baseMoveSpeed = 5000; // 5 seconds
@@ -828,20 +862,18 @@ angular.module('Geographr.controllers', [])
         
        var prepareTerrain = function() {
            $scope.terrainReady = true;
-           fireRef.child('camps').once('value',function(snap) {
-               if(!snap.val()) { // Generate camps if none on firebase
+           fireRef.child('campList').once('value',function(snap) {
+               if(!snap.val() && userID < 3) { // Generate camps if none on firebase
                    var nativeLocations = gameUtility.genNativeCamps(localTerrain);
                    fireRef.child('camps').set(nativeLocations); return;
                } 
-               var camps = snap.val();
-               for(var key in camps) { // Generate camp details from locations
-                   if(camps.hasOwnProperty(key)) {
-                       Math.seedrandom(key);
-                       var x = key.split(':')[0], y = key.split(':')[1];
-                       var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: key };
-                       if(localObjects.hasOwnProperty(key)) { localObjects[key].push(camp); } 
-                       else { localObjects[key] = [camp]; }
-                   }
+               campList = snap.val();
+               for(var i = 0; i < campList.length; i++) { // Generate camp details from locations
+                   Math.seedrandom(campList[i]);
+                   var x = campList[i].split(':')[0], y = campList[i].split(':')[1];
+                   var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
+                   if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
+                   else { localObjects[campList[i]] = [camp]; }
                }
                fireUser.child('location').on('value', movePlayer);
            });

@@ -30,4 +30,4 @@ find random tribe camps that have seed-generated desire levels for different goo
         - Weapons               6                   with lumber/iron
         - Spices                10                  in plains
         
-random encounters possible for every moved grid
+random encounters possible for every moved grid (server-side?)

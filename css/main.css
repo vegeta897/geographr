@@ -86,12 +86,17 @@ canvas { position: relative; }
 
 #uiContainer { top: 0; }
 
-.object-well button { margin-top: -5px; }
-
+.object-well>button { margin-top: -5px; }
 .object-well table { width: 100%; margin-top: 10px; }
+.object-well .well { margin: 4px 0; }
+.object-well .well .col-xs-6:last-child { padding-top: 4px; }
 
 #info { margin-bottom: 10px; }
 #info h2 { color: #c8c8c8; font-size: 20px }
+
+#inventory ul li .well {
+    padding-left: 16px;
+}
 
 ul#log { font-size: 11px; }
 ul#log li { margin-bottom: 0; }
