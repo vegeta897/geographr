@@ -271,6 +271,9 @@ angular.module('Geographr.controllers', [])
                 case 3: destination[1] = (destination[1] + 1); break;
             }
             var destGrid = destination.join(':');
+            var lastGrid = $scope.movePath.length > 1 ? 
+                $scope.movePath[$scope.movePath.length-2] : $scope.user.location; // Backtracking erases path
+            if(destGrid == lastGrid) { $timeout(function(){ $scope.movePath.pop(); dimPixel(); }); return; } 
             // Don't allow pathing into known water
             if(visiblePixels.hasOwnProperty(destGrid) && !localTerrain.hasOwnProperty(destGrid)) { return; }
             $timeout(function(){ $scope.movePath.push(destGrid); dimPixel(); });

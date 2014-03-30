@@ -82,17 +82,17 @@
             <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
         </div>
         <div ng-show="userInit && terrainReady" id="controls">
-            <button ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
+            <button ng-disabled="moving" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
                 <i class="glyphicon glyphicon-arrow-up"></i></button>
-            <button ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
+            <button ng-disabled="moving" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
                 <i class="glyphicon glyphicon-arrow-left"></i></button>
             <button ng-disabled="movePath.length == 0" ng-click="movePlayer('startStop')" 
                     class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go'}}</button>
-            <button ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
+            <button ng-disabled="moving" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
                 <i class="glyphicon glyphicon-arrow-right"></i></button>
-            <button ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
+            <button ng-disabled="moving" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
                 <i class="glyphicon glyphicon-arrow-down"></i></button>
-            <button ng-disabled="movePath.length == 0" ng-click="movePlayer('clear')"
+            <button ng-disabled="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
                     class="btn btn-default btn-sm" id="moveClear">Clear</button>
         </div>
     </div>
