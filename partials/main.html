@@ -180,11 +180,12 @@
                                     <span class="input-group-btn .btn-group "><button class="btn btn-default btn-sm"
                                         ng-click="buyResource(key,buyAmount)">Buy</button>
                                         <button class="btn btn-default btn-sm"
-                                            ng-click="buyResource(key,val.supply)">All</button></span>
+                                            ng-click="buyAmount = val.supply">All</button></span>
                                 </div>
                                 <div class=" col-xs-5">
                                     <span class="text-muted">Cost: </span>
-                                    {{ buyAmount * val.value }}
+                                    <span ng-class="{'text-danger': (buyAmount * val.value > user.money)}">
+                                        {{ buyAmount * val.value }}</span>
                                 </div>
                             </div>
                         </div>
