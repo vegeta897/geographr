@@ -73,19 +73,13 @@ angular.module('Geographr.game', [])
         var nearest = {coords: '', dist: 999};
         for(var i = 0; i < near.length; i++) {
             var nx = near[i].split(':')[0], ny = near[i].split(':')[1];
-            if(inArray(nx+':'+ny,exclude)) { console.log('excluded!'); continue; } // Not in excluded list
+            if(jQuery.inArray(nx+':'+ny,exclude) >= 0) { console.log('excluded!'); continue; }
             if(nx == ox && ny == oy) { console.log('self!'); continue; } // Not self
             if((nx - ox) * (nx - ox) + (ny - oy) * (ny - oy) < nearest.dist) {
                 nearest.coords = near[i]; nearest.dist = (nx - ox) * (nx - ox) + (ny - oy) * (ny - oy);
             }
         }
         return nearest.coords;
-    };
-    var inArray = function(value,array) {
-        for(var i = 0; i < array.length; i++) {
-            if(array[i] == value) { return true; }
-        }
-        return false;
     };
     var genCampEconomy = function(grid,terrain) {
         Math.seedrandom(grid);

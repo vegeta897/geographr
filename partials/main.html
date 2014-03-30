@@ -227,17 +227,35 @@
                 <h2>Selected Object<!--<small>{{ selectedGrid.ownerNick }}</small>--></h2>
                 <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
                     {{ selectedObject | itemDisplay }}&emsp;
-                    <span class="text-muted">({{ selectedObject.grid | grid }})</span>&emsp;
+                    <span class="text-muted">({{ selectedObject.grid | grid }})</span>
+                    <em ng-show="selectedObject.visited">&emsp;Visited</em>
                 </p>
+                <div class="row" ng-show="selectedObject.type == 'camp'">
+                    <div class="col-xs-12">Resource demands</div>
+                    <div class="col-xs-6 hard-right">
+                        <table class="unstyled table-tiny">
+                            <tr ng-repeat="resource in selectedObject.economy | splitList: 0">
+                                <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
+                                <td>{{ resource.demand }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-xs-6 hard-left">
+                        <table class="unstyled table-tiny">
+                            <tr ng-repeat="resource in selectedObject.economy | splitList: 1">
+                                <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
+                                <td>{{ resource.demand }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
                 <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
                     <h3>Contents</h3>
                     <ul class="list-unstyled">
                         <li ng-repeat="item in selectedObject.contents">
                             <button type="button" ng-click="harvestItem($index,item)" class="btn btn-xs btn-default">
-                                <span class="glyphicon glyphicon-arrow-left"></span>
-                                {{ item | itemDisplay }}
+                                <span class="glyphicon glyphicon-arrow-left"></span>{{ item | itemDisplay }}
                             </button>
-
                         </li>
                     </ul>
                 </div>

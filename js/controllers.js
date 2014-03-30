@@ -242,6 +242,11 @@ angular.module('Geographr.controllers', [])
             if(!$scope.selectedGrid[objectIndex]) { return; }
             $timeout(function() {
                 $scope.selectedObject = $scope.selectedGrid[objectIndex];
+                var grid = $scope.selectedObject.grid;
+                if($scope.selectedObject.type == 'camp' && jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
+                    $scope.selectedObject = gameUtility.expandCamp(grid,localTerrain);
+                    $scope.selectedObject.visited = true;
+                }
             });
         };
         $scope.movePlayer = function(dir) {
@@ -357,7 +362,7 @@ angular.module('Geographr.controllers', [])
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
                     $scope.selectedGrid = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
                     $scope.overPixel.objects = $scope.selectedGrid;
-                    if($scope.selectedGrid.length == 1) { $scope.selectedObject = $scope.selectedGrid[0]; }
+                    if($scope.selectedGrid.length == 1) { $scope.selectObject(0); }
                 } else { $scope.selectedGrid = null; }
                 dimPixel(); // Will draw select box
             });
@@ -501,7 +506,7 @@ angular.module('Geographr.controllers', [])
             if(localObjects.hasOwnProperty(x+':'+y)) { selectGrid(e); return; } // If selecting an object
             
             // If an object is selected, but is not clicked, clear the selected object
-            if($scope.selectedGrid[0]) { if($scope.selectedGrid[0].grid != x + ':' + y) { 
+            if($scope.selectedGrid && $scope.selectedGrid[0]) { if($scope.selectedGrid[0].grid != x + ':' + y) { 
                 $timeout(function() { 
                     $scope.selectedGrid = null; dimPixel(); 
                     delete $scope.overPixel.objects; delete $scope.selectedGrid; delete $scope.selectedObject;
@@ -587,9 +592,6 @@ angular.module('Geographr.controllers', [])
                         $scope.overPixel.y-$scope.zoomPosition[1]];
                     var cursorType = $scope.editTerrain ? 'terrain' + $scope.brushSize : 'cursor';
                     canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,cursorType);
-                    if(e.which == 1 || e.which == 3) {
-                        zoomOnMouseDown(e);
-                    }
                 });
             }
         };
@@ -733,11 +735,19 @@ angular.module('Geographr.controllers', [])
                 objects: localObjects[snap.val()], elevation: (localTerrain[snap.val()] || 0)
             };
             if(campList.indexOf(snap.val()) >= 0) { // If there is a camp here
+                if(!$scope.user.hasOwnProperty('visitedCamps')) {
+                    $scope.user.visitedCamps = [snap.val()];
+                    fireUser.child('visitedCamps').set($scope.user.visitedCamps);
+                } else if(jQuery.inArray($scope.user.visitedCamps,snap.val()) < 0) {
+                    $scope.user.visitedCamps.push(snap.val());
+                    fireUser.child('visitedCamps').update($scope.user.visitedCamps);
+                }
                 fireRef.child('camps/' + snap.val()).on('value',function(campSnap) {
                     var resourceList = gameUtility.resourceList;
                     var campData = gameUtility.expandCamp(snap.val(),localTerrain);
                     campData.deltas = {};
                     for(var j = 0; j < resourceList.length; j++) {
+                        // TODO: Have deltas influence demands
                         campData.deltas[resourceList[j]] = 0; // Default 0 delta
                         if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
                             && campSnap.val().deltas.hasOwnProperty(resourceList[j])) {

@@ -1,5 +1,16 @@
 /* Directives and Filters */
 
+var sortArrayByProperty = function(arr, sortby, descending) {
+    if(arr[0].hasOwnProperty(sortby)) {
+        if(descending) {
+            arr.sort(function(obj1,obj2) { if(obj1[sortby]<obj2[sortby]) { return 1; } else { return -1; } });
+        } else {
+            arr.sort(function(obj1,obj2) { if(obj1[sortby]>obj2[sortby]) { return 1; } else { return -1; } });
+        }
+    }
+    return arr;
+};
+
 angular.module('Geographr.directives', [])
 .directive('loginForm', function() {
     return {
@@ -97,6 +108,21 @@ angular.module('Geographr.directives', [])
         if(input.hasOwnProperty('name')) { name = ' ' + 
             input.name.substring(0,1).toUpperCase()+input.name.substring(1); }
         return owner+type+name;
+    }
+})
+.filter('splitList', function() {
+    return function(input,split) {
+        if(!input) { return input; }
+        var list = [];
+        for(var key in input) {
+            if(input.hasOwnProperty(key)) {
+                input[key].name = key;
+                list.push(input[key]);
+            }
+        }
+        list = sortArrayByProperty(list,'name');
+        var half = Math.floor(list.length/2);
+        return list.splice(0+half*split,half);
     }
 })
 .filter('grid', function() {
