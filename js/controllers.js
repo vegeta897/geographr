@@ -3,7 +3,7 @@
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, gameUtility) {
     
-        $scope.version = 0.13; $scope.versionName = 'Intimate Prosperity'; $scope.needUpdate = false;
+        $scope.version = 0.14; $scope.versionName = 'Dense Charm'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -295,14 +295,25 @@ angular.module('Geographr.controllers', [])
         
         $scope.buyResource = function(resource,amount) {
             if(amount < 1 || amount > $scope.onPixel.camp.economy[resource].supply) { return; }
-            var valPerWeight = $scope.onPixel.camp.economy[resource].valPerWeight;
-            console.log('buying',amount,'at',valPerWeight,'gold per pound');
+            if(parseInt($scope.user.money - amount * $scope.onPixel.camp.economy[resource].value) < 0) { return; }
+            console.log('buying',amount,resource,'at',$scope.onPixel.camp.economy[resource].value,'gold per pound');
             var newDelta = $scope.onPixel.camp.deltas[resource] - amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
-            $scope.user.money = parseInt($scope.user.money - amount * valPerWeight); // Deduct gold
+            $scope.user.money = parseInt($scope.user.money - amount * $scope.onPixel.camp.economy[resource].value);
             fireUser.child('money').set($scope.user.money);
-            fireInventory.push({ type: 'resource', name: resource, amount: amount })
+            fireInventory.push({ type: 'resource', name: resource, amount: parseInt(amount) })
+        };
+        $scope.sellResource = function(resource,amount,haveAmount,fireID) {
+            if(amount < 1 || amount > haveAmount) { return; }
+            console.log('selling',amount,'at',$scope.onPixel.camp.economy[resource].value,'gold per pound');
+            var newDelta = $scope.onPixel.camp.deltas[resource] + amount;
+            newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
+            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
+            $scope.user.money = parseInt($scope.user.money + amount * $scope.onPixel.camp.economy[resource].value); 
+            fireUser.child('money').set($scope.user.money);
+            if(haveAmount - amount > 0) { fireInventory.child(fireID+'/amount').set(haveAmount - amount); }
+                else { fireInventory.child(fireID).set(null); } // Remove inventory if no amount remains
         };
 
         var updateInventory = function(snapshot) {
@@ -713,6 +724,7 @@ angular.module('Geographr.controllers', [])
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
+            console.log('moving player to',snap.val());
             if($scope.user.location) { 
                 fireRef.child('camps/' + $scope.user.location).off(); } // Stop listening to last grid
             $scope.user.location = snap.val();
@@ -720,10 +732,8 @@ angular.module('Geographr.controllers', [])
                 terrain: localTerrain[snap.val()] ? 'Land' : 'Water', 
                 objects: localObjects[snap.val()], elevation: (localTerrain[snap.val()] || 0)
             };
-            var onObjects = localObjects[snap.val()] ? localObjects[snap.val()] : [];
             if(campList.indexOf(snap.val()) >= 0) { // If there is a camp here
                 fireRef.child('camps/' + snap.val()).on('value',function(campSnap) {
-                    //if(!campSnap.val()) { return; }
                     var resourceList = gameUtility.resourceList;
                     var campData = gameUtility.expandCamp(snap.val(),localTerrain);
                     campData.deltas = {};
@@ -741,7 +751,6 @@ angular.module('Geographr.controllers', [])
                     });
                 });
             }
-            console.log('moving player to',snap.val());
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
             $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
             var firstWater;

@@ -50,6 +50,7 @@ angular.module('Geographr.directives', [])
             var actions = element.parent().parent().next();
             actions.hide();
             element.on('click',function(e) {
+                actions.siblings('.actions').hide(); // Hide other actions panels
                 actions.toggle(); // Show actions panel
                 e.preventDefault();
             })

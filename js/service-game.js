@@ -97,8 +97,10 @@ angular.module('Geographr.game', [])
             economy[res] = {};
             economy[res].supply = parseInt(Math.random() * 100);
             economy[res].demand = parseInt(100 - economy[res].supply + Math.random() * 30 - 20);
+            economy[res].supply = parseInt(economy[res].supply/valuePerWeight[i]);
             economy[res].demand = economy[res].demand > 100 ? 100 : // Keep in 0-100 range
-                economy[res].demand < 0 ? 0 : economy[res].demand;
+                economy[res].demand < 1 ? 1 : economy[res].demand;
+            economy[res].value = (parseInt(valuePerWeight[i] * (economy[res].demand / 50)) || 1);
             economy[res].valPerWeight = valuePerWeight[i];
         }
         return economy;
