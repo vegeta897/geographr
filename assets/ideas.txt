@@ -11,7 +11,7 @@ weather? moves across map in bands, server-controlled
     
 each pixel has a temperature that gets updated every X minutes, seed-based, influenced by elevation and weather
 
-find random tribe camps that have seed-generated desire levels for different goods/resources
+find random native camps that have seed-generated desire levels for different goods/resources
     set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons
     either buy from a camp and sell in another, or carry out a trade, in which you could run off with the goods
         if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity
@@ -31,3 +31,11 @@ find random tribe camps that have seed-generated desire levels for different goo
         - Spices                10                  in plains
         
 random encounters possible for every moved grid (server-side?)
+
+find random objects/things/activities in the 9grid view
+    - click on it to engage in an activity, replaces 9grid view with activity view
+    - no click-fests!
+    - timing-based minigames?
+    
+carrier pigeon/bird flies between players at all times, delivering messages
+    - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.

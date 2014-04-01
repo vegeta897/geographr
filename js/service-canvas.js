@@ -202,9 +202,10 @@ angular.module('Geographr.canvas', [])
                         case 'camp': context.fillStyle = 'rgb(140,140,140)';
                             if(canvasType == 'full') { context.fillRect((x - offset[0])*canvasPixSize,
                                     (y - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize); }
-                            context.fillRect((x - offset[0])*canvasPixSize+zoomPixSize/4,
-                                (y - offset[1])*canvasPixSize+zoomPixSize/4, 
-                                canvasPixSize-zoomPixSize/2,canvasPixSize-zoomPixSize/2);
+                            var pix = zoomPixSize % 4 ? 1 : 0; // Keep sharp pixels
+                            context.fillRect(Math.floor((x - offset[0])*canvasPixSize+zoomPixSize/4),
+                                Math.floor((y - offset[1])*canvasPixSize+zoomPixSize/4), 
+                                canvasPixSize-zoomPixSize/2+pix,canvasPixSize-zoomPixSize/2+pix);
                             break;
                     }
                 }

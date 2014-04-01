@@ -19,7 +19,7 @@ angular.module('Geographr.controllers', [])
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
-            localLabels = {}, addingLabel = false, zoomLevels = [5,6,10,12,20,30,60], fireInventory, 
+            localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
             tutorialStep = 0, visiblePixels = {}, moveTimers = {}, campList = [];
     
         // Create a reference to the pixel data for our canvas
@@ -126,15 +126,18 @@ angular.module('Geographr.controllers', [])
         if(localStorage.get('visiblePixels')) { localStorage.remove('visiblePixels'); } // Delete me
     
         // Set up our canvases
-        var fullTerrainCanvas = document.getElementById('fullTerrainCanvas');
+        var fullTerrainCanvas = document.getElementById('fullTerrainCanvas'); // Mini-map
         var fullObjectCanvas = document.getElementById('fullObjectCanvas');
         var fullFogCanvas = document.getElementById('fullFogCanvas');
         var fullPingCanvas = document.getElementById('fullPingCanvas');
         var fullHighCanvas = document.getElementById('fullHighCanvas');
-        var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas');
+        var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas'); // Main view
         var zoomObjectCanvas = document.getElementById('zoomObjectCanvas');
         var zoomFogCanvas = document.getElementById('zoomFogCanvas');
         var zoomHighCanvas = document.getElementById('zoomHighCanvas');
+        var eventLowCanvas = document.getElementById('eventLowCanvas'); // Event view
+        var eventMainCanvas = document.getElementById('eventMainCanvas');
+        var eventHighCanvas = document.getElementById('eventHighCanvas');
         var fullTerrainContext = fullTerrainCanvas.getContext ? fullTerrainCanvas.getContext('2d') : null;
         var fullObjectContext = fullObjectCanvas.getContext ? fullObjectCanvas.getContext('2d') : null;
         var fullFogContext = fullFogCanvas.getContext ? fullFogCanvas.getContext('2d') : null;
@@ -144,6 +147,9 @@ angular.module('Geographr.controllers', [])
         var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
         var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
+        var eventLowContext = eventLowCanvas.getContext ? eventLowCanvas.getContext('2d') : null;
+        var eventMainContext = eventMainCanvas.getContext ? eventMainCanvas.getContext('2d') : null;
+        var eventHighContext = eventHighCanvas.getContext ? eventHighCanvas.getContext('2d') : null;
         $timeout(function(){ alignCanvases(); }, 500); // Align canvases half a second after load
         canvasUtility.fillCanvas(fullFogContext,'2e3338');
         canvasUtility.fillCanvas(zoomFogContext,'2e3338');
@@ -164,6 +170,8 @@ angular.module('Geographr.controllers', [])
             jQuery(zoomObjectCanvas).offset(jQuery(zoomTerrainCanvas).offset());
             jQuery(zoomHighCanvas).offset(jQuery(zoomTerrainCanvas).offset());
             jQuery(zoomFogCanvas).offset(jQuery(zoomTerrainCanvas).offset());
+            jQuery(eventMainCanvas).offset(jQuery(eventLowCanvas).offset());
+            jQuery(eventHighCanvas).offset(jQuery(eventLowCanvas).offset());
         };
 
         // Prevent right-click on high canvases
@@ -759,9 +767,7 @@ angular.module('Geographr.controllers', [])
                             campData.deltas[resourceList[j]] = campSnap.val().deltas[resourceList[j]];
                         }
                     }
-                    $timeout(function(){
-                        $scope.onPixel.camp = campData;
-                    });
+                    $timeout(function(){ $scope.onPixel.camp = campData; });
                 });
             }
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
@@ -810,7 +816,7 @@ angular.module('Geographr.controllers', [])
                 case 'createCamp':
                     var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                     fireRef.child('users/'+snap.val().user).update({
-                        camp: startGrid, location: startGrid, money: 1000
+                        camp: startGrid, location: startGrid, money: 500
                     }); break;
                 case 'move':
                     var baseMoveSpeed = 5000; // 5 seconds
