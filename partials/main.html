@@ -34,35 +34,36 @@
         </div>
         <div>
             <div ng-show="inEvent">
-                <canvas id="eventLowCanvas" width="300" height="300"></canvas> <!-- Event low canvas -->
-                <canvas id="eventMainCanvas" width="300" height="300"></canvas> <!-- Event main canvas -->
-                <canvas id="eventHighCanvas" width="300" height="300"></canvas> <!-- Event high canvas -->
+                <canvas id="eventLowCanvas" width="300" height="200"></canvas> <!-- Event low canvas -->
+                <p ng-bind-html="event.message" id="eventHUD"></p>
+                <canvas id="eventMainCanvas" width="300" height="200"></canvas> <!-- Event main canvas -->
+                <canvas id="eventHighCanvas" width="300" height="200"></canvas> <!-- Event high canvas -->
             </div>
             <table ng-hide="inEvent" id="gridView">
                 <!-- TODO: Generate this with ng-repeat or a directive -->
                 <tr>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[5] == selectedObject}"
-                        ng-click="selectObject(5)">{{ overPixel.objects[5] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[3] == selectedObject}"
-                        ng-click="selectObject(3)">{{ overPixel.objects[3] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[6] == selectedObject}"
-                        ng-click="selectObject(6)">{{ overPixel.objects[6] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[5] == selectedObject}"
+                        ng-click="activateObject(5)">{{ onPixel.objects[5] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[3] == selectedObject}"
+                        ng-click="activateObject(3)">{{ onPixel.objects[3] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[6] == selectedObject}"
+                        ng-click="activateObject(6)">{{ onPixel.objects[6] | itemDisplay }}</td>
                 </tr>
                 <tr>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[2] == selectedObject}"
-                        ng-click="selectObject(2)">{{ overPixel.objects[2] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[0] == selectedObject}"
-                        ng-click="selectObject(0)">{{ overPixel.objects[0] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[1] == selectedObject}"
-                        ng-click="selectObject(1)">{{ overPixel.objects[1] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[2] == selectedObject}"
+                        ng-click="activateObject(2)">{{ onPixel.objects[2] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[0] == selectedObject}"
+                        ng-click="activateObject(0)">{{ onPixel.objects[0] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[1] == selectedObject}"
+                        ng-click="activateObject(1)">{{ onPixel.objects[1] | itemDisplay }}</td>
                 </tr>
                 <tr>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[7] == selectedObject}"
-                        ng-click="selectObject(7)">{{ overPixel.objects[7] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[4] == selectedObject}"
-                        ng-click="selectObject(4)">{{ overPixel.objects[4] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && overPixel.objects[8] == selectedObject}"
-                        ng-click="selectObject(8)">{{ overPixel.objects[8] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[7] == selectedObject}"
+                        ng-click="activateObject(7)">{{ onPixel.objects[7] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[4] == selectedObject}"
+                        ng-click="activateObject(4)">{{ onPixel.objects[4] | itemDisplay }}</td>
+                    <td ng-class="{selected: selectedObject != null && onPixel.objects[8] == selectedObject}"
+                        ng-click="activateObject(8)">{{ onPixel.objects[8] | itemDisplay }}</td>
                 </tr>
             </table>
         </div>
@@ -206,7 +207,7 @@
                     </td></tr>
                 </table>
             </div>
-            <div class="well object-well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects && object.type != 'camp'">
+            <div class="well object-well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects && object.type != 'camp' && !object.activity">
                 {{ object | itemDisplay }}
             </div>
         </div>

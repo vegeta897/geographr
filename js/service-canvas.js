@@ -371,21 +371,18 @@ angular.module('Geographr.canvas', [])
                 }
                 context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
                     (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
-                context.closePath();
-                context.fill();
+                context.closePath(); context.fill();
             },
             drawLabel: function(context,coords,text,zoomPixSize) {
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);
-                context.font = "14px Georgia";
-                context.textAlign = 'center';
-                context.textBaseline = 'bottom';
-                context.fillStyle = 'rgba(0,0,0,0.8)';
-                context.shadowColor = 'black';
-                context.shadowOffsetX = context.shadowOffsetY = 0;
+                var fontSize = 10 + zoomPixSize / 4;
+                context.font = fontSize + 'px Georgia'; context.textAlign = 'center';
+                context.textBaseline = 'bottom'; context.fillStyle = 'rgba(0,0,0,0.8)';
+                context.shadowColor = 'black'; context.shadowOffsetX = context.shadowOffsetY = 0;
                 context.shadowBlur = 1;
-                context.fillText(text, x*zoomPixSize+2+zoomPixSize/2, y*zoomPixSize+1);
+                context.fillText(text, x*zoomPixSize+2+zoomPixSize/2, y*zoomPixSize+1-4-zoomPixSize/20);
                 context.fillStyle = 'white';
-                context.fillText(text, x*zoomPixSize+zoomPixSize/2, y*zoomPixSize);
+                context.fillText(text, x*zoomPixSize+zoomPixSize/2, y*zoomPixSize-4-zoomPixSize/20);
                 context.shadowColor = 'rgba(0,0,0,0)';
             },
             drawPing: function(context,coords) {
@@ -397,22 +394,16 @@ angular.module('Geographr.canvas', [])
                 pingGradient.addColorStop(0.2, "rgba(255, 255, 255, 1)");
                 pingGradient.addColorStop(0.4, "rgba(255, 255, 255, 0)");
                 pingGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
-                context.fillStyle = pingGradient;
-                context.beginPath();
+                context.fillStyle = pingGradient; context.beginPath();
                 context.arc(coords[0]*fullPixSize + fullPixOff,
                     coords[1]*fullPixSize +fullPixOff, 5, 0, 2 * Math.PI, false);
                 var cycle = 0;
                 function fadePing() {
-                    if(Math.round(cycle/2) == cycle/2) {
-                        context.fill();
-                    } else {
+                    if(Math.round(cycle/2) == cycle/2) { context.fill(); } else {
                         context.clearRect(coords[0] * fullPixSize - 15 + fullPixOff,
                             coords[1] * fullPixSize - 15 + fullPixOff, 30, 30);
                     }
-                    cycle++;
-                    if(cycle >= 8) {
-                        clearInterval(pingInt);
-                    }
+                    cycle++; if(cycle >= 8) { clearInterval(pingInt); }
                 }
                 var pingInt = setInterval(function(){fadePing()},200);
             },

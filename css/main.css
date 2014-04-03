@@ -55,7 +55,9 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 
 canvas { position: relative; }
 #fullPingCanvas, #fullFogCanvas, #fullHighCanvas, #fullObjectCanvas, #zoomFogCanvas, #zoomHighCanvas, 
-    #zoomObjectCanvas, #eventMainCanvas, #eventHighCanvas { position: absolute; top: -5000px; }
+    #zoomObjectCanvas, #eventLowCanvas, #eventMainCanvas, #eventHighCanvas { position: absolute; top: -5000px; }
+
+#eventHUD { position: relative; top: 204px; } #eventHUD p { margin: 0; }
 
 .coords .checkbox-inline { padding-top: 0; }
 .coords .checkbox-inline label { font-weight: normal; }

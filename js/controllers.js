@@ -1,9 +1,8 @@
 /* Controllers */
 
 angular.module('Geographr.controllers', [])
-.controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, gameUtility) {
-    
-        $scope.version = 0.14; $scope.versionName = 'Dense Charm'; $scope.needUpdate = false;
+.controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
+        $scope.version = 0.15; $scope.versionName = 'Complicated Blade'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -135,9 +134,6 @@ angular.module('Geographr.controllers', [])
         var zoomObjectCanvas = document.getElementById('zoomObjectCanvas');
         var zoomFogCanvas = document.getElementById('zoomFogCanvas');
         var zoomHighCanvas = document.getElementById('zoomHighCanvas');
-        var eventLowCanvas = document.getElementById('eventLowCanvas'); // Event view
-        var eventMainCanvas = document.getElementById('eventMainCanvas');
-        var eventHighCanvas = document.getElementById('eventHighCanvas');
         var fullTerrainContext = fullTerrainCanvas.getContext ? fullTerrainCanvas.getContext('2d') : null;
         var fullObjectContext = fullObjectCanvas.getContext ? fullObjectCanvas.getContext('2d') : null;
         var fullFogContext = fullFogCanvas.getContext ? fullFogCanvas.getContext('2d') : null;
@@ -147,9 +143,6 @@ angular.module('Geographr.controllers', [])
         var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
         var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
-        var eventLowContext = eventLowCanvas.getContext ? eventLowCanvas.getContext('2d') : null;
-        var eventMainContext = eventMainCanvas.getContext ? eventMainCanvas.getContext('2d') : null;
-        var eventHighContext = eventHighCanvas.getContext ? eventHighCanvas.getContext('2d') : null;
         $timeout(function(){ alignCanvases(); }, 500); // Align canvases half a second after load
         canvasUtility.fillCanvas(fullFogContext,'2e3338');
         canvasUtility.fillCanvas(zoomFogContext,'2e3338');
@@ -162,16 +155,17 @@ angular.module('Geographr.controllers', [])
         
         // Align canvas positions
         var alignCanvases = function() {
-            jQuery(fullPingCanvas).offset(jQuery(fullTerrainCanvas).offset());
-            jQuery(fullObjectCanvas).offset(jQuery(fullTerrainCanvas).offset());
-            jQuery(fullHighCanvas).offset(jQuery(fullTerrainCanvas).offset());
-            jQuery(fullFogCanvas).offset(jQuery(fullTerrainCanvas).offset());
-            jQuery(zoomFogCanvas).offset(jQuery(zoomTerrainCanvas).offset());
-            jQuery(zoomObjectCanvas).offset(jQuery(zoomTerrainCanvas).offset());
-            jQuery(zoomHighCanvas).offset(jQuery(zoomTerrainCanvas).offset());
-            jQuery(zoomFogCanvas).offset(jQuery(zoomTerrainCanvas).offset());
-            jQuery(eventMainCanvas).offset(jQuery(eventLowCanvas).offset());
-            jQuery(eventHighCanvas).offset(jQuery(eventLowCanvas).offset());
+            var fullOffset = jQuery(fullTerrainCanvas).offset();
+            jQuery(fullPingCanvas).offset(fullOffset);
+            jQuery(fullObjectCanvas).offset(fullOffset);
+            jQuery(fullHighCanvas).offset(fullOffset);
+            jQuery(fullFogCanvas).offset(fullOffset);
+            var zoomOffset = jQuery(zoomTerrainCanvas).offset();
+            jQuery(zoomFogCanvas).offset(zoomOffset);
+            jQuery(zoomObjectCanvas).offset(zoomOffset);
+            jQuery(zoomHighCanvas).offset(zoomOffset);
+            jQuery(zoomFogCanvas).offset(zoomOffset);
+            actCanvasUtility.alignCanvases();
         };
 
         // Prevent right-click on high canvases
@@ -246,15 +240,13 @@ angular.module('Geographr.controllers', [])
                 jQuery(zoomHighCanvas).unbind('mousedown').mousedown(zoomOnMouseDown);
             });
         };
-        $scope.selectObject = function(objectIndex) {
-            if(!$scope.selectedGrid[objectIndex]) { return; }
+        $scope.activateObject = function(objectIndex) {
             $timeout(function() {
-                $scope.selectedObject = $scope.selectedGrid[objectIndex];
-                var grid = $scope.selectedObject.grid;
-                if($scope.selectedObject.type == 'camp' && jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
-                    $scope.selectedObject = gameUtility.expandCamp(grid,localTerrain);
-                    $scope.selectedObject.visited = true;
-                }
+                $scope.event = { type: $scope.onPixel.objects[objectIndex].type };
+                $scope.event.message = gameUtility.eventMessages[$scope.event.type];
+                gameUtility.setupActivity($scope.event.type);
+                $scope.inEvent = true;
+                actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
             });
         };
         $scope.movePlayer = function(dir) {
@@ -331,6 +323,21 @@ angular.module('Geographr.controllers', [])
             if(haveAmount - amount > 0) { fireInventory.child(fireID+'/amount').set(haveAmount - amount); }
                 else { fireInventory.child(fireID).set(null); } // Remove inventory if no amount remains
         };
+        // Clicking in event canvas
+        var eventOnClick = function(e) {
+            if(e.which == 2 || e.which == 3) {  e.preventDefault(); return; } // If right/middle click pressed
+            var offset = actCanvasUtility.eventHighCanvas.offset(); // Get pixel location
+            var click = { x: Math.floor(e.pageX - offset.left), y: Math.floor(e.pageY - offset.top) };
+            var success = gameUtility.playActivity($scope.event.type,click);
+            if(success) {
+                actCanvasUtility.eventHighCanvas.unbind('mousedown',eventOnClick);
+                $timeout(function() {
+                    $scope.inEvent = false;
+                });
+            } else {
+                // TODO: Event failed!
+            }
+        };
 
         var updateInventory = function(snapshot) {
             var itemAdded = snapshot.val();
@@ -373,7 +380,15 @@ angular.module('Geographr.controllers', [])
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
                     $scope.selectedGrid = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
                     $scope.overPixel.objects = $scope.selectedGrid;
-                    if($scope.selectedGrid.length == 1) { $scope.selectObject(0); }
+                    if($scope.selectedGrid.length == 1) {
+                        $scope.selectedObject = $scope.selectedGrid[0];
+                        var grid = $scope.selectedObject.grid;
+                        if($scope.selectedObject.type == 'camp' && 
+                            jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
+                            $scope.selectedObject = gameUtility.expandCamp(grid,localTerrain);
+                            $scope.selectedObject.visited = true;
+                        }
+                    }
                 } else { $scope.selectedGrid = null; }
                 dimPixel(); // Will draw select box
             });
@@ -595,7 +610,20 @@ angular.module('Geographr.controllers', [])
                     $scope.overPixel.y = (y+$scope.zoomPosition[1]);
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
                     if(visiblePixels.hasOwnProperty(grid)) { // If grid is visible or explored
-                        $scope.overPixel.objects = $scope.selectedGrid ? $scope.selectedGrid : localObjects[grid];
+                        $scope.overPixel.objects = localObjects[grid];
+                        if(campList.indexOf(grid) >= 0) { // If there is a camp here
+                            Math.seedrandom(grid);
+                            var text = 'Camp ' + 
+                                gameUtility.capitalize(Chance($scope.overPixel.x*1000 + $scope.overPixel.y).word());
+                            canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
+                                $scope.overPixel.y-$scope.zoomPosition[1]],text,zoomPixSize);
+                        } else if($scope.user.location == grid) {
+                            canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
+                                $scope.overPixel.y-$scope.zoomPosition[1]],'You',zoomPixSize);
+                        } else if($scope.user.camp == grid) {
+                            canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
+                                $scope.overPixel.y-$scope.zoomPosition[1]],'Your Camp',zoomPixSize);
+                        }
                         $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
                         $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
                     } else { $scope.overPixel.type = $scope.overPixel.elevation = '-' }
@@ -769,6 +797,14 @@ angular.module('Geographr.controllers', [])
                     }
                     $timeout(function(){ $scope.onPixel.camp = campData; });
                 });
+            } else { // If no camp, create some events/activities
+                Math.seedrandom(); // True random
+                if(Math.random() > 0.5) {
+                    console.log('creating forage activity');
+                    var actForage = { type: 'forage', activity: true };
+                    if($scope.onPixel.objects) { $scope.onPixel.objects.push(actForage) } 
+                        else { $scope.onPixel.objects = [actForage]; }
+                }
             }
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
             $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
@@ -898,7 +934,7 @@ angular.module('Geographr.controllers', [])
                campList = snap.val();
                for(var i = 0; i < campList.length; i++) { // Generate camp details from locations
                    Math.seedrandom(campList[i]);
-                   var x = campList[i].split(':')[0], y = campList[i].split(':')[1];
+                   var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
                    var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
                    else { localObjects[campList[i]] = [camp]; }
