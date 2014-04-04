@@ -8,9 +8,31 @@ angular.module('Geographr.game', [])
             
         var event = {}; // Holds event details
         var eventMessages = { // Event messages/instructions to show user
-            forage: '<strong>Click</strong> where the 3 lines would <strong>intersect!</strong>'
+            instructions: {
+                forage: '<strong>Click</strong> where the 3 lines would <strong>intersect!</strong>',
+                hunt: '<strong>Click</strong> where the 3 lines would <strong>intersect!</strong>'
+            },
+            success: {
+                forage: 'You found <strong>some plants</strong> while foraging.',
+                hunt: 'You killed an <strong>innocent animal.</strong>'
+            },
+            failure: {
+                forage: 'You search for edible plants but <strong>find nothing</strong>.',
+                hunt: 'You <strong>couldn\'t find any animals</strong> to hunt.'
+            }
         };
-        
+        var eventProducts = {
+            forage: [
+                { name: 'red berries', color: '9e3333', avgQty: 3 },
+                { name: 'blue berries', color: '334c9e', avgQty: 2 },
+                { name: 'green berries', color: '689e48', avgQty: 3 },
+                { name: 'brown mushrooms', color: '6f6053', avgQty: 3 },
+                { name: 'white mushrooms', color: 'b0a9a4', avgQty: 2 },
+                { name: 'herbs', color: '728448', avgQty: 2 },
+                { name: 'onions', color: 'aaa982', avgQty: 1 }
+            ],
+            hunt: ['deer','boar','rabbit','fox','wolf','mole']
+        };
         var randomIntRange = function(min,max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         };
@@ -25,6 +47,14 @@ angular.module('Geographr.game', [])
         };
         var getDigit = function(num, digit) {
             return Math.floor(num / (Math.pow(10, digit-1)) % 10)
+        };
+        var pickInArray = function(array) { // Return a random element from input array
+            return array[Math.floor(Math.random()*array.length)];
+        };
+        var pickInObject = function(object) { // Return a random property from input object
+            var array = [];
+            for(var key in object) { if(object.hasOwnProperty(key)) { array.push(object[key]); } }
+            return array[Math.floor(Math.random()*array.length)];
         };
         var getNeighbors = function(loc,dist) { // Check a diamond area around x,y
             var neighbors = [];
@@ -105,26 +135,50 @@ angular.module('Geographr.game', [])
             }
             return economy;
         };
+        // Products of a successful event: [number] is variety count range, [rating] is success factor
+        var getEventProducts = function(eventType,number,rating) {
+            number = randomIntRange(number[0],number[1]); // Pick number and total from input ranges
+            var results = [];
+            var typesChosen = []; // Prevent 2 instances of same product
+            for(var i = 0; i < number; i++) {
+                var product = pickInArray(eventProducts[eventType]);
+                while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
+                    product = pickInArray(eventProducts[eventType]);
+                }
+                typesChosen.push(product.name);
+                results.push({
+                    type: 'plant', name: product.name, color: product.color, 
+                    amount: Math.ceil((product.avgQty*rating*(3/number) + randomIntRange(0,rating*2)))
+                })
+            }
+            return results;
+        };
+        
         return {
             setupActivity: function(type) {
                 Math.seedrandom();
                 switch(type) {
                     case 'forage':
                         event.targetX = Math.floor(Math.random()*100+100);
-                        event.targetY = Math.floor(Math.random()*100+50);
+                        event.targetY = Math.floor(Math.random()*100+100);
                         break;
                 }
                 actCanvasUtility.drawActivity(type,event);
             },
             playActivity: function(type,click) {
+                // TODO: Factor in player's skill level
+                var result = {};
                 switch(type) {
                     case 'forage':
-                        if(Math.abs(click.x - event.targetX) < 5 && Math.abs(click.y - event.targetY) < 5) {
-                            return true;
+                        if(Math.abs(click.x - event.targetX) < 10 && Math.abs(click.y - event.targetY) < 10) {
+                            result.success = true;
+                            result.products = getEventProducts(type,[1,3],1);
                         }
                         break;
                 }
-                return false;
+                
+                result.message = result.success ? eventMessages.success[type] : eventMessages.failure[type];
+                return result;
             },
             getVisibility: function(terrain,visible,coords) {
                 var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);

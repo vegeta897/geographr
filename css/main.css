@@ -25,18 +25,22 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 
 #mainContainer {
     width: 1204px;
-    padding: 4px 0 0;
+    height: 628px;
 }
 
 .canvas-container {
     width: 902px;
+    height: 600px;
     float: left;
 }
-.minimap { width: 302px; }
-.minimap .coords { margin: -2px 0 2px; }
+canvas { display: block; }
+.side { width: 302px; }
+#minimap, #eventCanvases, #zoomCanvases { position: relative; }
+#minimap, #eventCanvases { height: 300px; } #zoomCanvases { height: 604px; }
 
 #gridView {
-    width: 274px; height: 274px;
+    width: 295px; height: 295px;
+    margin-top: 4px;
     border: 1px solid #7a8288;
     text-align: center;
     border-collapse: separate;
@@ -48,16 +52,12 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
     user-select: none;
 }
 
-#gridView td { border: 1px solid #50575c; width: 91px; height: 91px; cursor: pointer; }
+#gridView td { border: 1px solid #50575c; width: 98px; height: 98px; cursor: pointer; }
 #gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
 #gridView td.selected { border: 2px solid #909ea8; background-color: #30363d; }
 #gridView td.selected:hover { border: 2px solid #778187; background-color: #3d434c; }
 
-canvas { position: relative; }
-#fullPingCanvas, #fullFogCanvas, #fullHighCanvas, #fullObjectCanvas, #zoomFogCanvas, #zoomHighCanvas, 
-    #zoomObjectCanvas, #eventLowCanvas, #eventMainCanvas, #eventHighCanvas { position: absolute; top: -5000px; }
-
-#eventHUD { position: relative; top: 204px; } #eventHUD p { margin: 0; }
+.canvas-container canvas { position: absolute; }
 
 .coords .checkbox-inline { padding-top: 0; }
 .coords .checkbox-inline label { font-weight: normal; }
@@ -67,7 +67,7 @@ canvas { position: relative; }
     padding: 8px;
     position: absolute;
     right: 2px;
-    bottom: 29px;
+    bottom: 28px;
 }
 
 #controls button { 
@@ -78,7 +78,8 @@ canvas { position: relative; }
 }
 #controls #moveUp, #controls #moveDown { margin: 0 60px; padding-top: 11px; }
 #controls #moveLeft { margin: 0 10px 0 0; padding-top: 11px; }
-#controls #moveStartStop { width: 40px; height: 40px; margin: 10px 10px 0 0; padding: 8px 0; font-size: 1em; }
+#controls #moveStartStop, #controls #lookAround { 
+    width: 40px; height: 40px; margin: 10px 10px 0 0; padding: 8px 0; font-size: 1em; }
 #controls #moveRight { padding-left: 16px; padding-top: 11px; }
 #controls #moveDown { padding-left: 16px; padding-top: 13px; margin-right: 20px; }
 #controls #moveClear { padding-left: 6px; padding-top: 1px; width: 40px; height: 20px; margin-top: 40px; 
@@ -91,6 +92,10 @@ canvas { position: relative; }
 #info { margin-bottom: 10px; }
 #info h2 { color: #c8c8c8; font-size: 20px }
 
+#eventHUD p {  }
+#eventHUD .event-products button { margin: 0 4px 4px 0; color: white; }
+#eventHUD .event-products button:hover { background-color: #24272b !important; }
+
 .object-well>button { margin-top: -5px; }
 .object-well table { width: 100%; margin-top: 10px; }
 .object-well .well { margin: 4px 0; }
@@ -98,7 +103,8 @@ canvas { position: relative; }
 .object-well .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
 
 #inventory ul li .well {
-    padding-left: 16px;
+    padding-left: 16px; padding-right: 3px;
+    margin-bottom: 6px;
 }
 #inventory ul li .well .input-group-sm > .form-control {
     height: 20px; padding: 0 3px; top: -1px; position: relative;

@@ -21,60 +21,74 @@
     </div>
 </div>
 <div id="mainContainer" class="container">
-    <div class="canvas-container minimap"> <!-- Minimap canvases -->
-        <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
-        <canvas id="fullFogCanvas" width="300" height="300"></canvas> <!-- Fog canvas -->
-        <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
-        <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
-        <canvas id="fullHighCanvas" width="300" height="300"> <!-- Highlight canvas -->
-            Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
-        </canvas>
-        <div class="coords">
-            {{ zoomPosition[0] }} , {{ zoomPosition[1] }}
+    <div class="canvas-container side">
+        <div id="minimap">
+            <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
+            <canvas id="fullFogCanvas" width="300" height="300"></canvas> <!-- Fog canvas -->
+            <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
+            <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
+            <canvas id="fullHighCanvas" width="300" height="300"> <!-- Highlight canvas -->
+                Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
+            </canvas>
         </div>
-        <div>
-            <div ng-show="inEvent">
-                <canvas id="eventLowCanvas" width="300" height="200"></canvas> <!-- Event low canvas -->
-                <p ng-bind-html="event.message" id="eventHUD"></p>
-                <canvas id="eventMainCanvas" width="300" height="200"></canvas> <!-- Event main canvas -->
-                <canvas id="eventHighCanvas" width="300" height="200"></canvas> <!-- Event high canvas -->
-            </div>
-            <table ng-hide="inEvent" id="gridView">
-                <!-- TODO: Generate this with ng-repeat or a directive -->
-                <tr>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[5] == selectedObject}"
-                        ng-click="activateObject(5)">{{ onPixel.objects[5] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[3] == selectedObject}"
-                        ng-click="activateObject(3)">{{ onPixel.objects[3] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[6] == selectedObject}"
-                        ng-click="activateObject(6)">{{ onPixel.objects[6] | itemDisplay }}</td>
-                </tr>
-                <tr>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[2] == selectedObject}"
-                        ng-click="activateObject(2)">{{ onPixel.objects[2] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[0] == selectedObject}"
-                        ng-click="activateObject(0)">{{ onPixel.objects[0] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[1] == selectedObject}"
-                        ng-click="activateObject(1)">{{ onPixel.objects[1] | itemDisplay }}</td>
-                </tr>
-                <tr>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[7] == selectedObject}"
-                        ng-click="activateObject(7)">{{ onPixel.objects[7] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[4] == selectedObject}"
-                        ng-click="activateObject(4)">{{ onPixel.objects[4] | itemDisplay }}</td>
-                    <td ng-class="{selected: selectedObject != null && onPixel.objects[8] == selectedObject}"
-                        ng-click="activateObject(8)">{{ onPixel.objects[8] | itemDisplay }}</td>
-                </tr>
-            </table>
+        <div id="eventCanvases" ng-show="inEvent">
+            <canvas id="eventLowCanvas" width="300" height="300"></canvas> <!-- Event low canvas -->
+            <canvas id="eventMainCanvas" width="300" height="300"></canvas> <!-- Event main canvas -->
+            <canvas id="eventHighCanvas" width="300" height="300"></canvas> <!-- Event high canvas -->
         </div>
+        <table ng-hide="inEvent" id="gridView">
+            <!-- TODO: Generate this with ng-repeat or a directive -->
+            <tr>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[5] == selectedObject}"
+                    ng-click="activateObject(5)">{{ onPixel.objects[5] | itemDisplay }}</td>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[3] == selectedObject}"
+                    ng-click="activateObject(3)">{{ onPixel.objects[3] | itemDisplay }}</td>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[6] == selectedObject}"
+                    ng-click="activateObject(6)">{{ onPixel.objects[6] | itemDisplay }}</td>
+            </tr>
+            <tr>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[2] == selectedObject}"
+                    ng-click="activateObject(2)">{{ onPixel.objects[2] | itemDisplay }}</td>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[0] == selectedObject}"
+                    ng-click="activateObject(0)">{{ onPixel.objects[0] | itemDisplay }}</td>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[1] == selectedObject}"
+                    ng-click="activateObject(1)">{{ onPixel.objects[1] | itemDisplay }}</td>
+            </tr>
+            <tr>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[7] == selectedObject}"
+                    ng-click="activateObject(7)">{{ onPixel.objects[7] | itemDisplay }}</td>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[4] == selectedObject}"
+                    ng-click="activateObject(4)">{{ onPixel.objects[4] | itemDisplay }}</td>
+                <td ng-class="{selected: selectedObject != null && onPixel.objects[8] == selectedObject}"
+                    ng-click="activateObject(8)">{{ onPixel.objects[8] | itemDisplay }}</td>
+            </tr>
+        </table>
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
-        <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
-        <canvas id="zoomFogCanvas" width="900" height="600"></canvas> <!-- Fog canvas -->
-        <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
-        <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
+        <div id="zoomCanvases">
+            <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
+            <canvas id="zoomFogCanvas" width="900" height="600"></canvas> <!-- Fog canvas -->
+            <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
+            <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
+        </div>
+        <div ng-show="userInit && terrainReady" id="controls">
+            <button ng-disabled="moving" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
+                <i class="glyphicon glyphicon-arrow-up"></i></button>
+            <button ng-disabled="moving" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
+                <i class="glyphicon glyphicon-arrow-left"></i></button>
+            <button ng-show="movePath.length > 0" ng-click="movePlayer('startStop')"
+                    class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go' }}</button>
+            <button ng-show="movePath.length == 0" ng-click="lookAround()"
+                    class="btn btn-default" id="lookAround">Look</button>
+            <button ng-disabled="moving" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
+                <i class="glyphicon glyphicon-arrow-right"></i></button>
+            <button ng-disabled="moving" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
+                <i class="glyphicon glyphicon-arrow-down"></i></button>
+            <button ng-disabled="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
+                    class="btn btn-default btn-sm" id="moveClear">Clear</button>
+        </div>
         <div class="col-xs-1 text-right hard-right pull-right coords">
-            {{ overPixel.x }} , {{ overPixel.y }}
+        {{ overPixel.x }} , {{ overPixel.y }}
         </div>
         <div class="col-xs-3 text-right pull-right coords">
             <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
@@ -96,76 +110,27 @@
         <div class="col-xs-2 hard-left pull-left coords">
             <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
         </div>
-        <div ng-show="userInit && terrainReady" id="controls">
-            <button ng-disabled="moving" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
-                <i class="glyphicon glyphicon-arrow-up"></i></button>
-            <button ng-disabled="moving" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
-                <i class="glyphicon glyphicon-arrow-left"></i></button>
-            <button ng-disabled="movePath.length == 0" ng-click="movePlayer('startStop')" 
-                    class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go'}}</button>
-            <button ng-disabled="moving" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
-                <i class="glyphicon glyphicon-arrow-right"></i></button>
-            <button ng-disabled="moving" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
-                <i class="glyphicon glyphicon-arrow-down"></i></button>
-            <button ng-disabled="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
-                    class="btn btn-default btn-sm" id="moveClear">Clear</button>
-        </div>
     </div>
 </div>
 <div id="uiContainer" ng-show="userInit && terrainReady" class="container">
     <div class="row">
         <div id="info" class="col-xs-3">
-            <h2>Welcome to <span class="geographr-color">Geographr</span>!</h2>
+            <div id="eventHUD" ng-show="inEvent">
+                <p ng-bind-html="event.message"></p>
+                <p class="event-products" ng-show="event.products">
+                    <button ng-click="takeFromEvent($index)" class="btn btn-xs" ng-repeat="product in event.products"
+                            ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
+                        {{ product.amount }}x {{ product.name }}
+                    </button>
+                </p>
+                <p ng-click="takeFromEvent('all')" ng-show="event.products">
+                    <button class="btn btn-sm btn-default">Take All</button>
+                </p>
+            </div>
             <div class="well" ng-show="helpText">
                 <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
                 <button ng-show="user.new" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
             </div>
-            <div class="row form-group">
-                <div class="input-group input-group-sm col-xs-8">
-                    <input class="form-control input-sm" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
-                    <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button></span>
-                </div>
-            </div>
-            <div ng-show="user.id < 3 || user.id == 20" class="row form-group">
-                <div class="col-xs-12">
-                    <div class="checkbox-inline"><label>
-                        <input ng-model="editTerrain" type="checkbox"> Terrain Edit Mode
-                    </label></div>
-                </div>
-            </div>
-            <div ng-show="editTerrain" class="well">
-                <div class="row form-group">
-                    <div class="col-xs-4">
-                        <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
-                    </div>
-                    <div class="col-xs-6 hard-left">
-                        <div class="checkbox-inline"><label>
-                            <input ng-disabled="brushSize > 0" ng-model="lockElevation" type="checkbox"> Fixed Elevation
-                        </label></div>
-                    </div>
-                </div>
-                <div class="row form-group">
-                    <div class="col-xs-12">
-                        Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
-                    </div>
-                </div>
-                <div class="row form-group">
-                    <div class="col-xs-12">
-                        <div class="checkbox-inline"><label>
-                            <input ng-disabled="brushSize < 1" ng-model="smoothTerrain" type="checkbox"> Smooth Area
-                        </label></div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-xs-12">
-                        <button class="btn btn-success" ng-click="saveTerrain()">Save Terrain</button>
-                    </div>
-                </div>
-            </div>
-            
-            <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
-            <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>
-            <button class="btn btn-default btn-sm" ng-click="showCommits = !showCommits">{{ showCommits | iif : 'Hide' : 'Show' }} Changelog</button>
             <div ng-show="showCommits" id="commits">
                 <table class="table">
                     <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
@@ -222,10 +187,11 @@
                         <span ng-init="style={background: '#'+item.color.hex}" ng-style="style" class="item-color"></span>
                         {{ item.type | itemDisplay }}
                     </button> -->
-                    <div class="well well-sm " ng-show="item.type == 'resource'">
-                        <strong>{{ item.amount }}</strong>&emsp;<span class="text-muted">pounds of</span> 
-                        {{ item.name | capitalize }}
-                        <div ng-show="onPixel.camp" class="input-group input-group-sm col-xs-5 pull-right">
+                    <div class="well well-sm" ng-show="item.type == 'resource'">
+                        <strong>{{ item.amount }}</strong>&emsp;
+                        <span class="text-muted">pounds of</span> {{ item.name }}
+                        <div ng-show="onPixel.camp" class="input-group input-group-sm col-xs-4 
+                            hard-right hard-left pull-right">
                             <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
                                    ng-init="sellAmount = item.amount" id="inputSellAmount">
                             <span class="input-group-btn">
@@ -233,6 +199,11 @@
                                 ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
                                 Sell</button></span>
                         </div>
+                    </div>
+                    <div ng-show="item.type == 'plant'">
+                        <span ng-init="style={background: '#'+item.color}" ng-style="style"
+                              class="item-color"></span>
+                        <strong>{{ item.amount }}</strong>x&emsp;{{ item.name | capitalize }}
                     </div>
                 </li>
             </ul>
@@ -290,6 +261,50 @@
                     <tr ng-repeat="user in scoreBoard | limitTo:5"><td>{{ $index+1 }}.</td><td>{{ user.nick }}</td><td class="text-right"><strong>{{ user.score }}</strong></td></tr>
                 </table>
             </div>
+            <div class="row form-group">
+                <div class="input-group input-group-sm col-xs-8">
+                    <input class="form-control input-sm" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
+                    <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button></span>
+                </div>
+            </div>
+            <div ng-show="user.id < 3 || user.id == 20" class="row form-group">
+                <div class="col-xs-12"><div class="checkbox-inline">
+                        <label><input ng-model="editTerrain" type="checkbox"> Terrain Edit Mode</label>
+                </div></div>
+            </div>
+            <div ng-show="editTerrain" class="well">
+                <div class="row form-group">
+                    <div class="col-xs-4">
+                        <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
+                    </div>
+                    <div class="col-xs-6 hard-left">
+                        <div class="checkbox-inline"><label>
+                            <input ng-disabled="brushSize > 0" ng-model="lockElevation" type="checkbox"> Fixed Elevation
+                        </label></div>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-xs-12">
+                        Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-xs-12">
+                        <div class="checkbox-inline"><label>
+                            <input ng-disabled="brushSize < 1" ng-model="smoothTerrain" type="checkbox"> Smooth Area
+                        </label></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <button class="btn btn-success" ng-click="saveTerrain()">Save Terrain</button>
+                    </div>
+                </div>
+            </div>
+
+            <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
+            <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>
+            <button class="btn btn-default btn-sm" ng-click="showCommits = !showCommits">{{ showCommits | iif : 'Hide' : 'Show' }} Changelog</button>
         </div>
     </div>
 </div>

@@ -36,6 +36,7 @@ find random objects/things/activities in the 9grid view
     - click on it to engage in an activity, replaces 9grid view with activity view
     - no click-fests!
     - timing-based minigames?
+    - create images to explain how to play minigames, w/ a checkbox for "don't remind me" (specific to each game)
     
 carrier pigeon/bird flies between players at all times, delivering messages
     - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.
