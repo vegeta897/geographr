@@ -117,7 +117,10 @@
         <div id="info" class="col-xs-3">
             <div ng-show="showCommits" id="commits">
                 <table class="table">
-                    <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
+                    <tr ng-repeat="commit in commits"><td><span class="text-muted">
+                        {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>
+                        {{ commit.message }}
+                    </td></tr>
                 </table>
             </div>
             <div id="eventHUD" ng-show="inEvent">

@@ -31,7 +31,7 @@ angular.module('Geographr.actCanvas', [])
                             eventMainContext.beginPath();
                             eventMainContext.strokeStyle = '#' + pool[p].product.color;
                             // Line width based on product amount above average
-                            eventMainContext.lineWidth = 1 + pool[p].product.avgQty - pool[p].product.amount;
+                            eventMainContext.lineWidth = 1 + (pool[p].product.amount - pool[p].product.avgQty)/2;
                             Math.seedrandom(seed+pool[p].targetX); // Consistent event redraws
                             for(var i = 0; i < 3; i++) {
                                 switch(Math.floor(Math.random()*4)) {

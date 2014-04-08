@@ -307,7 +307,7 @@ angular.module('Geographr.controllers', [])
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
                 $scope.brushSize = val;
-                $scope.lockElevation = $scope.lockElevation || val > 0; // Lock elevation if brush size is bigger than 1px
+                $scope.lockElevation = $scope.lockElevation || val > 0; // Lock elevation if brush size bigger than 1
             });
         };
         $scope.addLabel = function() { addingLabel = true; };
@@ -421,8 +421,8 @@ angular.module('Geographr.controllers', [])
         // Placing an object on the map
         var placeObject = function(event) {
             if($scope.authStatus != 'logged') { return; } // If not authed
-            if(event.which == 3) { $scope.cancelAddObject(); event.preventDefault(); return; } // If right click pressed
-            if(event.which == 2) { startDragPanning(event); return; } // If middle click pressed
+            if(event.which == 3) { $scope.cancelAddObject(); event.preventDefault(); return; } // If right click
+            if(event.which == 2) { startDragPanning(event); return; } // If middle click
             var object = $scope.placingObject;
             dimPixel(); // Dim the pixel being drawn on
             // Add the object in firebase
