@@ -23,6 +23,21 @@ angular.module('Geographr.actCanvas', [])
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
                 context[method](0,0,1200,750);
             },
+            drawLine: function(which,pointA,pointB,color) {
+                var context = which == 'low' ? eventLowContext : 
+                    which == 'main' ? eventMainContext : eventHighContext;
+                context.lineWidth = 1; context.strokeStyle = color;
+                context.beginPath();
+                context.moveTo(pointA[0],pointA[1]); context.lineTo(pointB[0],pointB[1]);
+                context.stroke();
+            },
+            drawCircle: function(which,location,size,color) {
+                var context = which == 'low' ? eventLowContext :
+                    which == 'main' ? eventMainContext : eventHighContext;
+                context.beginPath();
+                context.arc(location[0],location[1],size, 0, Math.PI*2);
+                context.closePath(); context.fillStyle = color; context.fill();
+            },
             drawActivity: function(type,pool,seed) {
                 clear(); // Clear event canvases
                 switch(type) {
@@ -31,7 +46,7 @@ angular.module('Geographr.actCanvas', [])
                             eventMainContext.beginPath();
                             eventMainContext.strokeStyle = '#' + pool[p].product.color;
                             // Line width based on product amount above average
-                            eventMainContext.lineWidth = 1 + (pool[p].product.amount - pool[p].product.avgQty)/2;
+                            eventMainContext.lineWidth = 1 + (pool[p].product.amount - pool[p].product.avgQty)/1.5;
                             Math.seedrandom(seed+pool[p].targetX); // Consistent event redraws
                             for(var i = 0; i < 3; i++) {
                                 switch(Math.floor(Math.random()*4)) {

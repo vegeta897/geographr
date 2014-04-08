@@ -176,14 +176,19 @@ angular.module('Geographr.game', [])
                     case 'forage':
                         var poolCopy = angular.copy(event.pool);
                         for(var i = 0; i < poolCopy.length; i++) {
-                            if(Math.abs(click.x - poolCopy[i].targetX) < 10 
-                                && Math.abs(click.y - poolCopy[i].targetY) < 10) {
+                            var dist = (click.x - poolCopy[i].targetX)*(click.x - poolCopy[i].targetX) +
+                                (click.y - poolCopy[i].targetY)*(click.y - poolCopy[i].targetY);
+                            if(dist < 225) {
                                 event.result.success = true;
-                                var product = poolCopy[i].product;
-                                delete product.avgQty;
-                                product.type = 'plant';
+                                var product = poolCopy[i].product; delete product.avgQty; product.type = 'plant';
+                                product.amount = Math.ceil(product.amount*((225-dist)/225));
                                 event.pool.splice(i,1); // Remove product from pool
-                                actCanvasUtility.drawActivity(type,event.pool,event.seed); // Redraw
+                                actCanvasUtility.drawCircle('main',[poolCopy[i].targetX,poolCopy[i].targetY],
+                                    3,'#ffffff'); // Show target
+                                actCanvasUtility.drawLine('main',[click.x,click.y], // Show delta
+                                    [poolCopy[i].targetX,poolCopy[i].targetY],'#00ff00');
+                                setTimeout(function() {
+                                    actCanvasUtility.drawActivity(type,event.pool,event.seed); },1000); // Redraw
                                 event.result.products.push(product);
                             }
                         }
