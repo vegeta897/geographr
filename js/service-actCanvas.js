@@ -23,22 +23,27 @@ angular.module('Geographr.actCanvas', [])
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }
                 context[method](0,0,1200,750);
             },
-            drawActivity: function(type,event) {
+            drawActivity: function(type,pool,seed) {
                 clear(); // Clear event canvases
-                Math.seedrandom();
                 switch(type) {
                     case 'forage':
-                        eventMainContext.beginPath(); eventMainContext.strokeStyle = '#aaaaaa';
-                        for(var i = 0; i < 3; i++) {
-                            switch(Math.floor(Math.random()*4)) {
-                                case 0: eventMainContext.moveTo(0,Math.floor(Math.random()*300)); break;
-                                case 1: eventMainContext.moveTo(300,Math.floor(Math.random()*300)); break;
-                                case 2: eventMainContext.moveTo(Math.floor(Math.random()*300),0); break;
-                                case 3: eventMainContext.moveTo(Math.floor(Math.random()*300),300); break;
+                        for(var p = 0; p < pool.length; p++) {
+                            eventMainContext.beginPath();
+                            eventMainContext.strokeStyle = '#' + pool[p].product.color;
+                            // Line width based on product amount above average
+                            eventMainContext.lineWidth = 1 + pool[p].product.avgQty - pool[p].product.amount;
+                            Math.seedrandom(seed+pool[p].targetX); // Consistent event redraws
+                            for(var i = 0; i < 3; i++) {
+                                switch(Math.floor(Math.random()*4)) {
+                                    case 0: eventMainContext.moveTo(0,Math.floor(Math.random()*300)); break;
+                                    case 1: eventMainContext.moveTo(300,Math.floor(Math.random()*300)); break;
+                                    case 2: eventMainContext.moveTo(Math.floor(Math.random()*300),0); break;
+                                    case 3: eventMainContext.moveTo(Math.floor(Math.random()*300),300); break;
+                                }
+                                eventMainContext.lineTo(pool[p].targetX,pool[p].targetY);
                             }
-                            eventMainContext.lineTo(event.targetX,event.targetY); 
+                            eventMainContext.stroke();
                         }
-                        eventMainContext.stroke();
                         eventMainContext.clearRect(50,50,200,200);
                         break;
                 }

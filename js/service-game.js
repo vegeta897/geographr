@@ -135,23 +135,28 @@ angular.module('Geographr.game', [])
             }
             return economy;
         };
-        // Products of a successful event: [number] is variety count range, [rating] is success factor
-        var getEventProducts = function(eventType,number,rating) {
-            number = randomIntRange(number[0],number[1]); // Pick number and total from input ranges
-            var results = [];
+        // Generate pool of resources for event
+        var createEventPool = function(eventType) {
+            var pool = [];
             var typesChosen = []; // Prevent 2 instances of same product
-            for(var i = 0; i < number; i++) {
-                var product = pickInArray(eventProducts[eventType]);
-                while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
-                    product = pickInArray(eventProducts[eventType]);
-                }
-                typesChosen.push(product.name);
-                results.push({
-                    type: 'plant', name: product.name, color: product.color, 
-                    amount: Math.ceil((product.avgQty*rating*(3/number) + randomIntRange(0,rating*2)))
-                })
+            switch(eventType) {
+                case 'forage':
+                    var number = randomIntRange(2,4); // TODO: Factor in player's skill level
+                    for(var i = 0; i < number; i++) {
+                        var product = pickInArray(eventProducts[eventType]);
+                        while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
+                            product = pickInArray(eventProducts[eventType]);
+                        }
+                        typesChosen.push(product.name);
+                        // TODO: Increase avg qty based on player's skill level
+                        var item = { type: 'plant', product: product,
+                            targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
+                        item.product.amount = item.product.avgQty + randomIntRange(0,2);
+                        pool.push(item);
+                    }
+                    break;
             }
-            return results;
+            return pool;
         };
         
         return {
@@ -159,26 +164,34 @@ angular.module('Geographr.game', [])
                 Math.seedrandom();
                 switch(type) {
                     case 'forage':
-                        event.targetX = Math.floor(Math.random()*100+100);
-                        event.targetY = Math.floor(Math.random()*100+100);
+                        event.pool = createEventPool(type); event.result = { products: [] }; 
+                        event.seed = randomIntRange(0,1000); // For consistent redrawing
                         break;
                 }
-                actCanvasUtility.drawActivity(type,event);
+                actCanvasUtility.drawActivity(type,event.pool,event.seed);
             },
             playActivity: function(type,click) {
                 // TODO: Factor in player's skill level
-                var result = {};
                 switch(type) {
                     case 'forage':
-                        if(Math.abs(click.x - event.targetX) < 10 && Math.abs(click.y - event.targetY) < 10) {
-                            result.success = true;
-                            result.products = getEventProducts(type,[1,3],1);
+                        var poolCopy = angular.copy(event.pool);
+                        for(var i = 0; i < poolCopy.length; i++) {
+                            if(Math.abs(click.x - poolCopy[i].targetX) < 10 
+                                && Math.abs(click.y - poolCopy[i].targetY) < 10) {
+                                event.result.success = true;
+                                var product = poolCopy[i].product;
+                                delete product.avgQty;
+                                product.type = 'plant';
+                                event.pool.splice(i,1); // Remove product from pool
+                                actCanvasUtility.drawActivity(type,event.pool,event.seed); // Redraw
+                                event.result.products.push(product);
+                            }
                         }
                         break;
                 }
-                
-                result.message = result.success ? eventMessages.success[type] : eventMessages.failure[type];
-                return result;
+                event.result.message = event.result.success ? eventMessages.success[type] 
+                    : eventMessages.failure[type];
+                return event.result;
             },
             getVisibility: function(terrain,visible,coords) {
                 var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);

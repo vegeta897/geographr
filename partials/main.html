@@ -115,9 +115,14 @@
 <div id="uiContainer" ng-show="userInit && terrainReady" class="container">
     <div class="row">
         <div id="info" class="col-xs-3">
+            <div ng-show="showCommits" id="commits">
+                <table class="table">
+                    <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
+                </table>
+            </div>
             <div id="eventHUD" ng-show="inEvent">
                 <p ng-bind-html="event.message"></p>
-                <p class="event-products" ng-show="event.products">
+                <p class="event-products" ng-show="event.products.length > 0">
                     <button ng-click="takeFromEvent($index)" class="btn btn-xs" ng-repeat="product in event.products"
                             ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
                         {{ product.amount }}x {{ product.name }}
@@ -130,11 +135,6 @@
             <div class="well" ng-show="helpText">
                 <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
                 <button ng-show="user.new" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
-            </div>
-            <div ng-show="showCommits" id="commits">
-                <table class="table">
-                    <tr ng-repeat="commit in commits"><td><span class="text-muted">{{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>{{ commit.message }}</td></tr>
-                </table>
             </div>
         </div>
         <div id="location" class="col-xs-3">
@@ -203,7 +203,7 @@
                     <div ng-show="item.type == 'plant'">
                         <span ng-init="style={background: '#'+item.color}" ng-style="style"
                               class="item-color"></span>
-                        <strong>{{ item.amount }}</strong>x&emsp;{{ item.name | capitalize }}
+                        <strong>{{ item.amount }}</strong>&emsp;{{ item.name | capitalize }}
                     </div>
                 </li>
             </ul>

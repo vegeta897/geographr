@@ -242,6 +242,7 @@ angular.module('Geographr.controllers', [])
                 else { taking = [$scope.event.products[product]]; $scope.event.products.splice(product,1); }
             for(var i = 0; i < taking.length; i++) {
                 var fireID = fireInventory.push().name();
+                // TODO: Don't store color on firebase
                 if($scope.user.hasOwnProperty('inventory')) {
                     for(var key in $scope.user.inventory) {
                         if($scope.user.inventory.hasOwnProperty(key) && 
