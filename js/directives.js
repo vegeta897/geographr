@@ -110,6 +110,23 @@ angular.module('Geographr.directives', [])
         return owner+type+name;
     }
 })
+.filter('skillLevel', function() {
+    return function(input) { if(!input) { return input; } return Math.floor(input / 10); }
+})
+.filter('typeFilter', function() {
+    return function(input,type) {
+        if(!input) { return input; }
+        var list = [];
+        for(var key in input) {
+            if(input.hasOwnProperty(key) && input[key].type == type) {
+                input[key].name = input[key].name ? input[key].name : key;
+                list.push(input[key]);
+            }
+        }
+        list = sortArrayByProperty(list,'name');
+        return list;
+    }
+})
 .filter('splitList', function() {
     return function(input,split) {
         if(!input) { return input; }

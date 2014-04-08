@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.16; $scope.versionName = 'Active Nonsense'; $scope.needUpdate = false;
+        $scope.version = 0.17; $scope.versionName = 'Marvelous Bank'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -97,6 +97,7 @@ angular.module('Geographr.controllers', [])
                     fireRef.child('users').on('child_added', updateUsers);
                     fireRef.child('users').on('child_changed', updateUsers);
                     if($scope.user.new) { tutorialStep = -1; tutorial('next'); }
+                    if(!$scope.user.hasOwnProperty('skills')) { $scope.user.skills = {}; }
                     initTerrain();
                     fireInventory = fireUser.child('inventory');
                     fireInventory.on('child_added', updateInventory);
@@ -352,11 +353,16 @@ angular.module('Geographr.controllers', [])
             if(e.which == 2 || e.which == 3) {  e.preventDefault(); return; } // If right/middle click pressed
             var offset = actCanvasUtility.eventHighCanvas.offset(); // Get pixel location
             var click = { x: Math.floor(e.pageX - offset.left), y: Math.floor(e.pageY - offset.top) };
-            var result = gameUtility.playActivity($scope.event.type,click);
+            $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
+            var result = gameUtility.playActivity($scope.event.type,click,$scope.user.skills[$scope.event.type]);
             //actCanvasUtility.eventHighCanvas.unbind('mousedown',eventOnClick);
             $timeout(function() {
                 if(result.success) {
                     // TODO: Increase player's skill level if successful
+                    if($scope.user.skills.hasOwnProperty($scope.event.type)) {
+                        $scope.user.skills[$scope.event.type] += 1;
+                    } else { $scope.user.skills[$scope.event.type] = 1; }
+                    fireUser.child('skills').set($scope.user.skills);
                 }
                 //$scope.inEvent = false; // delay with timeout
                 $scope.event.message = result.message;

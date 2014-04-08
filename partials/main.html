@@ -139,6 +139,17 @@
                 <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
                 <button ng-show="user.new" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
             </div>
+            <h2>Skills</h2>
+            <table class="unstyled skills">
+                <tr ng-repeat="(key,val) in user.skills">
+                    <td><strong>{{ key | capitalize }}</strong></td>
+                    <td class="text-right"><span class="text-muted">Level</span>&nbsp;&nbsp;<strong>
+                        {{ val | skillLevel }}</strong>&emsp;</td>
+                    <td><div class="progress">
+                        <div class="progress-bar" ng-style="{width: (val % 10 *10)+'%'}"></div>
+                    </div></td>
+                </tr>
+            </table>
         </div>
         <div id="location" class="col-xs-3">
             <h2>Location <small>({{ user.location | grid }})</small></h2>
@@ -182,34 +193,32 @@
         <div id="inventory" class="col-xs-3">
             <h2>Inventory</h2>
             <p><span class="text-muted">Gold:</span>&emsp;{{ user.money }}</p>
+            <p ng-hide="inventory" class="text-muted">No items</p>
             <ul class="list-unstyled">
-                <li class="text-muted" ng-hide="inventory">No items</li>
-                <li ng-repeat="item in inventory">
-                    <!-- <button type="button" ng-disabled="item.adding" ng-click="addObject(item)"
-                            class="btn btn-xs btn-default"><span class="glyphicon glyphicon-plus"></span>
-                        <span ng-init="style={background: '#'+item.color.hex}" ng-style="style" class="item-color"></span>
-                        {{ item.type | itemDisplay }}
-                    </button> -->
-                    <div class="well well-sm" ng-show="item.type == 'resource'">
+                <li ng-repeat="item in inventory | typeFilter:'resource'">
+                    <div class="well well-sm">
                         <strong>{{ item.amount }}</strong>&emsp;
                         <span class="text-muted">pounds of</span> {{ item.name }}
                         <div ng-show="onPixel.camp" class="input-group input-group-sm col-xs-4 
-                            hard-right hard-left pull-right">
+                        hard-right hard-left pull-right">
                             <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
                                    ng-init="sellAmount = item.amount" id="inputSellAmount">
-                            <span class="input-group-btn">
-                            <button class="btn btn-default btn-sm"
+                        <span class="input-group-btn">
+                        <button class="btn btn-default btn-sm"
                                 ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
-                                Sell</button></span>
+                            Sell</button></span>
                         </div>
-                    </div>
-                    <div ng-show="item.type == 'plant'">
-                        <span ng-init="style={background: '#'+item.color}" ng-style="style"
-                              class="item-color"></span>
-                        <strong>{{ item.amount }}</strong>&emsp;{{ item.name | capitalize }}
                     </div>
                 </li>
             </ul>
+            <table class="unstyled">
+                <tr ng-repeat="item in inventory | typeFilter:'plant'">
+                    <td><span ng-init="style={background: '#'+item.color}" ng-style="style" 
+                              class="item-color"></span></td>
+                    <td class="text-right"><strong>{{ item.amount }}&emsp;</strong></td>
+                    <td>{{ item.name | capitalize }}</td>
+                </tr>
+            </table>
         </div>
         <div class="col-xs-3">
             <div id="objectInfo" ng-show="selectedObject">

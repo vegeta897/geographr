@@ -141,14 +141,13 @@ angular.module('Geographr.game', [])
             var typesChosen = []; // Prevent 2 instances of same product
             switch(eventType) {
                 case 'forage':
-                    var number = randomIntRange(2,4); // TODO: Factor in player's skill level
+                    var number = randomIntRange(2,7);
                     for(var i = 0; i < number; i++) {
                         var product = pickInArray(eventProducts[eventType]);
                         while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
                             product = pickInArray(eventProducts[eventType]);
                         }
                         typesChosen.push(product.name);
-                        // TODO: Increase avg qty based on player's skill level
                         var item = { type: 'plant', product: product,
                             targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                         item.product.amount = item.product.avgQty + randomIntRange(0,2);
@@ -156,6 +155,7 @@ angular.module('Geographr.game', [])
                     }
                     break;
             }
+            console.log(typesChosen);
             return pool;
         };
         
@@ -170,18 +170,19 @@ angular.module('Geographr.game', [])
                 }
                 actCanvasUtility.drawActivity(type,event.pool,event.seed);
             },
-            playActivity: function(type,click) {
-                // TODO: Factor in player's skill level
+            playActivity: function(type,click,skill) {
+                skill = skill ? Math.floor(skill / 10) : 0;
                 switch(type) {
                     case 'forage':
                         var poolCopy = angular.copy(event.pool);
+                        var threshold = 225 + skill*4;
                         for(var i = 0; i < poolCopy.length; i++) {
                             var dist = (click.x - poolCopy[i].targetX)*(click.x - poolCopy[i].targetX) +
                                 (click.y - poolCopy[i].targetY)*(click.y - poolCopy[i].targetY);
-                            if(dist < 225) {
+                            if(dist < threshold) {
                                 event.result.success = true;
                                 var product = poolCopy[i].product; delete product.avgQty; product.type = 'plant';
-                                product.amount = Math.ceil(product.amount*((225-dist)/225));
+                                product.amount = Math.ceil(product.amount*((threshold-dist)/threshold));
                                 event.pool.splice(i,1); // Remove product from pool
                                 actCanvasUtility.drawCircle('main',[poolCopy[i].targetX,poolCopy[i].targetY],
                                     3,'#ffffff'); // Show target
@@ -190,6 +191,7 @@ angular.module('Geographr.game', [])
                                 setTimeout(function() {
                                     actCanvasUtility.drawActivity(type,event.pool,event.seed); },1000); // Redraw
                                 event.result.products.push(product);
+                                break; // Only one product foraged per click
                             }
                         }
                         break;

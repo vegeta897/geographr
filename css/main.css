@@ -90,11 +90,13 @@ canvas { display: block; }
 #uiContainer { top: 0; }
 
 #info { margin-bottom: 10px; }
-#info h2 { color: #c8c8c8; font-size: 20px }
 
 #eventHUD p {  }
 #eventHUD .event-products button { margin: 0 4px 4px 0; color: white; }
 #eventHUD .event-products button:hover { background-color: #24272b !important; }
+
+.skills { width: 100%; }
+.skills .progress { width: 130px; margin: 4px 0 }
 
 .object-well>button { margin-top: -5px; }
 .object-well table { width: 100%; margin-top: 10px; }
