@@ -1,6 +1,7 @@
 /* Directives and Filters */
 
 var sortArrayByProperty = function(arr, sortby, descending) {
+    if(arr.length == 0) { return arr; }
     if(arr[0].hasOwnProperty(sortby)) {
         if(descending) {
             arr.sort(function(obj1,obj2) { if(obj1[sortby]<obj2[sortby]) { return 1; } else { return -1; } });

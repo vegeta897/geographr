@@ -141,7 +141,7 @@ angular.module('Geographr.game', [])
             var typesChosen = []; // Prevent 2 instances of same product
             switch(eventType) {
                 case 'forage':
-                    var number = randomIntRange(2,7);
+                    var number = randomIntRange(2,4);
                     for(var i = 0; i < number; i++) {
                         var product = pickInArray(eventProducts[eventType]);
                         while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
@@ -155,7 +155,6 @@ angular.module('Geographr.game', [])
                     }
                     break;
             }
-            console.log(typesChosen);
             return pool;
         };
         
@@ -172,6 +171,7 @@ angular.module('Geographr.game', [])
             },
             playActivity: function(type,click,skill) {
                 skill = skill ? Math.floor(skill / 10) : 0;
+                event.result.success = false;
                 switch(type) {
                     case 'forage':
                         var poolCopy = angular.copy(event.pool);
