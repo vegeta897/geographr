@@ -35,8 +35,8 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 }
 canvas { display: block; }
 .side { width: 302px; }
-#minimap, #eventCanvases, #zoomCanvases { position: relative; }
-#minimap, #eventCanvases { height: 300px; } #zoomCanvases { height: 604px; }
+#minimap, #eventCanvases, #zoomCanvases, #eventTutorial { position: relative; }
+#minimap, #eventCanvases, #eventTutorial { height: 300px; } #zoomCanvases { height: 604px; }
 
 #gridView {
     width: 295px; height: 295px;
@@ -59,6 +59,7 @@ canvas { display: block; }
 
 .canvas-container canvas { position: absolute; }
 
+.checkbox-inline * { cursor: pointer !important; }
 .coords .checkbox-inline { padding-top: 0; }
 .coords .checkbox-inline label { font-weight: normal; }
 
@@ -91,7 +92,9 @@ canvas { display: block; }
 
 #info { margin-bottom: 10px; }
 
-#eventHUD p {  }
+#eventHUD { margin-top: -28px; min-height: 26px; }
+#eventHUD p { padding-top: 2px; margin-bottom: 8px; }
+#eventHUD .checkbox-inline { margin-left: 4px; }
 #eventHUD .event-products button { margin: 0 4px 4px 0; color: white; }
 #eventHUD .event-products button:hover { background-color: #24272b !important; }
 

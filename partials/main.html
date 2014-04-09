@@ -31,10 +31,13 @@
                 Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
             </canvas>
         </div>
-        <div id="eventCanvases" ng-show="inEvent">
+        <div id="eventCanvases" ng-show="inEvent && !inEventTutorial">
             <canvas id="eventLowCanvas" width="300" height="300"></canvas> <!-- Event low canvas -->
             <canvas id="eventMainCanvas" width="300" height="300"></canvas> <!-- Event main canvas -->
             <canvas id="eventHighCanvas" width="300" height="300"></canvas> <!-- Event high canvas -->
+        </div>
+        <div id="eventTutorial" ng-show="inEventTutorial">
+            <img src="" id="tutorialImage" width="300" height="300" ng-src="img/{{ event.type || 'loading' }}.png" />
         </div>
         <table ng-hide="inEvent" id="gridView">
             <!-- TODO: Generate this with ng-repeat or a directive -->
@@ -124,6 +127,9 @@
                 </table>
             </div>
             <div id="eventHUD" ng-show="inEvent">
+                <div ng-show="inEventTutorial" class="checkbox-inline text-muted"><label>
+                    <input ng-change="updateSkips()" ng-model="skipTutorial" type="checkbox"> Don't show me this again
+                </label></div>
                 <p ng-bind-html="event.message"></p>
                 <p class="event-products" ng-show="event.products.length > 0">
                     <button ng-click="takeFromEvent($index)" class="btn btn-xs" ng-repeat="product in event.products"
@@ -195,8 +201,7 @@
             </div>
         </div>
         <div id="inventory" class="col-xs-3">
-            <h2>Inventory</h2>
-            <p><span class="text-muted">Gold:</span>&emsp;{{ user.money }}</p>
+            <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;<strong>{{ user.money }}</strong></small></h2>
             <p ng-hide="inventory" class="text-muted">No items</p>
             <ul class="list-unstyled">
                 <li ng-repeat="item in inventory | typeFilter:'resource'">

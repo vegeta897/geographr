@@ -15,6 +15,7 @@ angular.module('Geographr.controllers', [])
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = [];
         $scope.movePath = [];
+        $scope.tutorialSkips = []; $scope.skipTutorial = false;
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
@@ -117,7 +118,7 @@ angular.module('Geographr.controllers', [])
         };
     
         // Attempt to get these variables from localstorage
-        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate'];
+        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate','tutorialSkips'];
         for(var i = 0; i < localStores.length; i++) {
             if(localStorage.get(localStores[i])) {
                 $scope[localStores[i]] = localStorage.get(localStores[i]);
@@ -156,6 +157,7 @@ angular.module('Geographr.controllers', [])
         // Prevent right-click on high canvases
         jQuery('body').on('contextmenu', '#fullHighCanvas', function(e){ return false; })
             .on('contextmenu', '#zoomHighCanvas', function(e){ return false; });
+        var tutorialImage = jQuery(document.getElementById('tutorialImage'));
     
         fullHighCanvas.onselectstart = function() { return false; }; // Disable text selection.
         zoomHighCanvas.onselectstart = function() { return false; };
@@ -224,17 +226,30 @@ angular.module('Geographr.controllers', [])
                 jQuery(zoomHighCanvas).unbind('mousedown').mousedown(zoomOnMouseDown);
             });
         };
+        $scope.updateSkips = function() {
+            $scope.tutorialSkips.push($scope.event.type);
+            localStorage.set('tutorialSkips',$scope.tutorialSkips);
+            $timeout(function() { $scope.inEventTutorial = false; });
+            tutorialImage.unbind('mousedown');
+        };
         $scope.activateObject = function(objectIndex) {
-            if(!$scope.onPixel.objects || objectIndex > $scope.onPixel.objects.length - 1) { return; }
+            if(!$scope.onPixel.objects || objectIndex > $scope.onPixel.objects.length - 1 
+                || $scope.onPixel.objects[objectIndex].type == 'camp') { return; }
             $timeout(function() {
-                $scope.event = { type: $scope.onPixel.objects[objectIndex].type };
-                $scope.event.message = gameUtility.eventMessages.instructions[$scope.event.type];
+                $scope.event = { type: $scope.onPixel.objects[objectIndex].type }; // Get event type
+                $scope.onPixel.objects.splice(objectIndex,1); // Remove object
                 gameUtility.setupActivity($scope.event.type);
                 $scope.inEvent = true;
-                $scope.onPixel.objects.splice(objectIndex,1); // Remove object
-                actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                // TODO: Begin event time limit
-                // TODO: Event tutorial/introduction with "don't tell me again" checkbox
+                $scope.inEventTutorial = jQuery.inArray($scope.event.type,$scope.tutorialSkips) < 0; // Skip tut?
+                if($scope.inEventTutorial) {
+                    tutorialImage.on('mousedown',function() {
+                        $timeout(function() { $scope.inEventTutorial = false; });
+                        tutorialImage.unbind('mousedown');
+                        actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
+                    });
+                } else {
+                    actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
+                }
             });
         };
         $scope.takeFromEvent = function(product) {
@@ -642,7 +657,7 @@ angular.module('Geographr.controllers', [])
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
                     if(visiblePixels.hasOwnProperty(grid)) { // If grid is visible or explored
                         $scope.overPixel.objects = localObjects[grid];
-                        if(campList.indexOf(grid) >= 0) { // If there is a camp here
+                        if(campList.indexOf(grid) >= 0 && $scope.showObjects) { // If there is a camp here
                             Math.seedrandom(grid);
                             var text = 'Camp ' + 
                                 gameUtility.capitalize(Chance($scope.overPixel.x*1000 + $scope.overPixel.y).word());
@@ -651,7 +666,7 @@ angular.module('Geographr.controllers', [])
                         } else if($scope.user.location == grid) {
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],'You',zoomPixSize);
-                        } else if($scope.user.camp == grid) {
+                        } else if($scope.user.camp == grid && $scope.showObjects) {
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],'Your Camp',zoomPixSize);
                         }

@@ -8,16 +8,12 @@ angular.module('Geographr.game', [])
             
         var event = {}; // Holds event details
         var eventMessages = { // Event messages/instructions to show user
-            instructions: {
-                forage: '<strong>Click</strong> where the 3 lines would <strong>intersect!</strong>',
-                hunt: '<strong>Click</strong> where the 3 lines would <strong>intersect!</strong>'
-            },
             success: {
                 forage: 'You found <strong>some plants</strong> while foraging.',
                 hunt: 'You killed an <strong>innocent animal.</strong>'
             },
             failure: {
-                forage: 'You search for edible plants but <strong>find nothing</strong>.',
+                forage: 'You search for plants but <strong>find nothing</strong>.',
                 hunt: 'You <strong>couldn\'t find any animals</strong> to hunt.'
             }
         };
@@ -163,7 +159,7 @@ angular.module('Geographr.game', [])
                 Math.seedrandom();
                 switch(type) {
                     case 'forage':
-                        event.pool = createEventPool(type); event.result = { products: [] }; 
+                        event.pool = createEventPool(type); event.result = { products: [] };
                         event.seed = randomIntRange(0,1000); // For consistent redrawing
                         break;
                 }
