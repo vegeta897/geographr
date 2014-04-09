@@ -162,17 +162,21 @@
                 <table class="unstyled" ng-show="showEco">
                     <tr><th>Resource</th><th>Supply</th><th>Demand</th></tr>
                     <tr ng-repeat-start="(key,val) in onPixel.camp.economy">
-                        <td><a href="#" data-resource data-info="val">{{ key | capitalize }}</a></td>
-                        <td>{{ val.supply }}</td><td>{{ val.demand }}</td>
+                        <td><a href="#" data-resource data-info="val"
+                                ng-class="{'text-muted': val.supply < 1}">{{ key | capitalize }}</a></td>
+                        <td>{{ val.supply }}</td><td style="color: white;"
+                            ng-style="{ opacity: (val.demand+15)/115 }">{{ val.demand }}</td>
                     </tr>
                     <tr class="actions" ng-repeat-end><td colspan="3">
                         <div class="well well-sm">
                             <div class="row">
-                                <div class="input-group input-group-sm col-xs-7 hard-right">
+                                <div class="input-group input-group-sm col-xs-7 hard-right"
+                                     ng-class="{ 'has-error': buyAmount > val.supply }">
                                     <input class="form-control input-sm text-center" type="text" ng-model="buyAmount"
                                         ng-init="buyAmount = 1" id="inputBuyAmount">
-                                    <span class="input-group-btn .btn-group "><button class="btn btn-default btn-sm"
-                                        ng-click="buyResource(key,buyAmount)">Buy</button>
+                                    <span class="input-group-btn .btn-group ">
+                                        <button ng-disabled="buyAmount > val.supply" class="btn btn-default btn-sm"
+                                            ng-click="buyResource(key,buyAmount)">Buy</button>
                                         <button class="btn btn-default btn-sm"
                                             ng-click="buyAmount = val.supply">All</button></span>
                                 </div>
@@ -197,16 +201,29 @@
             <ul class="list-unstyled">
                 <li ng-repeat="item in inventory | typeFilter:'resource'">
                     <div class="well well-sm">
-                        <strong>{{ item.amount }}</strong>&emsp;
-                        <span class="text-muted">pounds of</span> {{ item.name }}
-                        <div ng-show="onPixel.camp" class="input-group input-group-sm col-xs-4 
-                        hard-right hard-left pull-right">
-                            <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
-                                   ng-init="sellAmount = item.amount" id="inputSellAmount">
-                        <span class="input-group-btn">
-                        <button class="btn btn-default btn-sm"
-                                ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
-                            Sell</button></span>
+                        <strong class="text-right" style="display: inline-block; width: 30px;">
+                            {{ item.amount }}</strong>&emsp;
+                        <span class="text-muted">{{ item.amount > 1 | iif : 'pounds' : 'pound' }} of</span> 
+                        <span><span><a href="#" data-resource data-info="item">{{ item.name }}</a></span></span>
+                        <div class="well well-sm actions">
+                            <div class="row">
+                                <div class="input-group input-group-sm col-xs-7 hard-right" 
+                                     ng-class="{ 'has-error': sellAmount > item.amount }">
+                                    <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
+                                           ng-init="sellAmount = item.amount" id="inputSellAmount">
+                                    <span class="input-group-btn .btn-group ">
+                                        <button ng-disabled="sellAmount > item.amount" class="btn btn-default btn-sm" 
+                                            ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
+                                                Sell</button>
+                                        <button class="btn btn-default btn-sm"
+                                                ng-click="sellAmount = item.amount">All</button></span>
+                                </div>
+                                <div class=" col-xs-5">
+                                    <span class="text-muted">Value: </span>
+                                    <span ng-class="{'text-danger':sellAmount > item.amount}">
+                                        {{ sellAmount * onPixel.camp.economy[item.name].value }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -223,26 +240,27 @@
         <div class="col-xs-3">
             <div id="objectInfo" ng-show="selectedObject">
                 <h2>Selected Object<!--<small>{{ selectedGrid.ownerNick }}</small>--></h2>
-                <p><span ng-style="{background: '#'+selectedObject.color.hex}" class="item-color"></span>
-                    {{ selectedObject | itemDisplay }}&emsp;
+                <p>{{ selectedObject | itemDisplay }}&emsp;
                     <span class="text-muted">({{ selectedObject.grid | grid }})</span>
                     <em ng-show="selectedObject.visited">&emsp;Visited</em>
                 </p>
                 <div class="row" ng-show="selectedObject.economy">
                     <div class="col-xs-12">Resource demands</div>
-                    <div class="col-xs-6 hard-right">
+                    <div class="col-xs-6">
                         <table class="unstyled table-tiny">
                             <tr ng-repeat="resource in selectedObject.economy | splitList: 0">
                                 <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
-                                <td>{{ resource.demand }}</td>
+                                <td class="text-right" style="color: white;" 
+                                    ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
                             </tr>
                         </table>
                     </div>
-                    <div class="col-xs-6 hard-left">
+                    <div class="col-xs-6">
                         <table class="unstyled table-tiny">
                             <tr ng-repeat="resource in selectedObject.economy | splitList: 1">
                                 <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
-                                <td>{{ resource.demand }}</td>
+                                <td class="text-right" style="color: white;" 
+                                    ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
                             </tr>
                         </table>
                     </div>

@@ -105,8 +105,8 @@ canvas { display: block; }
 .object-well .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
 
 #inventory ul li .well {
-    padding-left: 16px; padding-right: 3px;
-    margin-bottom: 6px;
+    padding-left: 12px; padding-right: 12px;
+    margin-top: 4px; margin-bottom: 2px;
 }
 #inventory ul li .well .input-group-sm > .form-control {
     height: 20px; padding: 0 3px; top: -1px; position: relative;
