@@ -12,9 +12,13 @@ angular.module('Geographr.game', [])
                 forage: 'You found <strong>some plants</strong> while foraging.',
                 hunt: 'You killed an <strong>innocent animal.</strong>'
             },
+            ended: {
+                forage: 'There are <strong>no more plants</strong> to be harvested here.',
+                hunt: 'There are <strong>no more animals</strong> to be hunted here.'
+            },
             failure: {
                 forage: 'You search for plants but <strong>find nothing</strong>.',
-                hunt: 'You <strong>couldn\'t find any animals</strong> to hunt.'
+                hunt: 'You <strong>scared off</strong> the animal!'
             }
         };
         var eventProducts = {
@@ -159,7 +163,7 @@ angular.module('Geographr.game', [])
                 Math.seedrandom();
                 switch(type) {
                     case 'forage':
-                        event.pool = createEventPool(type); event.result = { products: [] };
+                        event.pool = createEventPool(type); event.result = {};
                         event.seed = randomIntRange(0,1000); // For consistent redrawing
                         break;
                 }
@@ -167,11 +171,11 @@ angular.module('Geographr.game', [])
             },
             playActivity: function(type,click,skill) {
                 skill = skill ? Math.floor(skill / 10) : 0;
-                event.result.success = false;
+                event.result.success = false; event.result.products = [];
                 switch(type) {
                     case 'forage':
                         var poolCopy = angular.copy(event.pool);
-                        var threshold = 225 + skill*4;
+                        var threshold = 225 + skill*skill;
                         for(var i = 0; i < poolCopy.length; i++) {
                             var dist = (click.x - poolCopy[i].targetX)*(click.x - poolCopy[i].targetX) +
                                 (click.y - poolCopy[i].targetY)*(click.y - poolCopy[i].targetY);
@@ -190,10 +194,19 @@ angular.module('Geographr.game', [])
                                 break; // Only one product foraged per click
                             }
                         }
+                        if(!event.result.success) { // If event failed, show harvest spots
+                            event.result.ended = true;
+                            for(var j = 0; j < poolCopy.length; j++) {
+                                actCanvasUtility.drawCircle('main',[poolCopy[j].targetX,poolCopy[j].targetY],
+                                    5,'#ffffff'); // Show target
+                            }
+                        }
+                        if(event.pool.length == 0) { event.result.ended = true; }
                         break;
                 }
-                event.result.message = event.result.success ? eventMessages.success[type] 
-                    : eventMessages.failure[type];
+                event.result.message = event.result.success ? 
+                    event.result.ended ? eventMessages.ended[type] : eventMessages.success[type] 
+                        : eventMessages.failure[type];
                 return event.result;
             },
             getVisibility: function(terrain,visible,coords) {

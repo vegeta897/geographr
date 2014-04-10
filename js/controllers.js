@@ -20,7 +20,7 @@ angular.module('Geographr.controllers', [])
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
             localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
-            tutorialStep = 0, visiblePixels = {}, moveTimers = {}, campList = [];
+            tutorialStep = 0, visiblePixels = {}, moveTimers = {}, waitTimer, campList = [];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -163,6 +163,7 @@ angular.module('Geographr.controllers', [])
         zoomHighCanvas.onselectstart = function() { return false; };
         
         var controlsDIV = jQuery('#controls'); // Movement controls
+        var progressBar = controlsDIV.children('.progress').children('.progress-bar');
     
         // Reset player
         $scope.reset = function() {
@@ -270,7 +271,8 @@ angular.module('Geographr.controllers', [])
                     if(taking[i].amount > 0) { $scope.user.inventory[fireID] = taking[i]; }
                 } else { $scope.user.inventory = {}; $scope.user.inventory[fireID] = taking[i]; }
             }
-            if($scope.event.products.length == 0) {
+            if($scope.event.products.length == 0 && $scope.event.result.ended) {
+                actCanvasUtility.eventHighCanvas.unbind('mousedown');
                 $timeout(function() { $scope.inEvent = false; $scope.event = {}; });
             }
             fireInventory.set(angular.copy($scope.user.inventory));
@@ -282,6 +284,8 @@ angular.module('Geographr.controllers', [])
                     $scope.moving = false; dimPixel(); return;
                 } 
                 $scope.moving = true; dimPixel();
+                var moveTime = 5 * (1 + localTerrain[$scope.movePath[0]] / 60);
+                playWaitingBar(moveTime+0.5);
                 fireServer.push({ user: userID, action: 'move', path: $scope.movePath }); return;
             }
             if(dir == 'clear') { $timeout(function(){ $scope.movePath = []; dimPixel(); }); return; }
@@ -305,20 +309,17 @@ angular.module('Geographr.controllers', [])
             $timeout(function(){ $scope.movePath.push(destGrid); dimPixel(); });
         };
         $scope.lookAround = function() { // Further examine current grid (as if re-moving to this grid)
+            $timeout(function(){ $scope.looking = true; });
             var look = function() {
                 if($scope.onPixel.camp) { // If there is a camp here
-
+                    
                 } else { // If no camp, create some events/activities
-                    Math.seedrandom(); // True random
-                    if(Math.random() > 0.2) {
-                        console.log('creating forage activity');
-                        var actForage = { type: 'forage', activity: true };
-                        $timeout(function(){ if($scope.onPixel.objects){ $scope.onPixel.objects.push(actForage); }
-                            else { $scope.onPixel.objects = [actForage]; } });
-                    }
+                    createActivity(0.8);
                 }
+                $timeout(function(){ $scope.looking = false; });
             };
             setTimeout(look,3000); // Look around for 3 seconds
+            playWaitingBar(3);
         };
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -363,26 +364,66 @@ angular.module('Geographr.controllers', [])
             if(haveAmount - amount > 0) { fireInventory.child(fireID+'/amount').set(haveAmount - amount); }
                 else { fireInventory.child(fireID).set(null); } // Remove inventory if no amount remains
         };
+        var createActivity = function(chance) {
+            Math.seedrandom(); // True random
+            
+            if(Math.random() > 1-chance) {
+                console.log('creating forage activity');
+                var actForage = { type: 'forage', activity: true };
+                if($scope.onPixel.objects) { $scope.onPixel.objects.push(actForage) }
+                else { $scope.onPixel.objects = [actForage]; }
+            }
+        };
         // Clicking in event canvas
         var eventOnClick = function(e) {
             if(e.which == 2 || e.which == 3) {  e.preventDefault(); return; } // If right/middle click pressed
             var offset = actCanvasUtility.eventHighCanvas.offset(); // Get pixel location
             var click = { x: Math.floor(e.pageX - offset.left), y: Math.floor(e.pageY - offset.top) };
             $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
-            var result = gameUtility.playActivity($scope.event.type,click,$scope.user.skills[$scope.event.type]);
+            $scope.event.result = gameUtility.playActivity($scope.event.type,click,
+                $scope.user.skills[$scope.event.type]);
             //actCanvasUtility.eventHighCanvas.unbind('mousedown',eventOnClick);
             $timeout(function() {
-                if(result.success) {
-                    // TODO: Increase player's skill level if successful
+                if($scope.event.result.success) {
                     if($scope.user.skills.hasOwnProperty($scope.event.type)) {
                         $scope.user.skills[$scope.event.type] += 1;
                     } else { $scope.user.skills[$scope.event.type] = 1; }
                     fireUser.child('skills').set($scope.user.skills);
+                } 
+                if($scope.event.result.ended) {
+                    setTimeout(function() {
+                        $timeout(function() { $scope.inEvent = false; $scope.event.message = null; });
+                    }, 2000);
+                    actCanvasUtility.eventHighCanvas.unbind('mousedown');
                 }
-                //$scope.inEvent = false; // delay with timeout
-                $scope.event.message = result.message;
-                $scope.event.products = result.products ? result.products : undefined;
+                $scope.event.message = $scope.event.result.message;
+                $scope.event.products = $scope.event.products ? 
+                    $scope.event.products.concat($scope.event.result.products) : $scope.event.result.products;
             });
+        };
+        // Animate progress bar above move controls for x seconds
+        var playWaitingBar = function(seconds) {
+            clearInterval(waitTimer);
+            var increments = 1;
+            progressBar.css({'-webkit-transition': 'width 0s', 'transition': 'width 0s' });
+            $timeout(function() {
+                $scope.waitProgress = 0;
+                $timeout(function() {
+                    progressBar.css({'-webkit-transition': 'width 0.5s linear', 'transition': 'width 0.5s linear' });
+                    $scope.waitProgress = Math.floor((increments/2 / seconds) * 100);
+                },100);
+            });
+            waitTimer = setInterval(function() {
+                increments++;
+                $timeout(function() { 
+                    $scope.waitProgress = Math.floor((increments/2 / seconds) * 100);
+                    $scope.waitProgress = $scope.waitProgress > 100 ? 100 : $scope.waitProgress;
+                    if(increments/2  > seconds) {
+                        clearInterval(waitTimer); //$scope.waitProgress = 0;
+                        //progressBar.css({'-webkit-transition': 'width 0s', 'transition': 'width 0s' });
+                    }
+                });
+            },500)
         };
 
         var updateInventory = function(snapshot) {
@@ -843,13 +884,7 @@ angular.module('Geographr.controllers', [])
                     $timeout(function(){ $scope.onPixel.camp = campData; });
                 });
             } else { // If no camp, create some events/activities
-                Math.seedrandom(); // True random
-                if(Math.random() > 0.3) {
-                    console.log('creating forage activity');
-                    var actForage = { type: 'forage', activity: true };
-                    if($scope.onPixel.objects) { $scope.onPixel.objects.push(actForage) } 
-                        else { $scope.onPixel.objects = [actForage]; }
-                }
+                createActivity(0.7);
             }
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
             $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
@@ -862,6 +897,10 @@ angular.module('Geographr.controllers', [])
             } // Get rid of rest of path from water
             if(firstWater) { $scope.movePath.splice($scope.movePath.indexOf(firstWater),999); } 
             if($scope.movePath.length == 0) { $scope.moving = false; }
+            else {
+                var moveTime = 5 * (1 + localTerrain[$scope.movePath[0]] / 60);
+                playWaitingBar(moveTime); 
+            }
             fireUser.child('visiblePixels').set(visiblePixels);
             $timeout(function(){
                 canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0);
@@ -994,9 +1033,8 @@ angular.module('Geographr.controllers', [])
                    fireRef.child('serverTest').set('test');
                    fireRef.child('serverTest').set(null);
                    auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
-                   awakeTimer = setTimeout(stayAwake, 3600000); // Re-authenticate every hour
                };
-               var awakeTimer = setTimeout(stayAwake, 3600000);
+               var awakeTimer = setInterval(stayAwake, 3600000); // Re-authenticate every hour
                fireRef.child('status').onDisconnect().set('offline');
                canvasUtility.fillCanvas(fullFogContext,'erase');
                zoomFogCanvas.style.visibility="hidden";

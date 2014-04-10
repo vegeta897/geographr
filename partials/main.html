@@ -75,17 +75,20 @@
             <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
         </div>
         <div ng-show="userInit && terrainReady" id="controls">
-            <button ng-disabled="moving" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
+            <div ng-class="{ invisible: !moving && !looking }" class="progress">
+                <div class="progress-bar" ng-style="{width: waitProgress+'%'}"></div>
+            </div>
+            <button ng-disabled="moving || looking" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
                 <i class="glyphicon glyphicon-arrow-up"></i></button>
-            <button ng-disabled="moving" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
+            <button ng-disabled="moving || looking" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
                 <i class="glyphicon glyphicon-arrow-left"></i></button>
             <button ng-show="movePath.length > 0" ng-click="movePlayer('startStop')"
                     class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go' }}</button>
-            <button ng-show="movePath.length == 0" ng-click="lookAround()"
+            <button ng-show="movePath.length == 0" ng-disabled="looking" ng-click="lookAround()"
                     class="btn btn-default" id="lookAround">Look</button>
-            <button ng-disabled="moving" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
+            <button ng-disabled="moving || looking" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
                 <i class="glyphicon glyphicon-arrow-right"></i></button>
-            <button ng-disabled="moving" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
+            <button ng-disabled="moving || looking" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
                 <i class="glyphicon glyphicon-arrow-down"></i></button>
             <button ng-disabled="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
                     class="btn btn-default btn-sm" id="moveClear">Clear</button>
@@ -126,7 +129,7 @@
                     </td></tr>
                 </table>
             </div>
-            <div id="eventHUD" ng-show="inEvent">
+            <div id="eventHUD">
                 <div ng-show="inEventTutorial" class="checkbox-inline text-muted"><label>
                     <input ng-change="updateSkips()" ng-model="skipTutorial" type="checkbox"> Don't show me this again
                 </label></div>
@@ -137,7 +140,7 @@
                         {{ product.amount }}x {{ product.name }}
                     </button>
                 </p>
-                <p ng-click="takeFromEvent('all')" ng-show="event.products">
+                <p ng-click="takeFromEvent('all')" ng-show="event.products.length > 0">
                     <button class="btn btn-sm btn-default">Take All</button>
                 </p>
             </div>

@@ -64,7 +64,7 @@ canvas { display: block; }
 .coords .checkbox-inline label { font-weight: normal; }
 
 #controls {
-    width: 196px; height: 196px;
+    width: 196px; height: 216px;
     padding: 8px;
     position: absolute;
     right: 2px;
@@ -77,6 +77,8 @@ canvas { display: block; }
     font-size: 2em;
     box-shadow: 1px 1px 4px 1px rgba(0,0,0,0.2);
 }
+#controls .progress { width: 100%; opacity: 0.7; margin: 2px 0 6px; }
+#controls .progress .progress-bar { -webkit-transition: width 0s; transition: width 0s; }
 #controls #moveUp, #controls #moveDown { margin: 0 60px; padding-top: 11px; }
 #controls #moveLeft { margin: 0 10px 0 0; padding-top: 11px; }
 #controls #moveStartStop, #controls #lookAround { 
