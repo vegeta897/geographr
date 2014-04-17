@@ -1,7 +1,7 @@
 /* Canvas drawing service */
 
 angular.module('Geographr.canvas', [])
-.factory('canvasUtility', function(colorUtility) {
+.service('canvasUtility', function(colorUtility) {
         var fullPixSize = 1;
         var fullPixOff = fullPixSize/2;
         

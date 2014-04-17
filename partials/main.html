@@ -171,8 +171,8 @@
                 <table class="unstyled" ng-show="showEco">
                     <tr><th>Resource</th><th>Supply</th><th>Demand</th></tr>
                     <tr ng-repeat-start="(key,val) in onPixel.camp.economy">
-                        <td><a href="#" data-resource data-info="val"
-                                ng-class="{'text-muted': val.supply < 1}">{{ key | capitalize }}</a></td>
+                        <td><a href="#" data-resource ng-class="{'text-muted': val.supply < 1}">
+                            {{ key | capitalize }}</a></td>
                         <td>{{ val.supply }}</td><td style="color: white;"
                             ng-style="{ opacity: (val.demand+15)/115 }">{{ val.demand }}</td>
                     </tr>
@@ -212,7 +212,7 @@
                         <strong class="text-right" style="display: inline-block; width: 30px;">
                             {{ item.amount }}</strong>&emsp;
                         <span class="text-muted">{{ item.amount > 1 | iif : 'pounds' : 'pound' }} of</span> 
-                        <span><span><a href="#" data-resource data-info="item">{{ item.name }}</a></span></span>
+                        <span><span><a href="#" data-resource>{{ item.name }}</a></span></span>
                         <div class="well well-sm actions">
                             <div class="row">
                                 <div class="input-group input-group-sm col-xs-7 hard-right" 
@@ -237,7 +237,13 @@
                 </li>
             </ul>
             <table class="unstyled">
-                <tr ng-repeat="item in inventory | typeFilter:'plant'">
+                <tr ng-repeat="item in inventory | typeFilter:['animal']" ng-class="{ 'last-of-type': $last }">
+                    <td><span ng-init="style={background: '#'+item.color}" ng-style="style"
+                              class="item-color"></span></td>
+                    <td class="text-right"><strong>{{ item.amount }}&emsp;</strong></td>
+                    <td>{{ item.name | capitalize }} carcass</td>
+                </tr>
+                <tr ng-repeat="item in inventory | typeFilter:['plant']" ng-class="{ 'last-of-type': $last }">
                     <td><span ng-init="style={background: '#'+item.color}" ng-style="style" 
                               class="item-color"></span></td>
                     <td class="text-right"><strong>{{ item.amount }}&emsp;</strong></td>

@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.17; $scope.versionName = 'Marvelous Bank'; $scope.needUpdate = false;
+        $scope.version = 0.18; $scope.versionName = 'Guilty Matrix'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -20,7 +20,7 @@ angular.module('Geographr.controllers', [])
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
             localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
-            tutorialStep = 0, visiblePixels = {}, moveTimers = {}, waitTimer, campList = [];
+            tutorialStep = 0, visiblePixels = {}, moveTimers = {}, waitTimer, campList = [], availableActivities = [];
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -238,8 +238,8 @@ angular.module('Geographr.controllers', [])
                 || $scope.onPixel.objects[objectIndex].type == 'camp') { return; }
             $timeout(function() {
                 $scope.event = { type: $scope.onPixel.objects[objectIndex].type }; // Get event type
+                availableActivities.splice(jQuery.inArray($scope.event.type,availableActivities),1);
                 $scope.onPixel.objects.splice(objectIndex,1); // Remove object
-                gameUtility.setupActivity($scope.event.type);
                 $scope.inEvent = true;
                 $scope.inEventTutorial = jQuery.inArray($scope.event.type,$scope.tutorialSkips) < 0; // Skip tut?
                 if($scope.inEventTutorial) {
@@ -247,9 +247,11 @@ angular.module('Geographr.controllers', [])
                         $timeout(function() { $scope.inEventTutorial = false; });
                         tutorialImage.unbind('mousedown');
                         actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
+                        gameUtility.setupActivity($scope.event.type);
                     });
                 } else {
                     actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
+                    gameUtility.setupActivity($scope.event.type);
                 }
             });
         };
@@ -318,8 +320,8 @@ angular.module('Geographr.controllers', [])
                 }
                 $timeout(function(){ $scope.looking = false; });
             };
-            setTimeout(look,3000); // Look around for 3 seconds
-            playWaitingBar(3);
+            setTimeout(look,2000); // Look around for 2 seconds
+            playWaitingBar(2);
         };
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -366,12 +368,18 @@ angular.module('Geographr.controllers', [])
         };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
-            
-            if(Math.random() > 1-chance) {
-                console.log('creating forage activity');
-                var actForage = { type: 'forage', activity: true };
-                if($scope.onPixel.objects) { $scope.onPixel.objects.push(actForage) }
-                else { $scope.onPixel.objects = [actForage]; }
+            var activities = { forage: 1, hunt: 0.3 };
+            for(var actKey in activities) {
+                if(activities.hasOwnProperty(actKey)) {
+                    if(Math.random() > 1-chance*activities[actKey] 
+                        && jQuery.inArray(actKey,availableActivities) < 0) { // No duplicate activities
+                        console.log('creating', actKey, 'activity');
+                        var activity = { type: actKey, activity: true };
+                        if($scope.onPixel.objects) { 
+                            $scope.onPixel.objects.push(activity); availableActivities.push(actKey);
+                        } else { $scope.onPixel.objects = [activity]; availableActivities = [actKey]; }
+                    }
+                }
             }
         };
         // Clicking in event canvas
@@ -393,7 +401,7 @@ angular.module('Geographr.controllers', [])
                 if($scope.event.result.ended) {
                     setTimeout(function() {
                         $timeout(function() { $scope.inEvent = false; $scope.event.message = null; });
-                    }, 2000);
+                    }, 2500);
                     actCanvasUtility.eventHighCanvas.unbind('mousedown');
                 }
                 $scope.event.message = $scope.event.result.message;
@@ -967,9 +975,8 @@ angular.module('Geographr.controllers', [])
         };
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
-            var url = 'http://' + document.domain + '/geographr/data/terrain.json';
             jQuery.ajax({
-                url: url, dataType: 'json'
+                url: 'data/terrain.json', dataType: 'json'
             }).done(function(results) {
                 console.log('new terrain downloaded');
                 localTerrain = results; // Download the whole terrain object at once into localTerrain

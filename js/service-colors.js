@@ -1,7 +1,7 @@
 /* Color gen service */
 
 angular.module('Geographr.colors', [])
-.factory('colorUtility', function() {
+.service('colorUtility', function() {
     var hsvToHex = function(hsv) {
         var h = hsv.hue, s = hsv.sat, v = hsv.val, rgb, i, data = [];
         if (s === 0) { rgb = [v,v,v]; } 
@@ -168,6 +168,23 @@ angular.module('Geographr.colors', [])
                 g: parseInt(result[2], 16),
                 b: parseInt(result[3], 16)
             } : null;
-        }
+        },
+        rgbToHSV: function rgbToHSV (r, g, b) {
+            r = r / 255; g = g / 255; b = b / 255;
+            var rr, gg, bb, h, s, v = Math.max(r, g, b),
+                diff = v - Math.min(r, g, b),
+                diffC = function(c) { return (v - c) / 6 / diff + 1 / 2; };
+            if (diff == 0) {
+                h = s = 0;
+            } else {
+                s = diff / v; rr = diffC(r); gg = diffC(g); bb = diffC(b);
+                if (r === v) { h = bb - gg; } 
+                    else if (g === v) { h = (1 / 3) + rr - bb; }
+                    else if (b === v) { h = (2 / 3) + gg - rr; }
+                if (h < 0) { h += 1; } else if (h > 1) { h -= 1; }
+            }
+            return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
+        },
+        hsvToHSL: function hsvToHSL(h,s,v){ return { h: h,s: s*v/((h=(2-s)*v)<1?h:2-h),l: h/2}}
     }
 });

@@ -1,7 +1,7 @@
 /* Game logic service */
 
 angular.module('Geographr.game', [])
-.factory('gameUtility', function(actCanvasUtility) {
+.service('gameUtility', function(actCanvasUtility,canvasUtility) {
         var resourceList = ['lumber', 'fish','fruit','vegetables', 'meat', 'salt', 'coal', 'iron', 
             'wool', 'tools', 'weapons', 'spices'];
         var valuePerWeight = [1,7,6,5,7,3,2,4,6,5,6,10]; // Base value per weight (carry capacity)
@@ -13,8 +13,8 @@ angular.module('Geographr.game', [])
                 hunt: 'You killed an <strong>innocent animal.</strong>'
             },
             ended: {
-                forage: 'There are <strong>no more plants</strong> to be harvested here.',
-                hunt: 'There are <strong>no more animals</strong> to be hunted here.'
+                forage: 'There are <strong>no more plants</strong> to be found.',
+                hunt: 'There are <strong>no more animals</strong> to be found.'
             },
             failure: {
                 forage: 'You search for plants but <strong>find nothing</strong>.',
@@ -23,15 +23,24 @@ angular.module('Geographr.game', [])
         };
         var eventProducts = {
             forage: [
-                { name: 'red berries', color: '9e3333', avgQty: 3 },
-                { name: 'blue berries', color: '334c9e', avgQty: 2 },
-                { name: 'green berries', color: '689e48', avgQty: 3 },
-                { name: 'brown mushrooms', color: '6f6053', avgQty: 3 },
-                { name: 'white mushrooms', color: 'b0a9a4', avgQty: 2 },
-                { name: 'herbs', color: '728448', avgQty: 2 },
-                { name: 'onions', color: 'aaa982', avgQty: 1 }
+                { name: 'red berries', color: '9e3333', rarity: 0.3, avgQty: 3 },
+                { name: 'blue berries', color: '334c9e', rarity: 0.5, avgQty: 2 },
+                { name: 'green berries', color: '689e48', rarity: 0.2, avgQty: 3 },
+                { name: 'brown mushrooms', color: '6f6053', rarity: 0, avgQty: 3 },
+                { name: 'white mushrooms', color: 'b0a9a4', rarity: 0.3, avgQty: 2 },
+                { name: 'herbs', color: '728448', rarity: 0.6, avgQty: 2 },
+                { name: 'onions', color: 'aaa982', rarity: 0.7, avgQty: 1 }
             ],
-            hunt: ['deer','boar','rabbit','fox','wolf','mole']
+            hunt: [
+                { name: 'deer', color: '6f4c32', rarity: 0.4, materials: ['meat','bone','pelt']},
+                { name: 'boar', color: '49413d', rarity: 0.7, materials: ['meat','bone','pelt'] },
+                { name: 'rabbit', color: '6d5f58', rarity: 0, materials: ['meat','bone','pelt'] },
+                { name: 'fox', color: '6d341e', rarity: 0.8, materials: ['meat','bone','pelt'] },
+                { name: 'wolf', color: '4b4c4f', rarity: 0.9, materials: ['meat','bone','pelt'] },
+                { name: 'mole', color: '433a32', rarity: 0.9, materials: ['meat','bone','pelt'] },
+                { name: 'pheasant', color: '713926', rarity: 0.7, materials: ['meat','bone'] },
+                { name: 'duck', color: '433a32', rarity: 0.8, materials: ['meat','bone'] }
+            ]
         };
         var randomIntRange = function(min,max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -50,6 +59,14 @@ angular.module('Geographr.game', [])
         };
         var pickInArray = function(array) { // Return a random element from input array
             return array[Math.floor(Math.random()*array.length)];
+        };
+        var pickProduct = function(type) { // Pick a product in an array based on rarity property value
+            Math.seedrandom(); var random = Math.random();
+            var picked = pickInArray(eventProducts[type]);
+            while(picked.rarity > random) {
+                picked = pickInArray(eventProducts[type]);
+            }
+            return picked;
         };
         var pickInObject = function(object) { // Return a random property from input object
             var array = [];
@@ -137,74 +154,124 @@ angular.module('Geographr.game', [])
         };
         // Generate pool of resources for event
         var createEventPool = function(eventType) {
-            var pool = [];
+            var pool = [], number, i, product, item;
             var typesChosen = []; // Prevent 2 instances of same product
             switch(eventType) {
                 case 'forage':
-                    var number = randomIntRange(2,4);
-                    for(var i = 0; i < number; i++) {
-                        var product = pickInArray(eventProducts[eventType]);
+                    number = randomIntRange(2,4);
+                    for(i = 0; i < number; i++) {
+                        product = pickProduct(eventType);
                         while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
-                            product = pickInArray(eventProducts[eventType]);
+                            product = pickProduct(eventType);
                         }
                         typesChosen.push(product.name);
-                        var item = { type: 'plant', product: product,
+                        item = { type: 'plant', product: product,
                             targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                         item.product.amount = item.product.avgQty + randomIntRange(0,2);
+                        pool.push(item);
+                    }
+                    break;
+                case 'hunt':
+                    number = randomIntRange(0,2) || 1; // 33% chance of there being 2 animals
+                    for(i = 0; i < number; i++) {
+                        product = pickProduct(eventType);
+                        item = { type: 'animal', product: product,
+                            targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                         pool.push(item);
                     }
                     break;
             }
             return pool;
         };
+        var createEventTimers = function(eventType,stepsPerItem,stepLength,pauseLength) {
+            event.step = 'start';
+            event.timer = setTimeout(function() {
+                var nextStep = function() {
+                    event.step = event.step >= event.pool.length * (stepsPerItem+1) ? 
+                        'end' : event.step + 1;
+                    actCanvasUtility.drawActivity(eventType,event);
+                    var nextStepLength = event.step % (stepsPerItem + 1) == 0 ? 
+                        pauseLength + parseInt(Math.random() * pauseLength) : stepLength;
+                    if(event.step == 'end') { 
+                        clearTimeout(event.timer);
+                        actCanvasUtility.fillCanvas(actCanvasUtility.eventHighContext,'rgba(36,39,43,0.7)');
+                        actCanvasUtility.drawText([150,150],26,'Click to continue...');
+                    } else { event.timer = setTimeout(nextStep,nextStepLength) }
+                };
+                event.step = 1; actCanvasUtility.drawActivity(eventType,event);
+                event.timer = setTimeout(nextStep,stepLength);
+            },pauseLength + parseInt(Math.random() * pauseLength));
+        };
         
         return {
             setupActivity: function(type) {
                 Math.seedrandom();
+                event.pool = createEventPool(type); event.result = {};
+                event.seed = randomIntRange(0,1000); // For consistent redrawing
+                actCanvasUtility.drawActivity(type,event);
                 switch(type) {
-                    case 'forage':
-                        event.pool = createEventPool(type); event.result = {};
-                        event.seed = randomIntRange(0,1000); // For consistent redrawing
-                        break;
+                    case 'hunt': createEventTimers(type,4,500,800); break;
                 }
-                actCanvasUtility.drawActivity(type,event.pool,event.seed);
             },
             playActivity: function(type,click,skill) {
                 skill = skill ? Math.floor(skill / 10) : 0;
                 event.result.success = false; event.result.products = [];
+                var poolCopy = angular.copy(event.pool), threshold, i, dist, product, j;
                 switch(type) {
                     case 'forage':
-                        var poolCopy = angular.copy(event.pool);
-                        var threshold = 225 + skill*skill;
-                        for(var i = 0; i < poolCopy.length; i++) {
-                            var dist = (click.x - poolCopy[i].targetX)*(click.x - poolCopy[i].targetX) +
+                        threshold = 225 + skill*skill;
+                        for(i = 0; i < poolCopy.length; i++) {
+                            dist = (click.x - poolCopy[i].targetX)*(click.x - poolCopy[i].targetX) +
                                 (click.y - poolCopy[i].targetY)*(click.y - poolCopy[i].targetY);
                             if(dist < threshold) {
                                 event.result.success = true;
-                                var product = poolCopy[i].product; delete product.avgQty; product.type = 'plant';
+                                product = poolCopy[i].product; delete product.avgQty; product.type = 'plant';
                                 product.amount = Math.ceil(product.amount*((threshold-dist)/threshold));
                                 event.pool.splice(i,1); // Remove product from pool
                                 actCanvasUtility.drawCircle('main',[poolCopy[i].targetX,poolCopy[i].targetY],
                                     3,'#ffffff'); // Show target
                                 actCanvasUtility.drawLine('main',[click.x,click.y], // Show delta
                                     [poolCopy[i].targetX,poolCopy[i].targetY],'#00ff00');
-                                setTimeout(function() {
-                                    actCanvasUtility.drawActivity(type,event.pool,event.seed); },1000); // Redraw
+                                setTimeout(function() { // Redraw after 1 second
+                                    actCanvasUtility.drawActivity(type,event); },1000);
                                 event.result.products.push(product);
                                 break; // Only one product foraged per click
                             }
                         }
                         if(!event.result.success) { // If event failed, show harvest spots
                             event.result.ended = true;
-                            for(var j = 0; j < poolCopy.length; j++) {
+                            for(j = 0; j < poolCopy.length; j++) {
                                 actCanvasUtility.drawCircle('main',[poolCopy[j].targetX,poolCopy[j].targetY],
                                     5,'#ffffff'); // Show target
                             }
                         }
                         if(event.pool.length == 0) { event.result.ended = true; }
                         break;
+                    case 'hunt':
+                        if(event.step % 5 == 4) { // Clicked on-time
+                            var animal = poolCopy[Math.floor(event.step/5)];
+                            dist = (click.x - animal.targetX)*(click.x - animal.targetX) +
+                                (click.y - animal.targetY)*(click.y - animal.targetY);
+                            threshold = 100;
+                            if(dist < threshold) {
+                                event.result.success = true;
+                                actCanvasUtility.drawCircle('main',[animal.targetX,animal.targetY],
+                                    10,'#ff0000');
+                                product = animal.product; product.amount = 1; product.type = 'animal';
+                                delete product.rarity;
+                                event.result.products.push(product);
+                            }
+                        }
+                        if(event.step == 'end') {
+                            event.result.ended = true;
+                        }
+                        if(!event.result.success) { // If event failed
+                            clearTimeout(event.timer);
+                            event.result.ended = true;
+                        }
+                        break;
                 }
-                event.result.message = event.result.success ? 
+                event.result.message = event.result.success || event.step == 'end' ? 
                     event.result.ended ? eventMessages.ended[type] : eventMessages.success[type] 
                         : eventMessages.failure[type];
                 return event.result;

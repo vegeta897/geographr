@@ -26,19 +26,9 @@ angular.module('Geographr.directives', [])
                 userInput.parent().removeClass('has-error');
                 passInput.parent().removeClass('has-error');
                 switch(status) {
-                    case 'notLogged':
-                        passInput.val('');
-                        break;
-                    case 'logged':
-                        break;
-                    case 'logging':
-                        break;
-                    case 'badEmail':
-                        userInput.focus().parent().addClass('has-error');
-                        break;
-                    case 'badPass':
-                        passInput.focus().parent().addClass('has-error');
-                        break;
+                    case 'notLogged': passInput.val(''); break;
+                    case 'badEmail': userInput.focus().parent().addClass('has-error'); break;
+                    case 'badPass': passInput.focus().parent().addClass('has-error'); break;
                 }
                 if(status == 'badEmail' || status == 'badPass') {
                     if(jQuery.trim(userInput.val()) == '') { // User input blank
@@ -55,9 +45,6 @@ angular.module('Geographr.directives', [])
 .directive('resource', function() {
     return {
         restrict: 'A',
-        scope: {
-            'resource': '&info' // Don't need this?
-        },
         link: function(scope, element) {
             var actions = element.parent().parent().next();
             actions.hide();
@@ -112,19 +99,20 @@ angular.module('Geographr.directives', [])
     }
 })
 .filter('skillLevel', function() {
-    return function(input) { if(!input) { return input; } return Math.floor(input / 10); }
+    return function(input) { if(!input) { return input; } return Math.floor(input / 10) + 1; }
 })
 .filter('typeFilter', function() {
-    return function(input,type) {
+    return function(input,types) {
         if(!input) { return input; }
         var list = [];
         for(var key in input) {
-            if(input.hasOwnProperty(key) && input[key].type == type) {
+            if(input.hasOwnProperty(key) && jQuery.inArray(input[key].type,types) >= 0 ) {
                 input[key].name = input[key].name ? input[key].name : key;
                 list.push(input[key]);
             }
         }
         list = sortArrayByProperty(list,'name');
+        list = sortArrayByProperty(list,'type');
         return list;
     }
 })
