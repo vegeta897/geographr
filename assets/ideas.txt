@@ -1,7 +1,3 @@
-start out as just a lone journeyman
-
-travelling between pixels takes a while.. long enough that you can do other activities while travelling
-
 need food/water to survive. hunt, forage, etc. full stats skills and inventory system like an RPG
     - if run out of food/water while travelling, stop and wait for player input
     
@@ -15,7 +11,7 @@ find random native camps that have seed-generated desire levels for different go
     set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons
     either buy from a camp and sell in another, or carry out a trade, in which you could run off with the goods
         if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity
-        
+    
     goods/resource ideas:       value per weight    abundance
         - Lumber                1                   near forests
         - Fish                  7                   near water
@@ -33,10 +29,13 @@ find random native camps that have seed-generated desire levels for different go
 random encounters possible for every moved grid (server-side?)
 
 find random objects/things/activities in the 9grid view
-    - click on it to engage in an activity, replaces 9grid view with activity view
     - no click-fests!
-    - timing-based minigames?
-    - create images to explain how to play minigames, w/ a checkbox for "don't remind me" (specific to each game)
-    
+
 carrier pigeon/bird flies between players at all times, delivering messages
     - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.
+
+ability to trash items in inventory, as well as stash 
+    - stashes will be stored on firebase, with a chance to discover by another player
+        - discovery chance based on observation skill (or other relevant skill, tbd)
+        
+sharpen weapons/tools mini-game where you click off-colour our out-of-place pixels 

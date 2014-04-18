@@ -19,7 +19,6 @@ angular.module('Geographr.directives', [])
         link: function(scope, element, attrs) {
             var userInput = element.find('#inputLoginUser');
             var passInput = element.find('#inputLoginPass');
-            var loginButton = element.children('#loginSubmit'); // The log in button
             attrs.$observe('loginForm',function(){
                 var status = scope.authStatus;
                 if(status == '') { return; }
@@ -77,6 +76,12 @@ angular.module('Geographr.directives', [])
             };
             element.slider().slider('setValue',scope.brushSize).on('slide', changeBrush);
         }
+    };
+})
+.filter('int', function() {
+    return function(number) {
+        if(!number) { return number; }
+        return parseInt(number);
     };
 })
 .filter('nlToArray', function() {

@@ -2,11 +2,21 @@
 
 angular.module('Geographr.game', [])
 .service('gameUtility', function(actCanvasUtility,canvasUtility) {
-        var resourceList = ['lumber', 'fish','fruit','vegetables', 'meat', 'salt', 'coal', 'iron', 
-            'wool', 'tools', 'weapons', 'spices'];
-        var valuePerWeight = [1,7,6,5,7,3,2,4,6,5,6,10]; // Base value per weight (carry capacity)
-            
-        var event = {}; // Holds event details
+        // TODO: Move all these data sets into a separate file
+        var resources = {
+            lumber: { value: 4, weight: 20, abundance: 40, unit: 'pieces' },
+            fish: { value: 6, weight: 2, abundance: 15 },
+            fruit: { value: 18, weight: 1, abundance: 15, unit: 'pieces' },
+            vegetables: { value: 12, weight: 2, abundance: 20 },
+            meat: { value: 48, weight: 6, abundance: 10, unit: 'cuts' },
+            salt: { value: 6, weight: 4, abundance: 20, unit: 'pouches' },
+            coal: { value: 6, weight: 10, abundance: 30, unit: 'chunks' },
+            iron: { value: 36, weight: 15, abundance: 15, unit: 'ingots' },
+            wool: { value: 48, weight: 2, abundance: 20, unit: 'sacks' },
+            tools: { value: 180, weight: 16, abundance: 8 },
+            weapons: { value: 240, weight: 26, abundance: 5 },
+            spices: { value: 60, weight: 1, abundance: 3, unit: 'pouches' }
+        };
         var eventMessages = { // Event messages/instructions to show user
             success: {
                 forage: 'You found <strong>some plants</strong> while foraging.',
@@ -42,6 +52,16 @@ angular.module('Geographr.game', [])
                 { name: 'duck', color: '433a32', rarity: 0.8, materials: ['meat','bone'] }
             ]
         };
+        var edibles = {
+            'red berries': { calories: 10 },
+            'blue berries': { calories: 15 },
+            'green berries': { calories: 10, effects: ['poison','nasty'] },
+            'brown mushrooms': { calories: 20 },
+            'white mushrooms': { calories: 20 },
+            'herbs': { calories: 5, effects: ['nasty'] },
+            'onions': { calories: 20, effects: ['nasty'] }
+        };
+        var event = {}; // Holds event details
         var randomIntRange = function(min,max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         };
@@ -137,18 +157,25 @@ angular.module('Geographr.game', [])
         var genCampEconomy = function(grid,terrain) {
             Math.seedrandom(grid);
             var economy = {};
-            for(var i = 0; i < resourceList.length; i++) {
-                var res = resourceList[i];
-                // TODO: Supply and demands influenced by location & terrain 
-                // Create module functions with coefficient parameters to handle this
-                economy[res] = {};
-                economy[res].supply = parseInt(Math.random() * 100);
-                economy[res].demand = parseInt(100 - economy[res].supply + Math.random() * 30 - 20);
-                economy[res].supply = parseInt(economy[res].supply/valuePerWeight[i]);
-                economy[res].demand = economy[res].demand > 100 ? 100 : // Keep in 0-100 range
-                    economy[res].demand < 1 ? 1 : economy[res].demand;
-                economy[res].value = (parseInt(valuePerWeight[i] * (economy[res].demand / 50)) || 1);
-                economy[res].valPerWeight = valuePerWeight[i];
+            for(var resKey in resources) {
+                if(resources.hasOwnProperty(resKey)) {
+                    var res = resources[resKey];
+                    // TODO: Supply and demands influenced by location & terrain 
+                    // Create module functions with coefficient parameters to handle this
+                    var random = Math.random();
+                    economy[resKey] = {};
+                    economy[resKey].supply = 
+                        parseInt((random * 10 * res.abundance)/res.value);
+                    economy[resKey].demand = 
+                        parseInt((1 - random)*100);
+                    economy[resKey].value = parseInt(res.value * (economy[resKey].demand / 50));
+                    economy[resKey].value = economy[resKey].value < 1 ? 1 : economy[resKey].value;
+//                    console.log(resKey,'-',parseInt(random*100),'---------------------------------');
+//                    console.log('supply:',economy[resKey].supply);
+//                    console.log('demand:',economy[resKey].demand);
+//                    console.log('abundance:',res.abundance,'raw value:',res.value);
+//                    console.log('camp value:',economy[resKey].value);
+                }
             }
             return economy;
         };
@@ -372,7 +399,6 @@ angular.module('Geographr.game', [])
                 }}
                 return output;
             },
-            resourceList: resourceList, valuePerWeight: valuePerWeight, event: event, 
-            eventMessages: eventMessages
+            resources: resources, event: event, eventMessages: eventMessages
         }
 });

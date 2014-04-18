@@ -347,7 +347,7 @@ angular.module('Geographr.controllers', [])
         $scope.buyResource = function(resource,amount) {
             if(amount < 1 || amount > $scope.onPixel.camp.economy[resource].supply) { return; }
             if(parseInt($scope.user.money - amount * $scope.onPixel.camp.economy[resource].value) < 0) { return; }
-            console.log('buying',amount,resource,'at',$scope.onPixel.camp.economy[resource].value,'gold per pound');
+            console.log('buying',amount,resource,'at',$scope.onPixel.camp.economy[resource].value,'gold per unit');
             var newDelta = $scope.onPixel.camp.deltas[resource] - amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
@@ -357,11 +357,12 @@ angular.module('Geographr.controllers', [])
         };
         $scope.sellResource = function(resource,amount,haveAmount,fireID) {
             if(amount < 1 || amount > haveAmount) { return; }
-            console.log('selling',amount,'at',$scope.onPixel.camp.economy[resource].value,'gold per pound');
+            console.log('selling',amount,'at',$scope.onPixel.camp.economy[resource].value * 0.8,'gold per unit');
             var newDelta = $scope.onPixel.camp.deltas[resource] + amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
-            $scope.user.money = parseInt($scope.user.money + amount * $scope.onPixel.camp.economy[resource].value); 
+            $scope.user.money = 
+                parseInt($scope.user.money + amount * $scope.onPixel.camp.economy[resource].value * 0.8); 
             fireUser.child('money').set($scope.user.money);
             if(haveAmount - amount > 0) { fireInventory.child(fireID+'/amount').set(haveAmount - amount); }
                 else { fireInventory.child(fireID).set(null); } // Remove inventory if no amount remains
@@ -439,6 +440,11 @@ angular.module('Geographr.controllers', [])
             itemAdded.fireID = snapshot.name();
             $timeout(function(){
                 switch(itemAdded.type) {
+                    case 'resource':
+                        if(gameUtility.resources[itemAdded.name].hasOwnProperty('unit')) {
+                            itemAdded.unit = gameUtility.resources[itemAdded.name].unit; }
+                        itemAdded.weight = gameUtility.resources[itemAdded.name].weight;
+                        break;
                     default:
                         break;
                 }
@@ -867,6 +873,7 @@ angular.module('Geographr.controllers', [])
                 terrain: localTerrain[snap.val()] ? 'Land' : 'Water', 
                 objects: localObjects[snap.val()], elevation: (localTerrain[snap.val()] || 0)
             };
+            availableActivities = [];
             if(campList.indexOf(snap.val()) >= 0) { // If there is a camp here
                 if(!$scope.user.hasOwnProperty('visitedCamps')) {
                     $scope.user.visitedCamps = [snap.val()];
@@ -876,17 +883,19 @@ angular.module('Geographr.controllers', [])
                     fireUser.child('visitedCamps').update($scope.user.visitedCamps);
                 }
                 fireRef.child('camps/' + snap.val()).on('value',function(campSnap) {
-                    var resourceList = gameUtility.resourceList;
+                    var resources = gameUtility.resources;
                     var campData = gameUtility.expandCamp(snap.val(),localTerrain);
                     campData.deltas = {};
-                    for(var j = 0; j < resourceList.length; j++) {
-                        // TODO: Have deltas influence demands
-                        campData.deltas[resourceList[j]] = 0; // Default 0 delta
-                        if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
-                            && campSnap.val().deltas.hasOwnProperty(resourceList[j])) {
-                            // Apply delta against supply
-                            campData.economy[resourceList[j]].supply += campSnap.val().deltas[resourceList[j]];
-                            campData.deltas[resourceList[j]] = campSnap.val().deltas[resourceList[j]];
+                    for(var resKey in resources) {
+                        if(resources.hasOwnProperty(resKey)) {
+                            // TODO: Have deltas influence demands
+                            campData.deltas[resKey] = 0; // Default 0 delta
+                            if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
+                                && campSnap.val().deltas.hasOwnProperty(resKey)) {
+                                // Apply delta against supply
+                                campData.economy[resKey].supply += campSnap.val().deltas[resKey];
+                                campData.deltas[resKey] = campSnap.val().deltas[resKey];
+                            }
                         }
                     }
                     $timeout(function(){ $scope.onPixel.camp = campData; });

@@ -207,11 +207,11 @@
             <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;<strong>{{ user.money }}</strong></small></h2>
             <p ng-hide="inventory" class="text-muted">No items</p>
             <ul class="list-unstyled">
-                <li ng-repeat="item in inventory | typeFilter:'resource'">
+                <li ng-repeat="item in inventory | typeFilter:['resource']">
                     <div class="well well-sm">
                         <strong class="text-right" style="display: inline-block; width: 30px;">
                             {{ item.amount }}</strong>&emsp;
-                        <span class="text-muted">{{ item.amount > 1 | iif : 'pounds' : 'pound' }} of</span> 
+                        <span class="text-muted">{{ item.unit }} of</span> 
                         <span><span><a href="#" data-resource>{{ item.name }}</a></span></span>
                         <div class="well well-sm actions">
                             <div class="row">
@@ -228,8 +228,8 @@
                                 </div>
                                 <div class=" col-xs-5">
                                     <span class="text-muted">Value: </span>
-                                    <span ng-class="{'text-danger':sellAmount > item.amount}">
-                                        {{ sellAmount * onPixel.camp.economy[item.name].value }}</span>
+                                    <span ng-class="{ 'text-danger': sellAmount > item.amount }">
+                                        {{ sellAmount * onPixel.camp.economy[item.name].value * 0.8 | int }}</span>
                                 </div>
                             </div>
                         </div>
