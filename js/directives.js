@@ -46,7 +46,7 @@ angular.module('Geographr.directives', [])
         restrict: 'A',
         link: function(scope, element) {
             var actions = element.parent().parent().next();
-            actions.hide();
+            if(!actions.hasClass('start-open')) { actions.hide(); }
             element.on('click',function(e) {
                 actions.siblings('.actions').hide(); // Hide other actions panels
                 actions.toggle(); // Show actions panel
@@ -106,18 +106,33 @@ angular.module('Geographr.directives', [])
 .filter('skillLevel', function() {
     return function(input) { if(!input) { return input; } return Math.floor(input / 10) + 1; }
 })
-.filter('typeFilter', function() {
+.filter('typeFilter', function(gameUtility) {
     return function(input,types) {
         if(!input) { return input; }
         var list = [];
-        for(var key in input) {
-            if(input.hasOwnProperty(key) && jQuery.inArray(input[key].type,types) >= 0 ) {
-                input[key].name = input[key].name ? input[key].name : key;
-                list.push(input[key]);
-            }
+        switch(types[0]) {
+            case 'edible':
+                for(var edKey in input) {
+                    if(input.hasOwnProperty(edKey)) {
+                        if(gameUtility.edibles.hasOwnProperty(input[edKey].name)) {
+                            if(types[1] != 'auto' || (types[1] == 'auto' &&
+                                !gameUtility.edibles[input[edKey].name].hasOwnProperty('effects'))) {
+                                list.push(input[edKey]);
+                            }
+                        } 
+                    }
+                }
+                break;
+            default:
+                for(var key in input) {
+                    if(input.hasOwnProperty(key) && jQuery.inArray(input[key].type,types) >= 0 ) {
+                        input[key].name = input[key].name ? input[key].name : key;
+                        list.push(input[key]);
+                    }
+                }
+                break;
         }
-        list = sortArrayByProperty(list,'name');
-        list = sortArrayByProperty(list,'type');
+        list = sortArrayByProperty(list,'name'); list = sortArrayByProperty(list,'type');
         return list;
     }
 })

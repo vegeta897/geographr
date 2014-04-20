@@ -100,8 +100,23 @@ canvas { display: block; }
 #eventHUD .event-products button { margin: 0 4px 4px 0; color: white; }
 #eventHUD .event-products button:hover { background-color: #24272b !important; }
 
-.skills { width: 100%; }
-.skills .progress { width: 130px; margin: 4px 0 }
+.skills, .stats { width: 100%; }
+.skills .progress, .stats .progress { width: 130px; margin: 4px 0; float: right; }
+.stats .progress { width: 180px; }
+.stats .progress .progress-bar { 
+    background-color: #858550; 
+    -webkit-transition: background-color 0.6s ease, width 0.6s ease; 
+    transition: background-color 0.6s ease, width 0.6s ease; 
+}
+.stats .progress .progress-bar.hungry { background-color: #853436; }
+.stats .progress .progress-bar.full { background-color: #49854d; }
+
+#uiContainer #autoEat td { padding-top: 8px; }
+#uiContainer #autoEat table { width: 100%; }
+#uiContainer #autoEat table tr th { font-weight: normal; }
+#uiContainer #autoEat table tr th h3 { margin-bottom: 6px; color: #909ea8; }
+#uiContainer #autoEat table tr td { padding: 0; }
+#uiContainer #autoEat table tr td .checkbox-inline { padding-top: 0; height: 20px; }
 
 .object-well>button { margin-top: -5px; }
 .object-well table { width: 100%; margin-top: 10px; }
@@ -137,11 +152,7 @@ ul#log li { margin-bottom: 0; }
     padding: 1px 5px 3px;
 }
 
-#scoreboard table { margin-bottom: 0; }
-
-button .glyphicon {
-    margin-right: 3px;
-}
+button .glyphicon { margin-right: 3px; }
 
 .attach-top { position: relative; top: -6px; }
 
@@ -161,12 +172,16 @@ strong { color: #ccc; }
 .attach-top { position: relative; top: -6px; }
 
 #objectInfo .well { padding-bottom: 5px; display: inline-block; }
-#objectInfo h3 { font-size: 16px; margin: 0 0 10px; color: #737880; }
+h3 { font-size: 16px; margin: 0 0 10px; color: #737880; }
 #objectInfo ul { margin-bottom: 0; }
 #objectInfo li button {
     position: relative; top: -1px;
     padding: 1px 5px 2px;
 }
+
+#uiContainer table.unstyled.scoreboard tr td { padding: 0 6px; font-size: 0.9em; }
+#uiContainer table.unstyled.scoreboard tr.active td { background-color: #31353a; }
+
 
 #commits { float: left; position: absolute; z-index: 9999; width: 900px; padding-top: 8px; }
 

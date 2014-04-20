@@ -53,13 +53,17 @@ angular.module('Geographr.game', [])
             ]
         };
         var edibles = {
-            'red berries': { calories: 10 },
-            'blue berries': { calories: 15 },
-            'green berries': { calories: 10, effects: ['poison','nasty'] },
-            'brown mushrooms': { calories: 20 },
-            'white mushrooms': { calories: 20 },
-            'herbs': { calories: 5, effects: ['nasty'] },
-            'onions': { calories: 20, effects: ['nasty'] }
+            'red berries': { calories: 2 },
+            'blue berries': { calories: 3 },
+            'green berries': { calories: 2, effects: ['poison','nasty'] },
+            'brown mushrooms': { calories: 4 },
+            'white mushrooms': { calories: 4 },
+            'spices': { calories: 1, effects: ['nasty'] },
+            'onions': { calories: 4, effects: ['nasty'] },
+            'fruit': { calories: 6 },
+            'vegetables': { calories: 5 },
+            'fish': { calories: 20, effects: ['nasty','foodPoisoning'] },
+            'meat': { calories: 60, effects: ['nasty','foodPoisoning'] }
         };
         var event = {}; // Holds event details
         var randomIntRange = function(min,max) {
@@ -399,6 +403,6 @@ angular.module('Geographr.game', [])
                 }}
                 return output;
             },
-            resources: resources, event: event, eventMessages: eventMessages
+            resources: resources, event: event, eventMessages: eventMessages, edibles: edibles
         }
 });
