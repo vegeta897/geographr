@@ -288,7 +288,7 @@ angular.module('Geographr.controllers', [])
                 if($scope.user.hasOwnProperty('autoEat')) {
                     $scope.user.autoEat.push(food);
                 } else { $scope.user.autoEat = [food] }
-                changeHunger($scope.user.id,0);
+                changeHunger(userID,0);
             } else { $scope.user.autoEat.splice(jQuery.inArray(food,$scope.user.autoEat),1); }
             if($scope.user.autoEat.length == 0) { // Send to firebase
                 fireUser.child('autoEat').set(null); } else { fireUser.child('autoEat').set($scope.user.autoEat); }
@@ -335,7 +335,7 @@ angular.module('Geographr.controllers', [])
                 $timeout(function(){ $scope.looking = false; });
             };
             setTimeout(look,2000); // Look around for 2 seconds
-            changeHunger($scope.user.id,1); // Use 1 hunger
+            changeHunger(userID,1); // Use 1 hunger
             playWaitingBar(2);
         };
         $scope.changeBrush = function(val) {
@@ -413,7 +413,7 @@ angular.module('Geographr.controllers', [])
                     fireUser.child('skills').set($scope.user.skills);
                 } 
                 if($scope.event.result.ended) { // Event finished
-                    changeHunger($scope.user.id,2); // Use 2 hunger
+                    changeHunger(userID,2); // Use 2 hunger
                     setTimeout(function() {
                         $timeout(function() { $scope.inEvent = false; $scope.event.message = null; });
                     }, 2500);
@@ -457,7 +457,7 @@ angular.module('Geographr.controllers', [])
                     if($scope.inventory.hasOwnProperty(key)) {
                         if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) &&
                             !gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')) {
-                            changeHunger($scope.user.id,0); $scope.noEdibles = false; return;
+                            changeHunger(userID,0); $scope.noEdibles = false; return;
                         }
                     }
                 }
@@ -1018,9 +1018,7 @@ angular.module('Geographr.controllers', [])
                     moveTimers[snap.val().user] = setTimeout(move, 
                         baseMoveSpeed * (1 + localTerrain[snap.val().path[moveCount]] / 60));
                     break;
-                case 'stop':
-                    clearTimeout(moveTimers[snap.val().user]);
-                    break;
+                case 'stop': clearTimeout(moveTimers[snap.val().user]); break;
                 default: break;
             }
             fireServer.child(snap.name()).set(null); // Delete the action
@@ -1102,6 +1100,8 @@ angular.module('Geographr.controllers', [])
            } else { // If regular user
                fireUser.child('location').on('value', movePlayer);
                fireUser.child('stats/hunger').on('value', function(snap) { $scope.user.stats.hunger = snap.val(); });
+               fireServer.push({ user: userID, action: 'logIn' });
+               fireRef.onDisconnect(function(){ fireServer.push({ user: userID, action: 'logOut' }); });
            }
            
        };
