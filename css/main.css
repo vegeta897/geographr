@@ -92,6 +92,9 @@ canvas { display: block; }
 
 #uiContainer { top: 0; }
 
+.change-effect { text-shadow: 0 0 0 rgba(255,255,255,0); line-height: 1.1em; }
+.actions { display: none; }
+
 #info { margin-bottom: 10px; }
 
 #eventHUD { margin-top: -28px; min-height: 26px; }
@@ -124,19 +127,18 @@ canvas { display: block; }
 .object-well .well .input-group-sm > .form-control { height: 20px; padding: 0 3px; }
 .object-well .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
 
-#inventory table.unstyled tr.last-of-type { border-bottom: 1px solid #50575c; } 
-#inventory table.unstyled tr.last-of-type:last-child { border-bottom: none; }
+#inventory table.unstyled { width: 100%; }
+#inventory table.unstyled tr.last-of-type { border-bottom: 1px solid #50575c; }
 #inventory table.unstyled tr.last-of-type td { padding-bottom: 3px; }
-#inventory table.unstyled tr.last-of-type:last-child td { padding-bottom: 0; }
 
-#inventory ul li .well {
+#inventory table.unstyled tr.actions .well { 
     padding-left: 12px; padding-right: 12px;
     margin-top: 4px; margin-bottom: 2px;
 }
-#inventory ul li .well .input-group-sm > .form-control {
-    height: 20px; padding: 0 3px; top: -1px; position: relative;
-}
-#inventory ul li .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
+#inventory table.unstyled tr.actions .well .input-group-sm > .form-control { height: 20px; padding: 0 3px; }
+#inventory table.unstyled tr.actions .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
+
+#uiContainer #inventory td.quantity { width: 52px; padding-right: 18px; }
 
 #objectInfo p { margin-bottom: 6px; }
 

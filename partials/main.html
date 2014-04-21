@@ -176,7 +176,10 @@
                                         ng-change="autoEat(item.name,autoEatThis)" 
                                         ng-model="autoEatThis" type="checkbox">
                                 </label></div></td>
-                                <td>{{ item.name | capitalize }}</td><td class="text-right">{{ item.amount }}</td>
+                                <td>{{ item.name | capitalize }}</td>
+                                <td class="text-right">
+                                    <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong>
+                                </td>
                             </tr>
                         </table>
                     </div>
@@ -227,50 +230,43 @@
             </div>
         </div>
         <div id="inventory" class="col-xs-3">
-            <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;<strong>{{ user.money }}</strong></small></h2>
+            <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;
+                <strong data-model="user.money" class="change-effect">{{ user.money }}</strong></small></h2>
             <p ng-hide="inventory" class="text-muted">No items</p>
-            <ul class="list-unstyled">
-                <li ng-repeat="item in inventory | typeFilter:['resource']">
-                    <div class="well well-sm">
-                        <strong class="text-right" style="display: inline-block; width: 30px;">
-                            {{ item.amount }}</strong>&emsp;
-                        <span class="text-muted">{{ item.unit }} of</span> 
-                        <span><span><a href="#" data-resource>{{ item.name }}</a></span></span>
-                        <div class="well well-sm actions">
-                            <div class="row">
-                                <div class="input-group input-group-sm col-xs-7 hard-right" 
-                                     ng-class="{ 'has-error': sellAmount > item.amount }">
-                                    <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
-                                           ng-init="sellAmount = item.amount" id="inputSellAmount">
-                                    <span class="input-group-btn .btn-group ">
-                                        <button ng-disabled="sellAmount > item.amount" class="btn btn-default btn-sm" 
+            <table class="unstyled">
+                <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant']" 
+                    ng-class="{ 'last-of-type': item.lastOfType }">
+                    <td style="width: 16px;"><a href="#" data-resource>
+                        <span ng-init="style={background: '#'+item.color}" ng-style="style" 
+                              class="item-color"></span></a></td>
+                    <td class="text-right quantity"><a href="#" data-resource><strong 
+                            data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
+                    <td><span ng-show="item.unit" class="text-muted">{{ item.unit }} of</span>
+                        <a href="#" data-resource>{{ item.name }}</a>
+                        <span ng-show="item.type == 'animal'"> carcass</span>
+                    </td>
+                </tr>
+                <tr ng-repeat-end class="actions">
+                    <td colspan="3"><div class="well well-sm">
+                        <div class="row" ng-show="onPixel.camp && item.type == 'resource'">
+                            <div class="input-group input-group-sm col-xs-7 hard-right"
+                                 ng-class="{ 'has-error': sellAmount > item.amount }">
+                                <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
+                                       ng-init="sellAmount = item.amount" id="inputSellAmount">
+                                <span class="input-group-btn .btn-group ">
+                                    <button ng-disabled="sellAmount > item.amount" class="btn btn-default btn-sm"
                                             ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
-                                                Sell</button>
-                                        <button class="btn btn-default btn-sm"
-                                                ng-click="sellAmount = item.amount">All</button></span>
-                                </div>
-                                <div class=" col-xs-5">
-                                    <span class="text-muted">Value: </span>
-                                    <span ng-class="{ 'text-danger': sellAmount > item.amount }">
-                                        {{ sellAmount * onPixel.camp.economy[item.name].value * 0.8 | int }}</span>
-                                </div>
+                                        Sell</button>
+                                    <button class="btn btn-default btn-sm"
+                                            ng-click="sellAmount = item.amount">All</button></span>
+                            </div>
+                            <div class=" col-xs-5">
+                                <span class="text-muted">Value: </span>
+                                <span ng-class="{ 'text-danger': sellAmount > item.amount }">
+                                    {{ sellAmount * onPixel.camp.economy[item.name].value * 0.8 | int }}</span>
                             </div>
                         </div>
-                    </div>
-                </li>
-            </ul>
-            <table class="unstyled">
-                <tr ng-repeat="item in inventory | typeFilter:['animal']" ng-class="{ 'last-of-type': $last }">
-                    <td><span ng-init="style={background: '#'+item.color}" ng-style="style"
-                              class="item-color"></span></td>
-                    <td class="text-right"><strong>{{ item.amount }}&emsp;</strong></td>
-                    <td>{{ item.name | capitalize }} carcass</td>
-                </tr>
-                <tr ng-repeat="item in inventory | typeFilter:['plant']" ng-class="{ 'last-of-type': $last }">
-                    <td><span ng-init="style={background: '#'+item.color}" ng-style="style" 
-                              class="item-color"></span></td>
-                    <td class="text-right"><strong>{{ item.amount }}&emsp;</strong></td>
-                    <td>{{ item.name | capitalize }}</td>
+                    </div></td>
                 </tr>
             </table>
         </div>

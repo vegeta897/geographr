@@ -99,6 +99,8 @@ angular.module('Geographr.controllers', [])
                     if($scope.user.new) { tutorialStep = -1; tutorial('next'); }
                     if(!$scope.user.hasOwnProperty('skills')) { $scope.user.skills = {}; }
                     initTerrain();
+                    fireUser.child('money').on('value',
+                        function(snap) { $timeout(function() {$scope.user.money = snap.val();}); });
                     fireInventory = fireUser.child('inventory');
                     fireInventory.on('child_added', updateInventory);
                     fireInventory.on('child_changed', updateInventory);
@@ -284,6 +286,7 @@ angular.module('Geographr.controllers', [])
                 if($scope.user.hasOwnProperty('autoEat')) {
                     $scope.user.autoEat.push(food);
                 } else { $scope.user.autoEat = [food] }
+                changeHunger($scope.user.id,0);
             } else { $scope.user.autoEat.splice(jQuery.inArray(food,$scope.user.autoEat),1); }
             if($scope.user.autoEat.length == 0) { // Send to firebase
                 fireUser.child('autoEat').set(null); } else { fireUser.child('autoEat').set($scope.user.autoEat); }
@@ -330,6 +333,7 @@ angular.module('Geographr.controllers', [])
                 $timeout(function(){ $scope.looking = false; });
             };
             setTimeout(look,2000); // Look around for 2 seconds
+            changeHunger($scope.user.id,1); // Use 1 hunger
             playWaitingBar(2);
         };
         $scope.changeBrush = function(val) {
@@ -394,13 +398,12 @@ angular.module('Geographr.controllers', [])
         };
         // Clicking in event canvas
         var eventOnClick = function(e) {
-            if(e.which == 2 || e.which == 3) {  e.preventDefault(); return; } // If right/middle click pressed
+            if(e.which == 2 || e.which == 3) { e.preventDefault(); return; } // If right/middle click pressed
             var offset = actCanvasUtility.eventHighCanvas.offset(); // Get pixel location
             var click = { x: Math.floor(e.pageX - offset.left), y: Math.floor(e.pageY - offset.top) };
             $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
             $scope.event.result = gameUtility.playActivity($scope.event.type,click,
                 $scope.user.skills[$scope.event.type]);
-            //actCanvasUtility.eventHighCanvas.unbind('mousedown',eventOnClick);
             $timeout(function() {
                 if($scope.event.result.success) {
                     if($scope.user.skills.hasOwnProperty($scope.event.type)) {
@@ -408,7 +411,8 @@ angular.module('Geographr.controllers', [])
                     } else { $scope.user.skills[$scope.event.type] = 1; }
                     fireUser.child('skills').set($scope.user.skills);
                 } 
-                if($scope.event.result.ended) {
+                if($scope.event.result.ended) { // Event finished
+                    changeHunger($scope.user.id,2); // Use 2 hunger
                     setTimeout(function() {
                         $timeout(function() { $scope.inEvent = false; $scope.event.message = null; });
                     }, 2500);
@@ -453,6 +457,7 @@ angular.module('Geographr.controllers', [])
                         if(gameUtility.resources[itemAdded.name].hasOwnProperty('unit')) {
                             itemAdded.unit = gameUtility.resources[itemAdded.name].unit; }
                         itemAdded.weight = gameUtility.resources[itemAdded.name].weight;
+                        itemAdded.color = gameUtility.resources[itemAdded.name].color;
                         break;
                     default:
                         if($scope.user.hasOwnProperty('autoEat') && 
@@ -943,35 +948,20 @@ angular.module('Geographr.controllers', [])
         };
         
         var changeHunger = function(userID,amount) {
-            var user = localUsers[userID];
+            var user = localUsers.hasOwnProperty(userID) ? localUsers[userID] : $scope.user;
             user.stats.hunger -= amount;
             var neededHunger = 100 - user.stats.hunger;
             if(user.hasOwnProperty('autoEat')) {
-                var newQuantities = {};
-                for(var a = 0; a < user.autoEat.length; a++) {
-                    for(var invKey in user.inventory) {
-                        if(user.inventory.hasOwnProperty(invKey) && neededHunger > 0) {
-                            var invItem = user.inventory[invKey];
-                            if(gameUtility.edibles.hasOwnProperty(invItem.name) && invItem.name == user.autoEat[a] 
-                                && neededHunger > 0) {
-                                var foodItem = gameUtility.edibles[invItem.name];
-                                var eatAmount = Math.floor(neededHunger/foodItem.calories);
-                                eatAmount = eatAmount > invItem.amount ? invItem.amount : eatAmount;
-                                neededHunger -= foodItem.calories * eatAmount;
-                                if(eatAmount > 0) { newQuantities[invKey] = invItem.amount - eatAmount; }
-                            }
-                        }
-                    }
-                }
-                for(var nKey in newQuantities) { // Set new item quantities, delete item if 0
-                    if(newQuantities.hasOwnProperty(nKey)) {
-                        if(newQuantities[nKey] > 0) {
-                            fireRef.child('users/'+userID+'/inventory/'+nKey+'/amount').set(newQuantities[nKey]);
+                var result = gameUtility.autoEat(user,neededHunger);
+                for(var nKey in result.newInv) { // Set new item quantities, delete item if 0
+                    if(result.newInv.hasOwnProperty(nKey)) {
+                        if(result.newInv[nKey] > 0) {
+                            fireRef.child('users/'+userID+'/inventory/'+nKey+'/amount').set(result.newInv[nKey]);
                         } else { fireRef.child('users/'+userID+'/inventory/'+nKey).set(null); }
                     }
                 }
             }
-            fireRef.child('users/'+userID+'/stats/hunger').set(100 - neededHunger);
+            fireRef.child('users/'+userID+'/stats/hunger').set(100 - result.newNeeded);
         };
             
         var addClient = function(snap) {
@@ -1011,7 +1001,7 @@ angular.module('Geographr.controllers', [])
                             moveTimers[snap.val().user] = setTimeout(move, 
                                 baseMoveSpeed * (1 + localTerrain[snap.val().path[moveCount]] / 60));
                         }
-                        changeHunger(snap.val().user,1); // Use 1 hunger
+                        changeHunger(snap.val().user,3); // Use 3 hunger
                     };
                     moveTimers[snap.val().user] = setTimeout(move, 
                         baseMoveSpeed * (1 + localTerrain[snap.val().path[moveCount]] / 60));

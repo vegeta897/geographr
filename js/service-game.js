@@ -4,18 +4,18 @@ angular.module('Geographr.game', [])
 .service('gameUtility', function(actCanvasUtility,canvasUtility) {
         // TODO: Move all these data sets into a separate file
         var resources = {
-            lumber: { value: 4, weight: 20, abundance: 40, unit: 'pieces' },
-            fish: { value: 6, weight: 2, abundance: 15 },
-            fruit: { value: 18, weight: 1, abundance: 15, unit: 'pieces' },
-            vegetables: { value: 12, weight: 2, abundance: 20 },
-            meat: { value: 48, weight: 6, abundance: 10, unit: 'cuts' },
-            salt: { value: 6, weight: 4, abundance: 20, unit: 'pouches' },
-            coal: { value: 6, weight: 10, abundance: 30, unit: 'chunks' },
-            iron: { value: 36, weight: 15, abundance: 15, unit: 'ingots' },
-            wool: { value: 48, weight: 2, abundance: 20, unit: 'sacks' },
-            tools: { value: 180, weight: 16, abundance: 8 },
-            weapons: { value: 240, weight: 26, abundance: 5 },
-            spices: { value: 60, weight: 1, abundance: 3, unit: 'pouches' }
+            lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, unit: 'pieces' },
+            fish: { color: '79888e', value: 6, weight: 2, abundance: 15 },
+            fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, unit: 'pieces' },
+            vegetables: { color: '7a984d', value: 12, weight: 2, abundance: 20 },
+            meat: { color: '82341c', value: 48, weight: 6, abundance: 10, unit: 'cuts' },
+            salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, unit: 'pouches' },
+            coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, unit: 'chunks' },
+            iron: { color: '59534a', value: 36, weight: 15, abundance: 15, unit: 'ingots' },
+            wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, unit: 'sacks' },
+            tools: { color: '5f5f5f', value: 180, weight: 16, abundance: 8 },
+            weapons: { color: '5f5656', value: 240, weight: 26, abundance: 5 },
+            spices: { color: '925825', value: 60, weight: 1, abundance: 3, unit: 'pouches' }
         };
         var eventMessages = { // Event messages/instructions to show user
             success: {
@@ -381,6 +381,25 @@ angular.module('Geographr.game', [])
                     expanded.push(newObject);
                 }
                 return expanded;
+            },
+            autoEat: function(user,neededHunger) {
+                var newQuantities = {};
+                for(var a = 0; a < user.autoEat.length; a++) {
+                    for(var invKey in user.inventory) {
+                        if(user.inventory.hasOwnProperty(invKey) && neededHunger > 0) {
+                            var invItem = user.inventory[invKey];
+                            if(edibles.hasOwnProperty(invItem.name) && invItem.name == user.autoEat[a]
+                                && neededHunger > 0) {
+                                var foodItem = edibles[invItem.name];
+                                var eatAmount = Math.floor(neededHunger/foodItem.calories);
+                                eatAmount = eatAmount > invItem.amount ? invItem.amount : eatAmount;
+                                neededHunger -= foodItem.calories * eatAmount;
+                                if(eatAmount > 0) { newQuantities[invKey] = invItem.amount - eatAmount; }
+                            }
+                        }
+                    }
+                }
+                return { newInv: newQuantities, newNeeded: neededHunger };
             },
             tutorial: function(step) {
                 var text = '';

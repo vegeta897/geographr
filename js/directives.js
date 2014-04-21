@@ -45,8 +45,8 @@ angular.module('Geographr.directives', [])
     return {
         restrict: 'A',
         link: function(scope, element) {
-            var actions = element.parent().parent().next();
-            if(!actions.hasClass('start-open')) { actions.hide(); }
+            var actions = element.parent().parent().next('.actions');
+            if(actions.hasClass('start-open')) { actions.show(); }
             element.on('click',function(e) {
                 actions.siblings('.actions').hide(); // Hide other actions panels
                 actions.toggle(); // Show actions panel
@@ -77,6 +77,29 @@ angular.module('Geographr.directives', [])
             element.slider().slider('setValue',scope.brushSize).on('slide', changeBrush);
         }
     };
+})
+.directive('changeEffect', function() {
+    return {
+        restrict: 'C',
+        scope: { model: '=' },
+        link: function(scope, element) {
+            scope.$watch('model', function(newVal,oldVal) {
+                var color = newVal > oldVal ? 'rgba(0,255,0,255)' : 
+                    newVal < oldVal ? 'rgba(255,0,0,255)' : 'rgba(255,255,255,255)';
+                element.css({textShadow: '0 0 6px ' + color, fontSize: '1.1em'});
+                setTimeout(function(){
+                    element.css({'-webkit-transition': 'text-shadow 0.8s ease-out, font-size 0.4s ease-out',
+                        transition: 'text-shadow 0.8s ease-out, font-size 0.4s ease-out'});
+                    element.css({textShadow: '0 0 0 rgba(255,255,255,0)', fontSize: '1em'});
+                    element.css({textShadow: '0 0 0 rgba(255,255,255,0)', fontSize: '1em'});
+                    setTimeout(function(){
+                        element.css({'-webkit-transition': 'text-shadow 0s, font-size 0s',
+                            transition: 'text-shadow 0s, font-size 0s'});
+                    },800);
+                },10);
+            })
+        }
+    }
 })
 .filter('int', function() {
     return function(number) {
@@ -133,6 +156,9 @@ angular.module('Geographr.directives', [])
                 break;
         }
         list = sortArrayByProperty(list,'name'); list = sortArrayByProperty(list,'type');
+        for(var i = 0; i < list.length; i++) {
+            list[i].lastOfType = (i < list.length - 1 && list[i].type != list[i+1].type);
+        }
         return list;
     }
 })
