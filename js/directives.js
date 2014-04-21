@@ -41,7 +41,7 @@ angular.module('Geographr.directives', [])
         }
     };
 })
-.directive('resource', function() {
+.directive('actionBar', function() {
     return {
         restrict: 'A',
         link: function(scope, element) {

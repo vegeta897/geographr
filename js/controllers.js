@@ -879,7 +879,8 @@ angular.module('Geographr.controllers', [])
             $scope.scoreBoard= [];
             for(var key in snap.val()) {
                 if(snap.val().hasOwnProperty(key)) {
-                    $scope.scoreBoard.push({ nick: snap.val()[key].nick, score: snap.val()[key].score });
+                    $scope.scoreBoard.push({ nick: snap.val()[key].nick, score: snap.val()[key].score, 
+                        online: snap.val()[key].online });
                 }
             }
             $timeout(function() { $scope.scoreBoard = sortArrayByProperty($scope.scoreBoard,'score',true); });
@@ -988,7 +989,7 @@ angular.module('Geographr.controllers', [])
         };
         var onClientAction = function(snap) {
             // When a client action is received
-            console.log(snap.val().action,'from',localUsers[snap.val().user].nick,'at',new Date());
+            console.log(localUsers[snap.val().user].nick,'did',snap.val().action,'at',new Date());
             var action = snap.val().action.split(',');
             switch(action[0]) {
                 case 'createCamp':
@@ -1021,6 +1022,7 @@ angular.module('Geographr.controllers', [])
                         baseMoveSpeed * (1 + localTerrain[snap.val().path[moveCount]] / 60));
                     break;
                 case 'stop': clearTimeout(moveTimers[snap.val().user]); break;
+                case 'logIn': fireRef.child('scoreBoard/'+snap.val().user+'/online').set(true); break;
                 default: break;
             }
             fireServer.child(snap.name()).set(null); // Delete the action
@@ -1081,16 +1083,20 @@ angular.module('Geographr.controllers', [])
                fireRef.child('clients/logged').on('child_changed', changeClient);
                fireRef.child('clients/logged').on('child_removed', removeClient);
                var updateUsers = function(snap) {
-                   if(localUsers.hasOwnProperty(snap.name())) {
-                       if(localUsers[snap.name()].hasOwnProperty('connections') &&
-                           !snap.val().hasOwnProperty('connections')) { 
-                           console.log(localUsers[snap.name()].nick,'disconnected at',
-                               new Date(snap.val().lastOnline)); }
+                   for(var key in snap.val()) {
+                       if(snap.val().hasOwnProperty(key)) {
+                           if(localUsers.hasOwnProperty(key)) {
+                               if(localUsers[key].hasOwnProperty('connections') &&
+                                   !snap.val().hasOwnProperty('connections')) {
+                                   console.log(localUsers[key].nick,'disconnected at',
+                                       new Date(snap.val().lastOnline)); }
+                               fireRef.child('scoreBoard/'+key+'/online').set(null);
+                           }
+                       }
                    }
-                   localUsers[snap.name()] = snap.val();
+                   localUsers = snap.val();
                };
-               fireRef.child('users').on('child_added', updateUsers);
-               fireRef.child('users').on('child_changed', updateUsers);
+               fireRef.child('users').on('value', updateUsers);
                fireServer.on('child_added', onClientAction);
                fireRef.child('status').set('online');
                var loginEmail = localStorage.get('serverLoginEmail');
