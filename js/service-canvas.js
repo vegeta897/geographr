@@ -246,13 +246,18 @@ angular.module('Geographr.canvas', [])
                 context.stroke();
                 context.shadowColor = 'rgba(0,0,0,0)';
             },
-            drawAllTerrain: function(context,terrain) {
+            drawAllTerrain: function(context,terrain,visible) {
                 context.fillStyle = 'rgb(44,61,75)'; // Clear canvas first
                 context.fillRect(0,0,300,300);
                 for(var key in terrain) {
                     if(terrain.hasOwnProperty(key)) {
                         var coord = key.split(':');
                         var affected = listNear(coord,1);
+                        var drawIt = false;
+                        for(var n = 0; n < affected.length; n++) {
+                            if(!visible || visible.hasOwnProperty(affected[n])) { drawIt = true; break;  }
+                        }
+                        if(!drawIt && visible) { continue; }
                         for(var i = 0; i < affected.length; i++) {
                             // If not drawing center pixel, only draw if it's water
                             if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }

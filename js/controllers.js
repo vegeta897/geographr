@@ -566,9 +566,9 @@ angular.module('Geographr.controllers', [])
                     drawObject(coords,localObjects[objKey]);
                 }
             }
+            if(!$scope.user || userID == 2) { return; }
             canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
-            if(!$scope.user || userID == 2) { return; }
             canvasUtility.drawFog(zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize);
             zoomFogContext.drawImage(fullFogCanvas, $scope.zoomPosition[0]*mainPixSize,
                 $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
@@ -813,7 +813,8 @@ angular.module('Geographr.controllers', [])
             .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
         controlsDIV.mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
             .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
-        jQuery(fullHighCanvas).mousewheel(zoomScroll).mousemove(panOnMouseMove).mousedown(panOnMouseDown);
+        jQuery(fullHighCanvas).mousewheel(zoomScroll).mousemove(panOnMouseMove)
+            .mousedown(panOnMouseDown).mouseup(onMouseUp);
     
         // Draw terrain, whether adding, changing, or removing
         var drawTerrain = function(coords,value) {
@@ -926,6 +927,7 @@ angular.module('Geographr.controllers', [])
                 createActivity(0.7);
             }
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
+            canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
             $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
             var firstWater;
             for(var i = 0; i < $scope.movePath.length; i++) {
@@ -1030,7 +1032,6 @@ angular.module('Geographr.controllers', [])
             }).done(function(results) {
                 console.log('new terrain downloaded');
                 localTerrain = results; // Download the whole terrain object at once into localTerrain
-                canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                 $scope.lastTerrainUpdate = new Date().getTime();
                 localStorage.set('lastTerrainUpdate',$scope.lastTerrainUpdate);
                 localStorage.set('terrain',localTerrain);
@@ -1051,8 +1052,6 @@ angular.module('Geographr.controllers', [])
 //                        fireRef.child('lastTerrainUpdate').set({time: new Date().getTime(), user: '1'});
 //                        var labels180 = gameUtility.terrain180(localLabels);
 //                        fireRef.child('labels').set(labels180);
-                        // TODO: Don't draw all terrain, just visible. Draw new visible pixels as they come.
-                        canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain); // Draw all terrain at once
                         prepareTerrain();
                     }
                 });
@@ -1076,6 +1075,7 @@ angular.module('Geographr.controllers', [])
                }
            });
            if(userID == 2) { // If server
+               canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
                console.log('server ready!');
                fireRef.child('clients/logged').on('child_added', addClient);
                fireRef.child('clients/logged').on('child_changed', changeClient);
