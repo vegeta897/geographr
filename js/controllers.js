@@ -1087,10 +1087,11 @@ angular.module('Geographr.controllers', [])
                        if(snap.val().hasOwnProperty(key)) {
                            if(localUsers.hasOwnProperty(key)) {
                                if(localUsers[key].hasOwnProperty('connections') &&
-                                   !snap.val().hasOwnProperty('connections')) {
+                                   !snap.val()[key].hasOwnProperty('connections')) {
                                    console.log(localUsers[key].nick,'disconnected at',
-                                       new Date(snap.val().lastOnline)); }
-                               fireRef.child('scoreBoard/'+key+'/online').set(null);
+                                       new Date(snap.val().lastOnline));
+                                   fireRef.child('scoreBoard/'+key+'/online').set(null);
+                               }
                            }
                        }
                    }
