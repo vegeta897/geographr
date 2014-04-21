@@ -986,7 +986,7 @@ angular.module('Geographr.controllers', [])
         };
         var onClientAction = function(snap) {
             // When a client action is received
-            console.log(snap.val().action,'from',localUsers[snap.val().user].nick);
+            console.log(snap.val().action,'from',localUsers[snap.val().user].nick,'at',new Date());
             var action = snap.val().action.split(',');
             switch(action[0]) {
                 case 'createCamp':
@@ -1080,7 +1080,15 @@ angular.module('Geographr.controllers', [])
                fireRef.child('clients/logged').on('child_added', addClient);
                fireRef.child('clients/logged').on('child_changed', changeClient);
                fireRef.child('clients/logged').on('child_removed', removeClient);
-               var updateUsers = function(snap) { $timeout(function() { localUsers[snap.name()] = snap.val(); }); };
+               var updateUsers = function(snap) {
+                   if(localUsers.hasOwnProperty(snap.name())) {
+                       if(localUsers[snap.name()].hasOwnProperty('connections') &&
+                           !snap.val().hasOwnProperty('connections')) { 
+                           console.log(localUsers[snap.name()].nick,'disconnected at',
+                               new Date(snap.val().lastOnline)); }
+                   }
+                   localUsers[snap.name()] = snap.val();
+               };
                fireRef.child('users').on('child_added', updateUsers);
                fireRef.child('users').on('child_changed', updateUsers);
                fireServer.on('child_added', onClientAction);
@@ -1093,15 +1101,24 @@ angular.module('Geographr.controllers', [])
                    fireRef.child('serverTest').set(null);
                    auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
                };
-               var awakeTimer = setInterval(stayAwake, 3600000); // Re-authenticate every hour
+               setInterval(stayAwake, 3600000); // Re-authenticate every hour
                fireRef.child('status').onDisconnect().set('offline');
                canvasUtility.fillCanvas(fullFogContext,'erase');
                zoomFogCanvas.style.visibility="hidden";
            } else { // If regular user
                fireUser.child('location').on('value', movePlayer);
                fireUser.child('stats/hunger').on('value', function(snap) { $scope.user.stats.hunger = snap.val(); });
-               fireServer.push({ user: userID, action: 'logIn' });
-               fireRef.onDisconnect(function(){ fireServer.push({ user: userID, action: 'logOut' }); });
+               var myConnectionsRef = fireUser.child('connections');
+               var lastOnlineRef = fireUser.child('lastOnline');
+               var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
+               connectedRef.on('value', function(snap) {
+                   if (snap.val() === true) {
+                       var con = myConnectionsRef.push(true);
+                       fireServer.push({ user: userID, action: 'logIn' });
+                       con.onDisconnect().remove();
+                       lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
+                   }
+               });
            }
            
        };
