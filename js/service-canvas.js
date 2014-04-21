@@ -180,24 +180,30 @@ angular.module('Geographr.canvas', [])
                 }
                 var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
+                context.shadowColor = 'rgba(0,0,0,0.6)';
+                context.shadowOffsetX = context.shadowOffsetY = zoomPixSize/16;
+                context.shadowBlur = zoomPixSize/12;
                 for(var i = 0; i < object.length; i++) {
                     switch(object[i].type) {
-                        case 'userCamp': context.fillStyle = 'rgba(73,68,39,0.8)';
+                        case 'userCamp': context.strokeStyle = 'rgba(73,68,39,1)';
                             if(canvasType == 'full') {
+                                context.shadowColor = 'rgba(0,0,0,0)';
                                 context.fillRect((x - offset[0]),(y - offset[1]),1,1); break;
                             }
-                            context.strokeStyle = 'rgba(0,0,0,0)';
+                            context.fillStyle = '#' + object[i].color;
+                            context.lineWidth = zoomPixSize / 6;
                             context.beginPath();
-                            context.moveTo((x - offset[0])*canvasPixSize+canvasPixSize/2,
-                                (y - offset[1])*canvasPixSize);
-                            context.lineTo((x - offset[0])*canvasPixSize+canvasPixSize,
-                                (y - offset[1])*canvasPixSize+canvasPixSize/2);
-                            context.lineTo((x - offset[0])*canvasPixSize+canvasPixSize/2,
-                                (y - offset[1])*canvasPixSize+canvasPixSize);
-                            context.lineTo((x - offset[0])*canvasPixSize,
-                                (y - offset[1])*canvasPixSize+canvasPixSize/2);
+                            context.moveTo((x - offset[0])*zoomPixSize+zoomPixSize/2,
+                                (y - offset[1])*zoomPixSize+context.lineWidth/1.3);
+                            context.lineTo((x - offset[0])*zoomPixSize+zoomPixSize-context.lineWidth/1.3,
+                                (y - offset[1])*zoomPixSize+zoomPixSize/2);
+                            context.lineTo((x - offset[0])*zoomPixSize+zoomPixSize/2,
+                                (y - offset[1])*zoomPixSize+zoomPixSize-context.lineWidth/1.3);
+                            context.lineTo((x - offset[0])*zoomPixSize+context.lineWidth/1.3,
+                                (y - offset[1])*zoomPixSize+zoomPixSize/2);
                             context.closePath();
                             context.fill();
+                            context.stroke();
                             break;
                         case 'camp': context.fillStyle = 'rgb(140,140,140)';
                             if(canvasType == 'full') { context.fillRect((x - offset[0])*canvasPixSize,
@@ -209,6 +215,7 @@ angular.module('Geographr.canvas', [])
                             break;
                     }
                 }
+                context.shadowColor = 'rgba(0,0,0,0)';
             },
             drawPlayer: function(context,coords,zoomPosition,zoomPixSize) {
                 if(!coords) { return; }

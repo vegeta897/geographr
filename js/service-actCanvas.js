@@ -134,7 +134,123 @@ angular.module('Geographr.actCanvas', [])
                             }
                         }
                         break;
-                }
+                    case 'mine':
+                        var sizes = [100,25,5], gridCounts = [3,4,5];
+                        var skillFactor = 1 + event.skill/10;
+                        var drawGrid = function(x,y,depth) {
+                            var size = sizes[depth];
+                            var squares = gridCounts[depth];
+                            for(var x1 = 0; x1 < squares; x1++) {
+                                for(var y1 = 0; y1 < squares; y1++) {
+                                    Math.seedrandom(event.seed+''+x1+y1+x+y);
+                                    var color = colorUtility.generate('mine-rock');
+                                    for(p = 0; p < event.pool.length; p++) {
+                                        var prod = event.pool[p].product;
+                                        var strength = 0;
+                                        var qX = depth > 0 ? Math.floor(x/sizes[0]) : x1;
+                                        var qY = depth > 0 ? Math.floor(y/sizes[0]) : y1;
+                                        if(event.pool[p].targetX[0] == qX &&
+                                            event.pool[p].targetY[0] == qY) {
+                                            strength = depth == 0 ? 
+                                                strength + Math.random()*0.1*skillFactor +
+                                                    (1-prod.rarity)/3 : 0;
+                                            if(depth > 0) {
+                                                qX = depth > 1 ? Math.floor(x/sizes[1])%4 : x1;
+                                                qY = depth > 1 ? Math.floor(y/sizes[1])%4 : y1;
+                                                if(event.pool[p].targetX[1] == qX &&
+                                                    event.pool[p].targetY[1] == qY) {
+                                                    strength = depth == 1 ? 
+                                                        strength + Math.random()*0.1*skillFactor +
+                                                            (1-prod.rarity)/4 : 0;
+                                                    if(depth > 1) {
+                                                        if(event.pool[p].targetX[2] == x1 &&
+                                                            event.pool[p].targetY[2] == y1) {
+                                                            strength = depth == 2 ?
+                                                                strength + Math.random()*0.1*skillFactor + 
+                                                                    (1-prod.rarity)/5 : 0;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        strength = strength > 0.8 ? 0.8 : strength; // 80% strength cap
+                                        color = colorUtility.generate({
+                                            strength: strength, oldColor: color.hsv, 
+                                            newColor: colorUtility.hexToHSV(prod.color)
+                                        });
+                                    }
+                                    eventMainContext.fillStyle = '#' + color.hex;
+                                    eventMainContext.fillRect(
+                                        (x+x1*size),(y+y1*size),size,size);
+                                    eventMainContext.lineWidth = 1; 
+                                    eventMainContext.strokeStyle = 'rgba(255,255,255,0.1)';
+                                    eventMainContext.beginPath(); // Bevel highlight
+                                    eventMainContext.moveTo((x+x1*size+0.5),(y+(y1+1)*size-1.5));
+                                    eventMainContext.lineTo((x+x1*size+0.5),(y+y1*size+0.5));
+                                    eventMainContext.lineTo((x+(x1+1)*size-1.5),(y+y1*size+0.5));
+                                    eventMainContext.stroke();
+                                    eventMainContext.strokeStyle = 'rgba(0,0,0,0.1)';
+                                    eventMainContext.beginPath(); // Bevel shading
+                                    eventMainContext.moveTo((x+(x1+1)*size-0.5),(y+(y1)*size+1.5));
+                                    eventMainContext.lineTo((x+(x1+1)*size-0.5),(y+(y1+1)*size-0.5));
+                                    eventMainContext.lineTo((x+x1*size+1.5),(y+(y1+1)*size-0.5));
+                                    eventMainContext.stroke();
+                                }
+                            }
+                        };
+                        drawGrid(0,0,0);
+//                        for(p = 0; p < event.pool.length; p++) {
+//                            eventMainContext.fillStyle = '#ff0000';
+//                            eventMainContext.fillRect(
+//                                event.pool[p].targetX[0]*100+event.pool[p].targetX[1]*25+
+//                                    event.pool[p].targetX[2]*5,
+//                                event.pool[p].targetY[0]*100+event.pool[p].targetY[1]*25+
+//                                    event.pool[p].targetY[2]*5,5,5);
+//                        }
+                        
+                        if(event.clicks.length == 0) { return false; }
+                        var clickDepth = 0, clicked = {}, quantClick;
+                        for(var c = 0; c < event.clicks.length; c++) {
+                            clickDepth = 0;
+                            var click = event.clicks[c];
+                            quantClick = { x: [], y: [] };
+                            for(var s = 0; s < sizes.length; s++) {
+                                var quantX = Math.floor(click[0]/sizes[s]) % gridCounts[s];
+                                var quantY = Math.floor(click[1]/sizes[s]) % gridCounts[s];
+                                quantClick.x.push(quantX); quantClick.y.push(quantY);
+                            }
+                            if(clicked.hasOwnProperty(quantClick.x[0]+':'+quantClick.y[0])) {
+                                clickDepth = 1;
+                                if(clicked.hasOwnProperty(quantClick.x[0]+':'+quantClick.x[1]+
+                                    ':'+quantClick.y[0]+':'+quantClick.y[1])) {
+                                    clickDepth = 2;
+                                } else { 
+                                    drawGrid(quantClick.x[0]*sizes[0]+quantClick.x[1]*sizes[1],
+                                    quantClick.y[0]*sizes[0]+quantClick.y[1]*sizes[1],2);
+                                    clicked[quantClick.x[0]+':'+quantClick.x[1]+
+                                        ':'+quantClick.y[0]+':'+quantClick.y[1]] = true;
+                                }
+                            } else { 
+                                drawGrid(quantClick.x[0]*sizes[0],quantClick.y[0]*sizes[0],1);
+                                clicked[quantClick.x[0]+':'+quantClick.y[0]] = true;
+                            }
+                        }
+                        var result = { onTarget: false };
+                        for(p = 0; p < event.pool.length; p++) {
+                            for(var d = 0; d <= clickDepth; d++) {
+                                if(event.pool[p].targetX[d] == quantClick.x[d] &&
+                                    event.pool[p].targetY[d] == quantClick.y[d]) {
+                                    if(d == clickDepth) { 
+                                        if(d == 2) { result.mined = event.pool[p]; result.mined.poolIndex = p; }
+                                        result.onTarget = true; break; 
+                                    }
+                                } else { break; }
+                            }
+                            if(result.onTarget) { break; }
+                        }
+                        return result;
+                        break;
+                } return false;
             },
             eventHighCanvas: jQuery(eventHighCanvas), eventHighContext: eventHighContext
         }

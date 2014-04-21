@@ -133,7 +133,8 @@
                 <div ng-show="inEventTutorial" class="checkbox-inline text-muted"><label>
                     <input ng-change="updateSkips()" ng-model="skipTutorial" type="checkbox"> Don't show me this again
                 </label></div>
-                <p ng-bind-html="event.message"></p>
+                <p ng-show="event.message" ng-bind-html="event.message"></p>
+                <p ng-hide="event.message">&nbsp;</p>
                 <p class="event-products" ng-show="event.products.length > 0">
                     <button ng-click="takeFromEvent($index)" class="btn btn-xs" ng-repeat="product in event.products"
                             ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
@@ -170,6 +171,8 @@
                         <table class="unstyled">
                             <tr><th colspan="2"><h3>Automatic Eating</h3></th>
                                 <th class="text-right text-muted">Amount</th></tr>
+                            <tr ng-show="noEdibles"><td colspan="3"><span class="text-danger">
+                                Nothing left to eat!</span></td></tr>
                             <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
                                 <td><div class="checkbox-inline text-muted"><label>
                                     <input ng-init="autoEatThis = item.autoEat" 
@@ -234,7 +237,7 @@
                 <strong data-model="user.money" class="change-effect">{{ user.money }}</strong></small></h2>
             <p ng-hide="inventory" class="text-muted">No items</p>
             <table class="unstyled">
-                <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant']" 
+                <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant','mineral']" 
                     ng-class="{ 'last-of-type': item.lastOfType }">
                     <td style="width: 16px;"><a href="#" data-resource>
                         <span ng-init="style={background: '#'+item.color}" ng-style="style" 
@@ -242,6 +245,7 @@
                     <td class="text-right quantity"><a href="#" data-resource><strong 
                             data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
                     <td><span ng-show="item.unit" class="text-muted">{{ item.unit }} of</span>
+                        <span ng-show="item.type == 'mineral'">unrefined</span>
                         <a href="#" data-resource>{{ item.name }}</a>
                         <span ng-show="item.type == 'animal'"> carcass</span>
                     </td>

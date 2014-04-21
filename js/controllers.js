@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.19; $scope.versionName = 'Invaluable Fig'; $scope.needUpdate = false;
+        $scope.version = 0.20; $scope.versionName = 'Brave Restaurant'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -108,10 +108,10 @@ angular.module('Geographr.controllers', [])
                     fireUser.child('camp').on('value', function(snap) {
                         if(!snap.val()) { return; }
                         var userCamp = { type: 'userCamp', owner: userID, 
-                            ownerNick: $scope.user.nick, grid: snap.val() };
-                        localObjects[snap.val()] ? localObjects[snap.val()].push(userCamp) :
-                            localObjects[snap.val()] = [userCamp];
-                        drawObject(snap.val().split(':'),localObjects[snap.val()]);
+                            ownerNick: $scope.user.nick, grid: snap.val().grid, color: snap.val().color };
+                        localObjects[snap.val().grid] ? localObjects[snap.val().grid].push(userCamp) :
+                            localObjects[snap.val().grid] = [userCamp];
+                        drawObject(snap.val().grid.split(':'),localObjects[snap.val().grid]);
                         $scope.user.camp = snap.val();
                     });
                 });
@@ -243,16 +243,17 @@ angular.module('Geographr.controllers', [])
                 $scope.onPixel.objects.splice(objectIndex,1); // Remove object
                 $scope.inEvent = true;
                 $scope.inEventTutorial = jQuery.inArray($scope.event.type,$scope.tutorialSkips) < 0; // Skip tut?
+                $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
                 if($scope.inEventTutorial) {
                     tutorialImage.on('mousedown',function() {
                         $timeout(function() { $scope.inEventTutorial = false; });
                         tutorialImage.unbind('mousedown');
                         actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                        gameUtility.setupActivity($scope.event.type);
+                        gameUtility.setupActivity($scope.event.type,$scope.user.skills[$scope.event.type]);
                     });
                 } else {
                     actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                    gameUtility.setupActivity($scope.event.type);
+                    gameUtility.setupActivity($scope.event.type,$scope.user.skills[$scope.event.type]);
                 }
             });
         };
@@ -267,7 +268,8 @@ angular.module('Geographr.controllers', [])
                 if($scope.user.hasOwnProperty('inventory')) {
                     for(var key in $scope.user.inventory) {
                         if($scope.user.inventory.hasOwnProperty(key) && 
-                            $scope.user.inventory[key].name == taking[i].name) {
+                            $scope.user.inventory[key].name == taking[i].name && 
+                            $scope.user.inventory[key].type == taking[i].type) {
                             $scope.user.inventory[key].amount += taking[i].amount;
                             taking[i].amount = 0;
                         }
@@ -382,7 +384,7 @@ angular.module('Geographr.controllers', [])
         };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
-            var activities = { forage: 1, hunt: 0.3 };
+            var activities = { forage: 1, hunt: 0.3, mine: 0.2 }; // TODO: Influenced by terrain
             for(var actKey in activities) {
                 if(activities.hasOwnProperty(actKey)) {
                     if(Math.random() > 1-chance*activities[actKey] 
@@ -401,7 +403,6 @@ angular.module('Geographr.controllers', [])
             if(e.which == 2 || e.which == 3) { e.preventDefault(); return; } // If right/middle click pressed
             var offset = actCanvasUtility.eventHighCanvas.offset(); // Get pixel location
             var click = { x: Math.floor(e.pageX - offset.left), y: Math.floor(e.pageY - offset.top) };
-            $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
             $scope.event.result = gameUtility.playActivity($scope.event.type,click,
                 $scope.user.skills[$scope.event.type]);
             $timeout(function() {
@@ -448,6 +449,21 @@ angular.module('Geographr.controllers', [])
             },500)
         };
 
+        var checkEdibles = function() { // Does the user have anything to auto-eat?
+            $timeout(function(){
+                if(!$scope.inventory) {  $scope.noEdibles = true; return; }
+                $scope.noEdibles = true;
+                for(var key in $scope.inventory) {
+                    if($scope.inventory.hasOwnProperty(key)) {
+                        if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) &&
+                            !gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')) {
+                            changeHunger($scope.user.id,0); $scope.noEdibles = false; return;
+                        }
+                    }
+                }
+            });
+        };
+        
         var updateInventory = function(snapshot) {
             var itemAdded = snapshot.val();
             itemAdded.fireID = snapshot.name();
@@ -466,26 +482,21 @@ angular.module('Geographr.controllers', [])
                 }
                 if(!$scope.inventory) { $scope.inventory = {}; }
                 $scope.inventory[snapshot.name()] = itemAdded;
+                checkEdibles();
             });
         };
 
         var removeInventory = function(snapshot) {
             $timeout(function(){
                 switch(snapshot.val().type) {
-                    case 'camp':
-                        tutorial('next');
-                        break;
-                    default:
-                        break;
+                    case 'camp': tutorial('next'); break;
+                    default: break;
                 }
                 delete $scope.inventory[snapshot.name()];
                 var items = 0; // Check how many items are in the inventory
-                for(var key in $scope.inventory) {
-                    if($scope.inventory.hasOwnProperty(key)) { items++; break; }
-                }
-                if(items == 0) {
-                    $scope.inventory = null;
-                }
+                for(var key in $scope.inventory) { if($scope.inventory.hasOwnProperty(key)) { items++; break; } }
+                if(items == 0) { $scope.inventory = null; }
+                checkEdibles();
             });
         };
         // Selecting an object on the map
@@ -737,7 +748,7 @@ angular.module('Geographr.controllers', [])
                         } else if($scope.user.location == grid) {
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],'You',zoomPixSize);
-                        } else if($scope.user.camp == grid && $scope.showObjects) {
+                        } else if($scope.user.camp.grid == grid && $scope.showObjects) {
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],'Your Camp',zoomPixSize);
                         }
@@ -981,7 +992,8 @@ angular.module('Geographr.controllers', [])
                 case 'createCamp':
                     var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                     fireRef.child('users/'+snap.val().user).update({
-                        camp: startGrid, location: startGrid, money: 500, stats: { hunger: 100 }
+                        camp: { grid: startGrid, color: colorUtility.generate('camp').hex }, 
+                        location: startGrid, money: 500, stats: { hunger: 100 }
                     }); 
                     fireRef.child('scoreBoard/'+snap.val().user).set(0);
                     break;

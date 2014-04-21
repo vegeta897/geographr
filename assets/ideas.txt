@@ -12,19 +12,19 @@ find random native camps that have seed-generated desire levels for different go
     either buy from a camp and sell in another, or carry out a trade, in which you could run off with the goods
         if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity
     
-    goods/resource ideas:       value per weight    abundance
-        - Lumber                1                   near forests
-        - Fish                  7                   near water
-        - Fruit                 6                   in plains
-        - Vegetables            5                   in plains
-        - Meat                  7
-        - Salt                  3                   in mountains and sea
-        - Coal                  2                   in mountains
-        - Iron                  4                   in mountains
-        - Wool                  6
-        - Tools                 5                   with lumber/iron
-        - Weapons               6                   with lumber/iron
-        - Spices                10                  in plains
+    goods/resource ideas:           abundance
+        - Lumber                    near forests
+        - Fish                      near water
+        - Fruit                     in plains
+        - Vegetables                in plains
+        - Meat                  
+        - Salt                      in mountains and sea
+        - Coal                      in mountains
+        - Iron                      in mountains
+        - Wool                 
+        - Tools                     with lumber/iron
+        - Weapons                   with lumber/iron
+        - Spices                    in plains
         
 random encounters possible for every moved grid (server-side?)
 

@@ -100,7 +100,8 @@ canvas { display: block; }
 #eventHUD { margin-top: -28px; min-height: 26px; }
 #eventHUD p { padding-top: 2px; margin-bottom: 8px; }
 #eventHUD .checkbox-inline { margin-left: 4px; }
-#eventHUD .event-products button { margin: 0 4px 4px 0; color: white; }
+#eventHUD .event-products button { margin: 0 4px 4px 0; color: white; 
+    text-shadow: 0 1px 0 #000, 1px 0 0 #000, 1px 1px 0 #000, 0 0 1px #000; }
 #eventHUD .event-products button:hover { background-color: #24272b !important; }
 
 .skills, .stats { width: 100%; }
