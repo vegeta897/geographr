@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.20; $scope.versionName = 'Brave Restaurant'; $scope.needUpdate = false;
+        $scope.version = 0.21; $scope.versionName = 'Sterling Freight'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -261,27 +261,11 @@ angular.module('Geographr.controllers', [])
             var taking;
             if(product == 'all') { taking = $scope.event.products; $scope.event.products = []; } 
                 else { taking = [$scope.event.products[product]]; $scope.event.products.splice(product,1); }
-            for(var i = 0; i < taking.length; i++) {
-                var fireID = fireInventory.push().name();
-                // TODO: Don't store unnecessary properties on firebase
-                // TODO: Create a function that cleans items of these properties
-                if($scope.user.hasOwnProperty('inventory')) {
-                    for(var key in $scope.user.inventory) {
-                        if($scope.user.inventory.hasOwnProperty(key) && 
-                            $scope.user.inventory[key].name == taking[i].name && 
-                            $scope.user.inventory[key].type == taking[i].type) {
-                            $scope.user.inventory[key].amount += taking[i].amount;
-                            taking[i].amount = 0;
-                        }
-                    }
-                    if(taking[i].amount > 0) { $scope.user.inventory[fireID] = taking[i]; }
-                } else { $scope.user.inventory = {}; $scope.user.inventory[fireID] = taking[i]; }
-            }
+            addToInventory(taking);
             if($scope.event.products.length == 0 && $scope.event.result.ended) {
                 actCanvasUtility.eventHighCanvas.unbind('mousedown');
                 $timeout(function() { $scope.inEvent = false; $scope.event = {}; });
             }
-            fireInventory.set(angular.copy($scope.user.inventory));
         };
         $scope.autoEat = function(food,eatThis) {
             if(eatThis) {
@@ -368,7 +352,8 @@ angular.module('Geographr.controllers', [])
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
             $scope.user.money = parseInt($scope.user.money - amount * $scope.onPixel.camp.economy[resource].value);
             fireUser.child('money').set($scope.user.money);
-            fireInventory.push({ type: 'resource', name: resource, amount: parseInt(amount) });
+            var invItem = { type: 'resource', name: resource, amount: parseInt(amount) };
+            addToInventory(invItem);
         };
         $scope.sellResource = function(resource,amount,haveAmount,fireID) {
             if(amount < 1 || amount > haveAmount) { return; }
@@ -464,22 +449,52 @@ angular.module('Geographr.controllers', [])
             });
         };
         
+        var cleanItem = function(item) { // Clean unnecessary properties from item before storing on firebase
+            delete item.color; delete item.materials; delete item.rarity; delete item.weight;
+            delete item.avgQty; delete item.value; delete item.effects; delete item.unit; delete item.abundance;
+            return item;
+        };
+        var dressItem = function(item) { // Dress item with properties not stored on firebase
+            var parent;
+            switch(item.type) {
+                case 'resource': parent = gameUtility.resources[item.name]; break;
+                case 'plant': parent = gameUtility.eventProducts.forage[item.name]; break;
+                case 'animal': parent = gameUtility.eventProducts.hunt[item.name]; break;
+                case 'mineral': parent = gameUtility.eventProducts.mine[item.name]; break;
+                default: parent = item; break;
+            }
+            item.color = parent.color; item.value = parent.value; item.weight = parent.weight;
+            item.unit = parent.unit; item.materials = parent.materials;
+            return item;
+        };
+        // Add item or array of items to inventory, stacking if possible, and send to firebase
+        var addToInventory = function(invItems) {
+            if(!invItems instanceof Array) { invItems = [invItems] }
+            for(var i = 0; i < invItems.length; i++) {
+                var invItem = cleanItem(invItems[i]);
+                var fireID = fireInventory.push().name();
+                if($scope.user.hasOwnProperty('inventory')) {
+                    for(var key in $scope.user.inventory) {
+                        if($scope.user.inventory.hasOwnProperty(key) &&
+                            $scope.user.inventory[key].name == invItem.name &&
+                            $scope.user.inventory[key].type == invItem.type) {
+                            $scope.user.inventory[key].amount += invItem.amount; invItem.amount = 0;
+                        }
+                    }
+                    if(invItem.amount > 0) { $scope.user.inventory[fireID] = invItem; }
+                } else { $scope.user.inventory = {}; $scope.user.inventory[fireID] = invItem; }
+            }
+            
+            fireInventory.set(angular.copy($scope.user.inventory));
+        };
+        
         var updateInventory = function(snapshot) {
             var itemAdded = snapshot.val();
             itemAdded.fireID = snapshot.name();
             $timeout(function(){
-                switch(itemAdded.type) {
-                    case 'resource':
-                        if(gameUtility.resources[itemAdded.name].hasOwnProperty('unit')) {
-                            itemAdded.unit = gameUtility.resources[itemAdded.name].unit; }
-                        itemAdded.weight = gameUtility.resources[itemAdded.name].weight;
-                        itemAdded.color = gameUtility.resources[itemAdded.name].color;
-                        break;
-                    default:
-                        if($scope.user.hasOwnProperty('autoEat') && 
-                            jQuery.inArray(itemAdded.name,$scope.user.autoEat) >= 0) { itemAdded.autoEat = true; }
-                        break;
-                }
+                itemAdded = dressItem(itemAdded);
+                if($scope.user.hasOwnProperty('autoEat') &&
+                    jQuery.inArray(itemAdded.name,$scope.user.autoEat) >= 0) { itemAdded.autoEat = true; }
                 if(!$scope.inventory) { $scope.inventory = {}; }
                 $scope.inventory[snapshot.name()] = itemAdded;
                 checkEdibles();

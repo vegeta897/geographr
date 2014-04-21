@@ -35,38 +35,38 @@ angular.module('Geographr.game', [])
             }
         };
         var eventProducts = {
-            forage: [
-                { name: 'red berries', color: '9e3333', rarity: 0.3, avgQty: 3 },
-                { name: 'blue berries', color: '334c9e', rarity: 0.5, avgQty: 2 },
-                { name: 'green berries', color: '689e48', rarity: 0.2, avgQty: 3 },
-                { name: 'brown mushrooms', color: '6f6053', rarity: 0, avgQty: 3 },
-                { name: 'white mushrooms', color: 'b0a9a4', rarity: 0.3, avgQty: 2 },
-                { name: 'herbs', color: '728448', rarity: 0.6, avgQty: 2 },
-                { name: 'onions', color: 'aaa982', rarity: 0.7, avgQty: 1 }
-            ],
-            hunt: [
-                { name: 'deer', color: '6f4c32', rarity: 0.4, materials: ['meat','bone','pelt']},
-                { name: 'boar', color: '49413d', rarity: 0.7, materials: ['meat','bone','pelt'] },
-                { name: 'rabbit', color: '6d5f58', rarity: 0, materials: ['meat','bone','pelt'] },
-                { name: 'fox', color: '6d341e', rarity: 0.8, materials: ['meat','bone','pelt'] },
-                { name: 'wolf', color: '4b4c4f', rarity: 0.9, materials: ['meat','bone','pelt'] },
-                { name: 'mole', color: '433a32', rarity: 0.9, materials: ['meat','bone','pelt'] },
-                { name: 'pheasant', color: '713926', rarity: 0.7, materials: ['meat','bone'] },
-                { name: 'duck', color: '433a32', rarity: 0.8, materials: ['meat','bone'] }
-            ],
-            mine: [
-                { name: 'salt', color: 'a8a797', rarity: 0 },
-                { name: 'coal', color: '191a1a', rarity: 0.2 },
-                { name: 'iron ore', color: '593125', rarity: 0.4 },
-                { name: 'copper ore', color: '924c36', rarity: 0.3 },
-                { name: 'silver', color: 'b0b0b0', rarity: 0.8 },
-                { name: 'gold', color: 'cab349', rarity: 0.85 },
-                { name: 'rough emerald', color: '4f8e4f', rarity: 0.8 },
-                { name: 'rough ruby', color: '8e4242', rarity: 0.85 },
-                { name: 'rough topaz', color: 'a69748', rarity: 0.8 },
-                { name: 'rough sapphire', color: '485ea6', rarity: 0.85 },
-                { name: 'rough diamond', color: 'c8c3c5', rarity: 0.95 }
-            ]
+            forage: {
+                'red berries': { color: '9e3333', rarity: 0.3, avgQty: 3 },
+                'blue berries': { color: '334c9e', rarity: 0.5, avgQty: 2 },
+                'green berries': { color: '689e48', rarity: 0.2, avgQty: 3 },
+                'brown mushrooms': { color: '6f6053', rarity: 0, avgQty: 3 },
+                'white mushrooms': { color: 'b0a9a4', rarity: 0.3, avgQty: 2 },
+                'herbs': { color: '728448', rarity: 0.6, avgQty: 2 },
+                'onions': { color: 'aaa982', rarity: 0.7, avgQty: 1 }
+            },
+            hunt: {
+                'deer': { color: '6f4c32', rarity: 0.4, materials: ['meat','bone','pelt']},
+                'boar': { color: '49413d', rarity: 0.7, materials: ['meat','bone','pelt'] },
+                'rabbit': { color: '6d5f58', rarity: 0, materials: ['meat','bone','pelt'] },
+                'fox': { color: '6d341e', rarity: 0.8, materials: ['meat','bone','pelt'] },
+                'wolf': { color: '4b4c4f', rarity: 0.9, materials: ['meat','bone','pelt'] },
+                'mole': { color: '433a32', rarity: 0.9, materials: ['meat','bone','pelt'] },
+                'pheasant': { color: '713926', rarity: 0.7, materials: ['meat','bone'] },
+                'duck': { color: '433a32', rarity: 0.8, materials: ['meat','bone'] }
+            },
+            mine: {
+                'salt': { color: 'a8a797', rarity: 0 },
+                'coal': { color: '191a1a', rarity: 0.2 },
+                'iron ore': { color: '593125', rarity: 0.4 },
+                'copper ore': { color: '924c36', rarity: 0.3 },
+                'silver': { color: 'b0b0b0', rarity: 0.8 },
+                'gold': { color: 'cab349', rarity: 0.85 },
+                'rough emerald': { color: '4f8e4f', rarity: 0.8 },
+                'rough ruby': { color: '8e4242', rarity: 0.85 },
+                'rough topaz': { color: 'a69748', rarity: 0.8 },
+                'rough sapphire': { color: '485ea6', rarity: 0.85 },
+                'rough diamond': { color: 'c8c3c5', rarity: 0.95 }
+            }
         };
         var edibles = {
             'red berries': { calories: 2 },
@@ -82,36 +82,26 @@ angular.module('Geographr.game', [])
             'meat': { calories: 60, effects: ['nasty','foodPoisoning'] }
         };
         var event = {}; // Holds event details
-        var randomIntRange = function(min,max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        };
-        var randomRange = function(min,max) {
-            return Math.random() * (max-min) + min;
-        };
-        var toRadians = function(angle) {
-            return angle * 0.0174533;
-        };
-        var toDegrees = function(angle) {
-            return (angle * 57.2957795 + 360) % 360;
-        };
-        var getDigit = function(num, digit) {
-            return Math.floor(num / (Math.pow(10, digit-1)) % 10)
-        };
-        var pickInArray = function(array) { // Return a random element from input array
-            return array[Math.floor(Math.random()*array.length)];
+        var randomIntRange = function(min,max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
+        var randomRange = function(min,max) { return Math.random() * (max-min) + min; };
+        var toRadians = function(angle) { return angle * 0.0174533; };
+        var toDegrees = function(angle) { return (angle * 57.2957795 + 360) % 360; };
+        var getDigit = function(num, digit) { return Math.floor(num / (Math.pow(10, digit-1)) % 10) };
+        // Return a random element from input array
+        var pickInArray = function(array) { return array[Math.floor(Math.random()*array.length)]; };
+        var pickInObject = function(object) { // Return a random property from input object (attach name)
+            var array = [];
+            for(var key in object) { if(object.hasOwnProperty(key)) { 
+                var property = object[key]; property.name = key; array.push(object[key]); } }
+            return pickInArray(array);
         };
         var pickProduct = function(type) { // Pick a product in an array based on rarity property value
             Math.seedrandom(); var random = Math.random();
-            var picked = pickInArray(eventProducts[type]);
+            var picked = pickInObject(eventProducts[type]);
             while(picked.rarity > random) {
-                picked = pickInArray(eventProducts[type]);
+                picked = pickInObject(eventProducts[type]);
             }
             return picked;
-        };
-        var pickInObject = function(object) { // Return a random property from input object
-            var array = [];
-            for(var key in object) { if(object.hasOwnProperty(key)) { array.push(object[key]); } }
-            return array[Math.floor(Math.random()*array.length)];
         };
         var getNeighbors = function(loc,dist) { // Check a diamond area around x,y
             var neighbors = [];
@@ -274,7 +264,7 @@ angular.module('Geographr.game', [])
         
         return {
             setupActivity: function(type,skill) {
-                event.skill = skill ? Math.floor(skill / 10) : 0;
+                event = {}; event.skill = skill ? Math.floor(skill / 10) : 0;
                 Math.seedrandom();
                 event.pool = createEventPool(type); event.result = {};
                 event.seed = randomIntRange(0,10000); // For consistent redrawing
@@ -473,6 +463,7 @@ angular.module('Geographr.game', [])
                 }}
                 return output;
             },
-            resources: resources, event: event, eventMessages: eventMessages, edibles: edibles
+            resources: resources, event: event, eventMessages: eventMessages, eventProducts: eventProducts,
+            edibles: edibles
         }
 });
