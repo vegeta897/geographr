@@ -84,7 +84,7 @@
                 <i class="glyphicon glyphicon-arrow-left"></i></button>
             <button ng-show="movePath.length > 0" ng-click="movePlayer('startStop')"
                     class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go' }}</button>
-            <button ng-show="movePath.length == 0" ng-disabled="looking" ng-click="lookAround()"
+            <button ng-show="movePath.length == 0" ng-disabled="looking || cantLook" ng-click="lookAround()"
                     class="btn btn-default" id="lookAround">Look</button>
             <button ng-disabled="moving || looking" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
                 <i class="glyphicon glyphicon-arrow-right"></i></button>

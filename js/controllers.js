@@ -13,7 +13,7 @@ angular.module('Geographr.controllers', [])
         $scope.editTerrain = false; $scope.smoothTerrain = false;
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = [];
-        $scope.movePath = [];
+        $scope.movePath = []; $scope.lookCount = 0;
         $scope.tutorialSkips = []; $scope.skipTutorial = false;
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
@@ -309,14 +309,18 @@ angular.module('Geographr.controllers', [])
             $timeout(function(){ $scope.movePath.push(destGrid); dimPixel(); });
         };
         $scope.lookAround = function() { // Further examine current grid (as if re-moving to this grid)
+            if($scope.cantLook) { return; } $scope.lookCount++;
             $timeout(function(){ $scope.looking = true; });
             var look = function() {
                 if($scope.onPixel.camp) { // If there is a camp here
-                    
                 } else { // If no camp, create some events/activities
-                    createActivity(0.8);
+                    var looks = $scope.lookCount;
+                    createActivity(0.25*((looks=looks/6-1)*looks*looks + 1) + 0.7);
                 }
-                $timeout(function(){ $scope.looking = false; });
+                $timeout(function(){ 
+                    $scope.looking = false;
+                    if($scope.lookCount >= 6) { $scope.cantLook = true; }
+                });
             };
             setTimeout(look,2000); // Look around for 2 seconds
             changeHunger(userID,1); // Use 1 hunger
@@ -913,6 +917,7 @@ angular.module('Geographr.controllers', [])
                 objects: localObjects[snap.val()], elevation: (localTerrain[snap.val()] || 0)
             };
             availableActivities = [];
+            $scope.cantLook = false; $scope.lookCount = 0;
             if(campList.indexOf(snap.val()) >= 0) { // If there is a camp here
                 if(!$scope.user.hasOwnProperty('visitedCamps')) {
                     $scope.user.visitedCamps = [snap.val()];
