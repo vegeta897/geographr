@@ -56,11 +56,11 @@ angular.module('Geographr.game', [])
             },
             mine: {
                 'salt': { color: 'a8a797', rarity: 0, profession: 'saltFarm' },
-                'coal': { color: '191a1a', rarity: 0.2, profession: 'blackSmith' },
-                'iron ore': { color: '593125', rarity: 0.4, profession: 'blackSmith' },
-                'copper ore': { color: '924c36', rarity: 0.3, profession: 'blackSmith' },
-                'silver': { color: 'b0b0b0', rarity: 0.8, profession: 'blackSmith' },
-                'gold': { color: 'cab349', rarity: 0.85, profession: 'blackSmith' },
+                'coal': { color: '191a1a', rarity: 0.2, profession: 'blacksmith' },
+                'iron ore': { color: '593125', rarity: 0.4, profession: 'blacksmith' },
+                'copper ore': { color: '924c36', rarity: 0.3, profession: 'blacksmith' },
+                'silver': { color: 'b0b0b0', rarity: 0.8, profession: 'blacksmith' },
+                'gold': { color: 'cab349', rarity: 0.85, profession: 'blacksmith' },
                 'rough emerald': { color: '4f8e4f', rarity: 0.8, profession: 'jeweler' },
                 'rough ruby': { color: '8e4242', rarity: 0.85, profession: 'jeweler' },
                 'rough topaz': { color: 'a69748', rarity: 0.8, profession: 'jeweler' },
@@ -188,9 +188,9 @@ angular.module('Geographr.game', [])
                 }
             }
             economy.resources = resources;
-            var blackSmithFactor = resources['coal'].demand + resources['iron'].demand + 
+            var blacksmithFactor = resources['coal'].demand + resources['iron'].demand + 
                 resources['tools'].demand + resources['weapons'].demand;
-            if(blackSmithFactor/400 < Math.random() * 0.6 + 0.4) { economy.hasBlackSmith = true; }
+            if(blacksmithFactor/400 < Math.random() * 0.6 + 0.4) { economy.hasBlacksmith = true; }
             return economy;
         };
         // Generate pool of resources for event

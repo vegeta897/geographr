@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.21; $scope.versionName = 'Sterling Freight'; $scope.needUpdate = false;
+        $scope.version = 0.211; $scope.versionName = 'Sterling Freight'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -28,6 +28,16 @@ angular.module('Geographr.controllers', [])
         var auth; // Create a reference to the auth service for our data
         fireRef.parent().child('version').once('value', function(snap) { // Check version number
             if($scope.version >= snap.val()) {
+                fireRef.parent().child('version').on('value',function(snap) {
+                    if($scope.version >= snap.val()) { return; }
+                    $timeout(function() {
+                        $scope.needUpdate = true; $scope.authStatus = ''; $scope.userInit = false;
+                        $scope.user = $scope.onPixel = null;
+                        jQuery(zoomHighCanvas)
+                            .unbind('mousemove').unbind('mousedown').unbind('mouseup').unbind('mousewheel');
+                        jQuery(fullHighCanvas).unbind('mousedown').unbind('mouseup').unbind('mousewheel');
+                    });
+                });
                 auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
                     if(userID == 2) {
                         console.log('server re-authed!');
@@ -291,16 +301,15 @@ angular.module('Geographr.controllers', [])
         };
         $scope.movePlayer = function(dir) {
             if(dir == 'startStop') { // If starting or stopping movement
-                if($scope.moving) {
-                    fireServer.push({ user: userID, action: 'stop' });
-                    $scope.moving = false; dimPixel(); return;
-                } 
+                if($scope.moving) { fireServer.push({ user: userID, action: 'stop' });
+                    $scope.moving = false; dimPixel(); return; } 
                 $scope.moving = true; dimPixel();
                 var moveTime = 5 * (1 + localTerrain[$scope.movePath[0]] / 60);
                 playWaitingBar(moveTime+0.5);
                 fireServer.push({ user: userID, action: 'move', path: $scope.movePath }); return;
             }
             if(dir == 'clear') { $timeout(function(){ $scope.movePath = []; dimPixel(); }); return; }
+            if(dir == 'undo') { $timeout(function(){ $scope.movePath.pop(); dimPixel(); }); return; }
             // If new path, use player location, otherwise use last path node
             var destination = $scope.movePath.length == 0 ? [parseInt($scope.user.location.split(':')[0]),
                 parseInt($scope.user.location.split(':')[1])] : 

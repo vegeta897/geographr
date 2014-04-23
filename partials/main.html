@@ -81,10 +81,12 @@
             
             
             <div ng-class="{ invisible: !moving && !looking }" class="progress">
-                <div class="progress-bar" ng-style="{width: waitProgress+'%'}"></div>
-            </div>
+                <div class="progress-bar" ng-style="{width: waitProgress+'%'}"></div></div>
             <button ng-disabled="moving || looking" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
                 <i class="glyphicon glyphicon-arrow-up"></i></button>
+            <button ng-hide="movePath.length == 0 || moving" ng-click="movePlayer('undo')"
+                class="btn btn-default btn-sm" id="moveUndo">
+                <i class="glyphicon glyphicon-repeat icon-flipped"></i></button>
             <button ng-disabled="moving || looking" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
                 <i class="glyphicon glyphicon-arrow-left"></i></button>
             <button ng-show="movePath.length > 0" ng-click="movePlayer('startStop')"
@@ -95,8 +97,8 @@
                 <i class="glyphicon glyphicon-arrow-right"></i></button>
             <button ng-disabled="moving || looking" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
                 <i class="glyphicon glyphicon-arrow-down"></i></button>
-            <button ng-disabled="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
-                    class="btn btn-default btn-sm" id="moveClear">Clear</button>
+            <button ng-hide="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
+                class="btn btn-default btn-sm" id="moveClear">Clear</button>
         </div>
         <div class="col-xs-1 text-right hard-right pull-right coords">
         {{ overPixel.x }} , {{ overPixel.y }}
@@ -142,9 +144,8 @@
                 <p ng-hide="event.message">&nbsp;</p>
                 <div class="well" ng-show="event.products.length > 0">
                     <p class="event-products">
-                        <button ng-click="takeFromEvent($index)" class="btn btn-xs btn-item"
-                                ng-repeat="product in event.products"
-                                ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
+                        <button ng-click="takeFromEvent($index)" ng-style="{'background-color': '#'+product.color}"
+                            class="btn btn-xs btn-item" ng-repeat="product in event.products">
                             {{ product.amount }}x {{ product.name }}
                         </button>
                     </p>
@@ -189,9 +190,8 @@
                                                ng-model="autoEatThis" type="checkbox">
                                     </label></div></td>
                                     <td>{{ item.name | capitalize }}</td>
-                                    <td class="text-right">
-                                        <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong>
-                                    </td>
+                                    <td class="text-right"><strong data-model="item.amount" class="change-effect">
+                                        {{ item.amount }}</strong></td>
                                 </tr>
                             </table>
                         </div>
@@ -214,9 +214,7 @@
                         <tr ng-repeat-start="(key,val) in onPixel.camp.economy.resources" 
                             ng-init="item = hasItem({type:'resource',name:key})">
                             <td><button data-toggle-panel class="btn btn-xs btn-item" 
-                                ng-init="style={'background-color': '#'+val.color}" ng-style="style" >
-                                {{ key | capitalize }}
-                            </button></td>
+                                ng-style="{'background-color': '#'+val.color}" >{{ key | capitalize }}</button></td>
                             <td ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
                             <td style="color: #fff;" ng-style="{opacity:(val.demand+15)/115}">{{ val.demand }}
                                 {{ item | iif : '*' : '' }}</td>
@@ -265,7 +263,7 @@
                         </td></tr>
                     </table>
                 </div></div>
-                <button ng-show="onPixel.camp.economy.hasBlackSmith && hasItem({profession:'blackSmith'})" 
+                <button ng-show="onPixel.camp.economy.hasBlacksmith && hasItem({profession:'blacksmith'})" 
                         class="btn btn-default btn-sm" ng-click="showBS = !showBS">Blacksmith</button>
                 <div ng-show="showBS">I'm a blacksmith!</div>
             </div>
@@ -281,7 +279,7 @@
                 <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant','mineral']" 
                     ng-class="{ 'last-of-type': item.lastOfType }">
                     <td style="width: 16px;"><a href="#" data-toggle-panel>
-                        <span ng-init="style={background: '#'+item.color}" ng-style="style" 
+                        <span ng-style="{background: '#'+item.color}" 
                               class="item-color"></span></a></td>
                     <td class="text-right quantity"><a href="#" data-toggle-panel><strong 
                             data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
@@ -305,26 +303,24 @@
                     <span class="text-muted">({{ selectedObject.grid | grid }})</span>
                     <em ng-show="selectedObject.visited">&emsp;Visited</em>
                 </p>
+                <h3 ng-show="selectedObject.economy.resources">Resource Demands</h3>
                 <div class="row" ng-show="selectedObject.economy.resources">
-                    <div class="col-xs-12">Resource demands</div>
-                    <div class="col-xs-6">
+                    <div class="col-xs-6" ng-repeat="column in [0,1]">
                         <table class="unstyled table-tiny">
-                            <tr ng-repeat="resource in selectedObject.economy.resources | splitList: 0">
-                                <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
+                            <tr ng-repeat="resource in selectedObject.economy.resources | splitList: column">
+                                <td class="has-label">
+                                    <span ng-style="{'background-color': '#'+resource.color}" class="label">
+                                    {{ resource.name | capitalize }}</span></td>
                                 <td class="text-right" style="color: white;" 
                                     ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
                             </tr>
                         </table>
                     </div>
-                    <div class="col-xs-6">
-                        <table class="unstyled table-tiny">
-                            <tr ng-repeat="resource in selectedObject.economy.resources | splitList: 1">
-                                <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
-                                <td class="text-right" style="color: white;" 
-                                    ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
-                            </tr>
-                        </table>
-                    </div>
+                </div>
+                <div class="row col-xs-12">
+                    <h3>Camp Services</h3>
+                    <span ng-show="selectedObject.economy.hasBlacksmith" style="background-color: #222;" 
+                          class="label big-label">Blacksmith</span>
                 </div>
                 <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
                     <h3>Contents</h3>
@@ -337,7 +333,7 @@
                     </ul>
                 </div>
             </div>
-            <h2>Event Log</h2>
+            <!-- <h2>Event Log</h2>
             <em ng-hide="eventLog.length > 0" class="text-muted">Nothing&nbsp;&nbsp;yet</em>
             <ul id="log" class="list-unstyled">
                 <li ng-repeat="event in eventLog | limitTo:10">
@@ -345,7 +341,7 @@
                     {{ event.user }} {{ event.type }}<span ng-show="event.coords" class="text-muted"> at</span> 
                     {{ event.coords[0]}}<span ng-show="event.coords" class="text-muted">, </span>{{ event.coords[1] }}
                 </li>
-            </ul>
+            </ul> -->
             <h2>Scoreboard</h2>
             <div class="col-xs-10">
                 <table class="table unstyled scoreboard">
