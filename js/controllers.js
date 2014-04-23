@@ -1013,7 +1013,9 @@ angular.module('Geographr.controllers', [])
                     }
                 }
             }
-            fireRef.child('users/'+userID+'/stats/hunger').set(100 - result.newNeeded);
+            var newHunger = result ? 100 - result.newNeeded : 100 - neededHunger;
+            fireRef.child('users/'+userID+'/stats/hunger').set(newHunger);
+            
         };
             
         var addClient = function(snap) {
@@ -1034,9 +1036,10 @@ angular.module('Geographr.controllers', [])
                     var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                     fireRef.child('users/'+snap.val().user).update({
                         camp: { grid: startGrid, color: colorUtility.generate('camp').hex }, 
-                        location: startGrid, money: 500, stats: { hunger: 100 }
+                        location: startGrid, money: 200, stats: { hunger: 100 }
                     }); 
-                    fireRef.child('scoreBoard/'+snap.val().user).set(0);
+                    fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
+                    fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(localUsers[snap.val().user].nick);
                     break;
                 case 'move':
                     var baseMoveSpeed = 5000; // 5 seconds
@@ -1150,7 +1153,10 @@ angular.module('Geographr.controllers', [])
                zoomFogCanvas.style.visibility="hidden";
            } else { // If regular user
                fireUser.child('location').on('value', movePlayer);
-               fireUser.child('stats/hunger').on('value', function(snap) { $scope.user.stats.hunger = snap.val(); });
+               fireUser.child('stats/hunger').on('value', function(snap) {
+                   $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
+                   $scope.user.stats.hunger = snap.val();
+               });
                var myConnectionsRef = fireUser.child('connections');
                var lastOnlineRef = fireUser.child('lastOnline');
                var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');

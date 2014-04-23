@@ -74,7 +74,7 @@
             <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
             <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
         </div>
-        <div ng-show="userInit && terrainReady" id="controls">
+        <div ng-show="userInit && terrainReady && user.camp" id="controls">
             
             
             <!-- TODO: Add "undo" button in top right that erases last path node -->
@@ -155,47 +155,52 @@
                 <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
                 <button ng-show="user.new" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
             </div>
-            <h2>Skills</h2>
-            <table class="unstyled skills">
-                <tr ng-repeat="(key,val) in user.skills">
-                    <td><strong>{{ key | capitalize }}</strong></td>
-                    <td class="text-right"><span class="text-muted">Level</span>&nbsp;&nbsp;<strong>
-                        {{ val | skillLevel }}</strong>&emsp;</td>
-                    <td><div class="progress">
-                        <div class="progress-bar" ng-style="{width: (val % 10 *10)+'%'}"></div>
-                    </div></td>
-                </tr>
-            </table>
-            <h2>Stats</h2>
-            <table class="unstyled stats">
-                <tr><td><a data-toggle-panel href="#">Hunger</a></td><td><div class="progress">
-                    <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
-                         ng-class="{ hungry: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
-                </div></td></tr>
-                <tr id="autoEat" class="actions start-open"><td colspan="2">
-                    <div class="well well-sm">
-                        <table class="unstyled">
-                            <tr><th colspan="2"><h3>Automatic Eating</h3></th>
-                                <th class="text-right text-muted">Amount</th></tr>
-                            <tr ng-show="noEdibles"><td colspan="3"><span class="text-danger">
+            <div ng-show="user.camp">
+                <h2>Skills</h2>
+                <em class="text-muted" ng-hide="user.skills.length > 0">
+                    No skills yet. Do some foraging or hunting!</em>
+                <table class="unstyled skills">
+                    <tr ng-repeat="(key,val) in user.skills">
+                        <td><strong>{{ key | capitalize }}</strong></td>
+                        <td class="text-right"><span class="text-muted">Level</span>&nbsp;&nbsp;<strong>
+                            {{ val | skillLevel }}</strong>&emsp;</td>
+                        <td><div class="progress">
+                            <div class="progress-bar" ng-style="{width: (val % 10 *10)+'%'}"></div>
+                        </div></td>
+                    </tr>
+                </table>
+                <h2>Stats</h2>
+                <table class="unstyled stats">
+                    <tr><td><a data-toggle-panel href="#">Hunger</a></td><td><div class="progress">
+                        <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
+                             ng-class="{ hungry: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
+                    </div></td></tr>
+                    <tr id="autoEat" class="actions start-open" ng-show="user.camp"><td colspan="2">
+                        <div class="well well-sm">
+                            <table class="unstyled">
+                                <tr><th colspan="2"><h3>Automatic Eating</h3></th>
+                                    <th class="text-right text-muted">Amount</th></tr>
+                                <tr ng-show="noEdibles"><td colspan="3"><span class="text-danger">
                                 Nothing left to eat!</span></td></tr>
-                            <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
-                                <td><div class="checkbox-inline text-muted"><label>
-                                    <input ng-init="autoEatThis = item.autoEat" 
-                                        ng-change="autoEat(item.name,autoEatThis)" 
-                                        ng-model="autoEatThis" type="checkbox">
-                                </label></div></td>
-                                <td>{{ item.name | capitalize }}</td>
-                                <td class="text-right">
-                                    <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </td></tr>
-            </table>
+                                <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
+                                    <td><div class="checkbox-inline text-muted"><label>
+                                        <input ng-init="autoEatThis = item.autoEat"
+                                               ng-change="autoEat(item.name,autoEatThis)"
+                                               ng-model="autoEatThis" type="checkbox">
+                                    </label></div></td>
+                                    <td>{{ item.name | capitalize }}</td>
+                                    <td class="text-right">
+                                        <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </td></tr>
+                </table>
+            </div>
         </div>
-        <div id="location" class="col-xs-3">
+        <div class="col-xs-6" ng-hide="user.camp"></div>
+        <div id="location" class="col-xs-3" ng-show="user.camp">
             <h2>Location <small>({{ user.location | grid }})</small></h2>
             <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
                 <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
@@ -268,7 +273,7 @@
                  ng-show="onPixel.objects && object.type != 'camp' && !object.activity">{{ object | itemDisplay }}
             </div>
         </div>
-        <div id="inventory" class="col-xs-3">
+        <div id="inventory" class="col-xs-3" ng-show="user.camp">
             <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;
                 <strong data-model="user.money" class="change-effect">{{ user.money }}</strong></small></h2>
             <p ng-hide="inventory" class="text-muted">No items</p>
@@ -344,7 +349,7 @@
             <h2>Scoreboard</h2>
             <div class="col-xs-10">
                 <table class="table unstyled scoreboard">
-                    <tr ng-class="{ active: $even }" ng-repeat="user in scoreBoard | limitTo:5">
+                    <tr ng-class="{ active: $even }" ng-repeat="user in scoreBoard | limitTo:5" ng-show="user.nick">
                         <td>{{ $index+1 }}.</td>
                         <td><span ng-class="{'text-success':user.online}">{{ user.nick }}</span></td>
                         <td class="text-right"><strong>{{ user.score }}</strong></td>
