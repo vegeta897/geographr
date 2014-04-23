@@ -140,16 +140,16 @@
                 </label></div>
                 <p ng-show="event.message" ng-bind-html="event.message"></p>
                 <p ng-hide="event.message">&nbsp;</p>
-                <p class="event-products" ng-show="event.products.length > 0">
-                    <button ng-click="takeFromEvent($index)" class="btn btn-xs btn-item" 
-                            ng-repeat="product in event.products"
-                            ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
-                        {{ product.amount }}x {{ product.name }}
-                    </button>
-                </p>
-                <p ng-click="takeFromEvent('all')" ng-show="event.products.length > 0">
-                    <button class="btn btn-sm btn-default">Take All</button>
-                </p>
+                <div class="well" ng-show="event.products.length > 0">
+                    <p class="event-products">
+                        <button ng-click="takeFromEvent($index)" class="btn btn-xs btn-item"
+                                ng-repeat="product in event.products"
+                                ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
+                            {{ product.amount }}x {{ product.name }}
+                        </button>
+                    </p>
+                    <button ng-click="takeFromEvent('all')" class="btn btn-sm btn-default">Take All</button>
+                </div>
             </div>
             <div class="well" ng-show="helpText">
                 <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
@@ -157,7 +157,7 @@
             </div>
             <div ng-show="user.camp">
                 <h2>Skills</h2>
-                <em class="text-muted" ng-hide="user.skills.length > 0">
+                <em class="text-muted" ng-hide="user.skills">
                     No skills yet. Do some foraging or hunting!</em>
                 <table class="unstyled skills">
                     <tr ng-repeat="(key,val) in user.skills">

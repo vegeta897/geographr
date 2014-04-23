@@ -97,7 +97,6 @@ angular.module('Geographr.controllers', [])
                     visiblePixels = snap.val().hasOwnProperty('visiblePixels') ? snap.val().visiblePixels : {};
                     fireRef.child('scoreBoard').on('value', updateScoreBoard);
                     if($scope.user.new) { tutorialStep = -1; tutorial('next'); }
-                    if(!$scope.user.hasOwnProperty('skills')) { $scope.user.skills = {}; }
                     initTerrain();
                     fireUser.child('money').on('value',
                         function(snap) { $timeout(function() {$scope.user.money = snap.val();}); });
@@ -256,17 +255,17 @@ angular.module('Geographr.controllers', [])
                 $scope.onPixel.objects.splice(objectIndex,1); // Remove object
                 $scope.inEvent = true;
                 $scope.inEventTutorial = jQuery.inArray($scope.event.type,$scope.tutorialSkips) < 0; // Skip tut?
-                $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
+                var skills = $scope.user.skills ? $scope.user.skills : {};
                 if($scope.inEventTutorial) {
                     tutorialImage.on('mousedown',function() {
                         $timeout(function() { $scope.inEventTutorial = false; });
                         tutorialImage.unbind('mousedown');
                         actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                        gameUtility.setupActivity($scope.event.type,$scope.user.skills[$scope.event.type]);
+                        gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]);
                     });
                 } else {
                     actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                    gameUtility.setupActivity($scope.event.type,$scope.user.skills[$scope.event.type]);
+                    gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]);
                 }
             });
         };
@@ -409,10 +408,11 @@ angular.module('Geographr.controllers', [])
             if(e.which == 2 || e.which == 3) { e.preventDefault(); return; } // If right/middle click pressed
             var offset = actCanvasUtility.eventHighCanvas.offset(); // Get pixel location
             var click = { x: Math.floor(e.pageX - offset.left), y: Math.floor(e.pageY - offset.top) };
-            $scope.event.result = gameUtility.playActivity($scope.event.type,click,
-                $scope.user.skills[$scope.event.type]);
+            var skills = $scope.user.skills ? $scope.user.skills : {};
+            $scope.event.result = gameUtility.playActivity($scope.event.type,click,skills[$scope.event.type]);
             $timeout(function() {
                 if($scope.event.result.success) {
+                    $scope.user.skills = $scope.user.skills ? $scope.user.skills : {};
                     if($scope.user.skills.hasOwnProperty($scope.event.type)) {
                         $scope.user.skills[$scope.event.type] += 1;
                     } else { $scope.user.skills[$scope.event.type] = 1; }
@@ -469,14 +469,15 @@ angular.module('Geographr.controllers', [])
             });
         };
         var cleanInventory = function(inventory) { // Clean un-needed properties before storing on firebase
-            for(var invKey in inventory) {
-                if(!inventory.hasOwnProperty(invKey)) { continue; }
-                var item = inventory[invKey];
+            var inventoryCopy = angular.copy(inventory);
+            for(var invKey in inventoryCopy) {
+                if(!inventoryCopy.hasOwnProperty(invKey)) { continue; }
+                var item = inventoryCopy[invKey];
                 delete item.color; delete item.materials; delete item.rarity; delete item.weight; delete item.fireID;
                 delete item.avgQty; delete item.value; delete item.effects; delete item.unit; delete item.abundance;
                 delete item.profession; delete item.lastOfType; delete item.autoEat;
             }
-            return inventory;
+            return inventoryCopy;
         };
         var dressItem = function(item) { // Dress item with properties not stored on firebase
             var parent;
@@ -526,10 +527,6 @@ angular.module('Geographr.controllers', [])
 
         var removeInventory = function(snapshot) {
             $timeout(function(){
-                switch(snapshot.val().type) {
-                    case 'camp': tutorial('next'); break;
-                    default: break;
-                }
                 delete $scope.inventory[snapshot.name()];
                 var items = 0; // Check how many items are in the inventory
                 for(var key in $scope.inventory) { if($scope.inventory.hasOwnProperty(key)) { items++; break; } }
