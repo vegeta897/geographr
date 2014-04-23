@@ -75,6 +75,11 @@
             <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
         </div>
         <div ng-show="userInit && terrainReady" id="controls">
+            
+            
+            <!-- TODO: Add "undo" button in top right that erases last path node -->
+            
+            
             <div ng-class="{ invisible: !moving && !looking }" class="progress">
                 <div class="progress-bar" ng-style="{width: waitProgress+'%'}"></div>
             </div>
@@ -136,7 +141,8 @@
                 <p ng-show="event.message" ng-bind-html="event.message"></p>
                 <p ng-hide="event.message">&nbsp;</p>
                 <p class="event-products" ng-show="event.products.length > 0">
-                    <button ng-click="takeFromEvent($index)" class="btn btn-xs" ng-repeat="product in event.products"
+                    <button ng-click="takeFromEvent($index)" class="btn btn-xs btn-item" 
+                            ng-repeat="product in event.products"
                             ng-init="style={'background-color': '#'+product.color}" ng-style="style" >
                         {{ product.amount }}x {{ product.name }}
                     </button>
@@ -162,7 +168,7 @@
             </table>
             <h2>Stats</h2>
             <table class="unstyled stats">
-                <tr><td><a data-action-bar href="#">Hunger</a></td><td><div class="progress">
+                <tr><td><a data-toggle-panel href="#">Hunger</a></td><td><div class="progress">
                     <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
                          ng-class="{ hungry: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
                 </div></td></tr>
@@ -195,41 +201,71 @@
                 <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
             <p ng-hide="onPixel.objects || onPixel.camp" class="text-muted">Nothing here.</p>
             <div class="well object-well" ng-show="onPixel.camp">
-                {{ onPixel.camp | itemDisplay }}
-                <button class="btn btn-default btn-sm pull-right" ng-click="showEco = !showEco">Economy</button>
-                <table class="unstyled" ng-show="showEco">
-                    <tr><th>Resource</th><th>Supply</th><th>Demand</th></tr>
-                    <tr ng-repeat-start="(key,val) in onPixel.camp.economy">
-                        <td><a href="#" data-action-bar ng-class="{'text-muted': val.supply < 1}">
-                            {{ key | capitalize }}</a></td>
-                        <td>{{ val.supply }}</td><td style="color: white;"
-                            ng-style="{ opacity: (val.demand+15)/115 }">{{ val.demand }}</td>
-                    </tr>
-                    <tr class="actions" ng-repeat-end><td colspan="3">
-                        <div class="well well-sm">
-                            <div class="row">
-                                <div class="input-group input-group-sm col-xs-7 hard-right"
-                                     ng-class="{ 'has-error': buyAmount > val.supply }">
-                                    <input class="form-control input-sm text-center" type="text" ng-model="buyAmount"
-                                        ng-init="buyAmount = 1" id="inputBuyAmount">
-                                    <span class="input-group-btn .btn-group ">
+                <div class="row"><div class="col-xs-12">
+                    <h3 class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
+                    <button class="btn btn-default btn-sm pull-right" ng-click="showEco = !showEco">Resources</button>
+                    <table class="unstyled" ng-show="showEco">
+                        <tr><th>Resource</th><th>Supply</th><th>Demand</th></tr>
+                        <tr ng-repeat-start="(key,val) in onPixel.camp.economy.resources" 
+                            ng-init="item = hasItem({type:'resource',name:key})">
+                            <td><button data-toggle-panel class="btn btn-xs btn-item" 
+                                ng-init="style={'background-color': '#'+val.color}" ng-style="style" >
+                                {{ key | capitalize }}
+                            </button></td>
+                            <td ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
+                            <td style="color: #fff;" ng-style="{opacity:(val.demand+15)/115}">{{ val.demand }}
+                                {{ item | iif : '*' : '' }}</td>
+                        </tr>
+                        <tr class="actions" ng-repeat-end><td colspan="3">
+                            <div class="well well-sm">
+                                <div class="row">
+                                    <div class="input-group input-group-sm col-xs-7 hard-right"
+                                         ng-class="{ 'has-error': buyAmount > val.supply }">
+                                        <input class="form-control input-sm text-center" type="text"
+                                               ng-model="buyAmount" ng-init="buyAmount = 1" id="inputBuyAmount">
+                                    <span class="input-group-btn">
                                         <button ng-disabled="buyAmount > val.supply" class="btn btn-default btn-sm"
-                                            ng-click="buyResource(key,buyAmount)">Buy</button>
+                                                ng-click="buyResource(key,buyAmount)">Buy</button>
                                         <button class="btn btn-default btn-sm"
-                                            ng-click="buyAmount = val.supply">All</button></span>
+                                                ng-click="buyAmount = val.supply">All</button></span>
+                                    </div>
+                                    <div class="col-xs-5 text-right">
+                                        <span class="text-muted">Cost: </span>
+                                    <strong ng-class="{'text-danger': (buyAmount * val.value > user.money)}">
+                                        {{ buyAmount * val.value }}</strong>
+                                    </div>
                                 </div>
-                                <div class=" col-xs-5">
-                                    <span class="text-muted">Cost: </span>
-                                    <span ng-class="{'text-danger': (buyAmount * val.value > user.money)}">
-                                        {{ buyAmount * val.value }}</span>
+                                <div class="row" ng-show="item">
+                                    <div class="input-group input-group-sm col-xs-7 hard-right"
+                                         ng-class="{ 'has-error': sellAmount > item.amount }">
+                                        <input class="form-control input-sm text-center" type="text"
+                                            ng-model="sellAmount" ng-init="sellAmount = item.amount"
+                                                id="inputSellAmount">
+                                        <span class="input-group-btn">
+                                            <button ng-disabled="sellAmount > item.amount" 
+                                                class="btn btn-default btn-sm"
+                                                ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
+                                                Sell</button>
+                                            <button class="btn btn-default btn-sm" ng-click="sellAmount = item.amount">
+                                                All</button>
+                                        </span>
+                                    </div>
+                                    <div class="col-xs-5 text-right">
+                                        <span class="text-muted">Value: </span>
+                                        <strong ng-class="{ 'text-danger': sellAmount > item.amount }">
+                                            {{ sellAmount * val.value * 0.8 | int }}</strong>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </td></tr>
-                </table>
+                        </td></tr>
+                    </table>
+                </div></div>
+                <button ng-show="onPixel.camp.economy.hasBlackSmith && hasItem({profession:'blackSmith'})" 
+                        class="btn btn-default btn-sm" ng-click="showBS = !showBS">Blacksmith</button>
+                <div ng-show="showBS">I'm a blacksmith!</div>
             </div>
-            <div class="well object-well" ng-repeat="object in onPixel.objects" ng-show="onPixel.objects && object.type != 'camp' && !object.activity">
-                {{ object | itemDisplay }}
+            <div class="well object-well" ng-repeat="object in onPixel.objects" 
+                 ng-show="onPixel.objects && object.type != 'camp' && !object.activity">{{ object | itemDisplay }}
             </div>
         </div>
         <div id="inventory" class="col-xs-3">
@@ -239,37 +275,20 @@
             <table class="unstyled">
                 <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant','mineral']" 
                     ng-class="{ 'last-of-type': item.lastOfType }">
-                    <td style="width: 16px;"><a href="#" data-action-bar>
+                    <td style="width: 16px;"><a href="#" data-toggle-panel>
                         <span ng-init="style={background: '#'+item.color}" ng-style="style" 
                               class="item-color"></span></a></td>
-                    <td class="text-right quantity"><a href="#" data-action-bar><strong 
+                    <td class="text-right quantity"><a href="#" data-toggle-panel><strong 
                             data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
                     <td><span ng-show="item.unit" class="text-muted">{{ item.unit }} of</span>
                         <span ng-show="item.type == 'mineral'">unrefined</span>
-                        <a href="#" data-action-bar>{{ item.name }}</a>
+                        <a href="#" data-toggle-panel>{{ item.name }}</a>
                         <span ng-show="item.type == 'animal'"> carcass</span>
                     </td>
                 </tr>
                 <tr ng-repeat-end class="actions">
                     <td colspan="3"><div class="well well-sm">
-                        <div class="row" ng-show="onPixel.camp && item.type == 'resource'">
-                            <div class="input-group input-group-sm col-xs-7 hard-right"
-                                 ng-class="{ 'has-error': sellAmount > item.amount }">
-                                <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
-                                       ng-init="sellAmount = item.amount" id="inputSellAmount">
-                                <span class="input-group-btn .btn-group ">
-                                    <button ng-disabled="sellAmount > item.amount" class="btn btn-default btn-sm"
-                                            ng-click="sellResource(item.name,sellAmount,item.amount,item.fireID)">
-                                        Sell</button>
-                                    <button class="btn btn-default btn-sm"
-                                            ng-click="sellAmount = item.amount">All</button></span>
-                            </div>
-                            <div class=" col-xs-5">
-                                <span class="text-muted">Value: </span>
-                                <span ng-class="{ 'text-danger': sellAmount > item.amount }">
-                                    {{ sellAmount * onPixel.camp.economy[item.name].value * 0.8 | int }}</span>
-                            </div>
-                        </div>
+                        <!-- Item actions -->
                     </div></td>
                 </tr>
             </table>
@@ -281,11 +300,11 @@
                     <span class="text-muted">({{ selectedObject.grid | grid }})</span>
                     <em ng-show="selectedObject.visited">&emsp;Visited</em>
                 </p>
-                <div class="row" ng-show="selectedObject.economy">
+                <div class="row" ng-show="selectedObject.economy.resources">
                     <div class="col-xs-12">Resource demands</div>
                     <div class="col-xs-6">
                         <table class="unstyled table-tiny">
-                            <tr ng-repeat="resource in selectedObject.economy | splitList: 0">
+                            <tr ng-repeat="resource in selectedObject.economy.resources | splitList: 0">
                                 <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
                                 <td class="text-right" style="color: white;" 
                                     ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
@@ -294,7 +313,7 @@
                     </div>
                     <div class="col-xs-6">
                         <table class="unstyled table-tiny">
-                            <tr ng-repeat="resource in selectedObject.economy | splitList: 1">
+                            <tr ng-repeat="resource in selectedObject.economy.resources | splitList: 1">
                                 <td><span class="text-muted">{{ resource.name | capitalize }}</span></td>
                                 <td class="text-right" style="color: white;" 
                                     ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
@@ -334,35 +353,41 @@
             </div>
             <div class="row form-group">
                 <div class="input-group input-group-sm col-xs-8">
-                    <input class="form-control input-sm" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
-                    <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">Add Label</button></span>
+                    <input class="form-control input-sm" type="text" ng-model="labelText" id="inputLabelText"
+                           placeholder="label name">
+                    <span class="input-group-btn"><button class="btn btn-default btn-sm" ng-click="addLabel()">
+                        Add Label</button></span>
                 </div>
             </div>
             <div ng-show="user.id < 3 || user.id == 20" class="row form-group">
                 <div class="col-xs-12"><div class="checkbox-inline">
-                        <label><input ng-model="editTerrain" type="checkbox"> Terrain Edit Mode</label>
+                        <label><input ng-model="editTerrain" type="checkbox">&nbsp;Terrain Edit Mode</label>
                 </div></div>
             </div>
             <div ng-show="editTerrain" class="well">
                 <div class="row form-group">
                     <div class="col-xs-4">
-                        <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation" ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
+                        <input class="form-control input-sm text-center" type="text" ng-model="lockedElevation"
+                            ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation">
                     </div>
                     <div class="col-xs-6 hard-left">
                         <div class="checkbox-inline"><label>
-                            <input ng-disabled="brushSize > 0" ng-model="lockElevation" type="checkbox"> Fixed Elevation
-                        </label></div>
+                            <input ng-disabled="brushSize > 0" ng-model="lockElevation" type="checkbox">
+                            &nbsp;Fixed Elevation</label></div>
                     </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-xs-12">
-                        Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value="" data-slider-handle="square" data-slider-min="0" data-slider-max="3" data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+                        Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value=""
+                            data-slider-handle="square" data-slider-min="0" data-slider-max="3"
+                            data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
                     </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-xs-12">
                         <div class="checkbox-inline"><label>
-                            <input ng-disabled="brushSize < 1" ng-model="smoothTerrain" type="checkbox"> Smooth Area
+                            <input ng-disabled="brushSize < 1" ng-model="smoothTerrain" 
+                                   type="checkbox">&nbsp;Smooth Area
                         </label></div>
                     </div>
                 </div>
@@ -372,10 +397,10 @@
                     </div>
                 </div>
             </div>
-
             <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
             <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>
-            <button class="btn btn-default btn-sm" ng-click="showCommits = !showCommits">{{ showCommits | iif : 'Hide' : 'Show' }} Changelog</button>
+            <button class="btn btn-default btn-sm" ng-click="showCommits = !showCommits">
+                {{ showCommits | iif : 'Hide' : 'Show' }} Changelog</button>
         </div>
     </div>
 </div>

@@ -207,6 +207,19 @@ angular.module('Geographr.controllers', [])
             drawZoomCanvas();
             dimPixel();
         };
+        // Grab a specific item from user's inventory (find by property(s), like name or type)
+        $scope.hasItem = function(checkObject) {
+            for(var invKey in $scope.inventory) {
+                if(!$scope.inventory.hasOwnProperty(invKey)) { continue; }
+                var passed = true;
+                for(var checkKey in checkObject) {
+                    if(!checkObject.hasOwnProperty(checkKey)) { continue; }
+                    if($scope.inventory[invKey][checkKey] != checkObject[checkKey]) { passed = false; }
+                }
+                if(passed) { return $scope.inventory[invKey]; }
+            }
+            return false;
+        };
         // Create player camp, newbie's first step
         $scope.createCamp = function() {
             tutorial('next');
@@ -348,25 +361,29 @@ angular.module('Geographr.controllers', [])
         };
         
         $scope.buyResource = function(resource,amount) {
-            if(amount < 1 || amount > $scope.onPixel.camp.economy[resource].supply) { return; }
-            if(parseInt($scope.user.money - amount * $scope.onPixel.camp.economy[resource].value) < 0) { return; }
-            console.log('buying',amount,resource,'at',$scope.onPixel.camp.economy[resource].value,'gold per unit');
+            if(amount < 1 || amount > $scope.onPixel.camp.economy.resources[resource].supply) { return; }
+            if(parseInt($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value) < 0) {
+                return; }
+            console.log('buying',amount,resource,'at',
+                $scope.onPixel.camp.economy.resources[resource].value,'gold per unit');
             var newDelta = $scope.onPixel.camp.deltas[resource] - amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
-            $scope.user.money = parseInt($scope.user.money - amount * $scope.onPixel.camp.economy[resource].value);
+            $scope.user.money = 
+                parseInt($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
             fireUser.child('money').set($scope.user.money);
             var invItem = { type: 'resource', name: resource, amount: parseInt(amount) };
             addToInventory(invItem);
         };
         $scope.sellResource = function(resource,amount,haveAmount,fireID) {
             if(amount < 1 || amount > haveAmount) { return; }
-            console.log('selling',amount,'at',$scope.onPixel.camp.economy[resource].value * 0.8,'gold per unit');
+            console.log('selling',amount,'at',
+                $scope.onPixel.camp.economy.resources[resource].value * 0.8,'gold per unit');
             var newDelta = $scope.onPixel.camp.deltas[resource] + amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
             $scope.user.money = 
-                parseInt($scope.user.money + amount * $scope.onPixel.camp.economy[resource].value * 0.8); 
+                parseInt($scope.user.money + amount * $scope.onPixel.camp.economy.resources[resource].value * 0.8); 
             fireUser.child('money').set($scope.user.money);
             if(haveAmount - amount > 0) { fireInventory.child(fireID+'/amount').set(haveAmount - amount); }
                 else { fireInventory.child(fireID).set(null); } // Remove inventory if no amount remains
@@ -443,53 +460,55 @@ angular.module('Geographr.controllers', [])
                 if(!$scope.inventory) {  $scope.noEdibles = true; return; }
                 $scope.noEdibles = true;
                 for(var key in $scope.inventory) {
-                    if($scope.inventory.hasOwnProperty(key)) {
-                        if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) &&
-                            !gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')) {
-                            changeHunger(userID,0); $scope.noEdibles = false; return;
-                        }
+                    if(!$scope.inventory.hasOwnProperty(key)) { continue; }
+                    if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) &&
+                        !gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')) {
+                        changeHunger(userID,0); $scope.noEdibles = false; return;
                     }
                 }
             });
         };
-        
-        var cleanItem = function(item) { // Clean unnecessary properties from item before storing on firebase
-            delete item.color; delete item.materials; delete item.rarity; delete item.weight;
-            delete item.avgQty; delete item.value; delete item.effects; delete item.unit; delete item.abundance;
-            return item;
+        var cleanInventory = function(inventory) { // Clean un-needed properties before storing on firebase
+            for(var invKey in inventory) {
+                if(!inventory.hasOwnProperty(invKey)) { continue; }
+                var item = inventory[invKey];
+                delete item.color; delete item.materials; delete item.rarity; delete item.weight; delete item.fireID;
+                delete item.avgQty; delete item.value; delete item.effects; delete item.unit; delete item.abundance;
+                delete item.profession; delete item.lastOfType; delete item.autoEat;
+            }
+            return inventory;
         };
         var dressItem = function(item) { // Dress item with properties not stored on firebase
             var parent;
             switch(item.type) {
-                case 'resource': parent = gameUtility.resources[item.name]; break;
+                case 'resource': parent = gameUtility.resourceList[item.name]; break;
                 case 'plant': parent = gameUtility.eventProducts.forage[item.name]; break;
                 case 'animal': parent = gameUtility.eventProducts.hunt[item.name]; break;
                 case 'mineral': parent = gameUtility.eventProducts.mine[item.name]; break;
                 default: parent = item; break;
             }
             item.color = parent.color; item.value = parent.value; item.weight = parent.weight;
-            item.unit = parent.unit; item.materials = parent.materials;
+            item.unit = parent.unit; item.materials = parent.materials; item.profession = parent.profession;
             return item;
         };
         // Add item or array of items to inventory, stacking if possible, and send to firebase
         var addToInventory = function(invItems) {
             if(!invItems instanceof Array) { invItems = [invItems] }
             for(var i = 0; i < invItems.length; i++) {
-                var invItem = cleanItem(invItems[i]);
+                var invItem = invItems[i];
                 var fireID = fireInventory.push().name();
-                if($scope.user.hasOwnProperty('inventory')) {
-                    for(var key in $scope.user.inventory) {
-                        if($scope.user.inventory.hasOwnProperty(key) &&
-                            $scope.user.inventory[key].name == invItem.name &&
-                            $scope.user.inventory[key].type == invItem.type) {
-                            $scope.user.inventory[key].amount += invItem.amount; invItem.amount = 0;
+                if($scope.hasOwnProperty('inventory')) {
+                    for(var key in $scope.inventory) {
+                        if($scope.inventory.hasOwnProperty(key) &&
+                            $scope.inventory[key].name == invItem.name &&
+                            $scope.inventory[key].type == invItem.type) {
+                            $scope.inventory[key].amount += invItem.amount; invItem.amount = 0;
                         }
                     }
-                    if(invItem.amount > 0) { $scope.user.inventory[fireID] = invItem; }
-                } else { $scope.user.inventory = {}; $scope.user.inventory[fireID] = invItem; }
+                    if(invItem.amount > 0) { $scope.inventory[fireID] = invItem; }
+                } else { $scope.inventory = {}; $scope.inventory[fireID] = invItem; }
             }
-            
-            fireInventory.set(angular.copy($scope.user.inventory));
+            fireInventory.set(angular.copy(cleanInventory($scope.inventory)));
         };
         
         var updateInventory = function(snapshot) {
@@ -897,10 +916,9 @@ angular.module('Geographr.controllers', [])
         var updateScoreBoard = function(snap) {
             $scope.scoreBoard= [];
             for(var key in snap.val()) {
-                if(snap.val().hasOwnProperty(key)) {
-                    $scope.scoreBoard.push({ nick: snap.val()[key].nick, score: snap.val()[key].score, 
-                        online: snap.val()[key].online });
-                }
+                if(!snap.val().hasOwnProperty(key)) { continue; }
+                $scope.scoreBoard.push({ nick: snap.val()[key].nick, score: snap.val()[key].score, 
+                    online: snap.val()[key].online });
             }
             $timeout(function() { $scope.scoreBoard = sortArrayByProperty($scope.scoreBoard,'score',true); });
         };
@@ -927,7 +945,7 @@ angular.module('Geographr.controllers', [])
                     fireUser.child('visitedCamps').update($scope.user.visitedCamps);
                 }
                 fireRef.child('camps/' + snap.val()).on('value',function(campSnap) {
-                    var resources = gameUtility.resources;
+                    var resources = gameUtility.resourceList;
                     var campData = gameUtility.expandCamp(snap.val(),localTerrain);
                     campData.deltas = {};
                     for(var resKey in resources) {
@@ -937,7 +955,7 @@ angular.module('Geographr.controllers', [])
                             if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
                                 && campSnap.val().deltas.hasOwnProperty(resKey)) {
                                 // Apply delta against supply
-                                campData.economy[resKey].supply += campSnap.val().deltas[resKey];
+                                campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey];
                                 campData.deltas[resKey] = campSnap.val().deltas[resKey];
                             }
                         }
@@ -1104,15 +1122,13 @@ angular.module('Geographr.controllers', [])
                fireRef.child('clients/logged').on('child_removed', removeClient);
                var updateUsers = function(snap) {
                    for(var key in snap.val()) {
-                       if(snap.val().hasOwnProperty(key)) {
-                           if(localUsers.hasOwnProperty(key)) {
-                               if(localUsers[key].hasOwnProperty('connections') &&
-                                   !snap.val()[key].hasOwnProperty('connections')) {
-                                   console.log(localUsers[key].nick,'disconnected at',
-                                       new Date(snap.val().lastOnline));
-                                   fireRef.child('scoreBoard/'+key+'/online').set(null);
-                               }
-                           }
+                       if(!snap.val().hasOwnProperty(key)) { continue; }
+                       if(!localUsers.hasOwnProperty(key)) { continue; }
+                       if(localUsers[key].hasOwnProperty('connections') &&
+                           !snap.val()[key].hasOwnProperty('connections')) {
+                           console.log(localUsers[key].nick,'disconnected at',
+                               new Date(snap.val()[key].lastOnline));
+                           fireRef.child('scoreBoard/'+key+'/online').set(null);
                        }
                    }
                    localUsers = snap.val();

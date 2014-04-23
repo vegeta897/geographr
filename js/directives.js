@@ -41,7 +41,7 @@ angular.module('Geographr.directives', [])
         }
     };
 })
-.directive('actionBar', function() {
+.directive('togglePanel', function() {
     return {
         restrict: 'A',
         link: function(scope, element) {

@@ -3,7 +3,7 @@
 angular.module('Geographr.game', [])
 .service('gameUtility', function(actCanvasUtility,canvasUtility) {
         // TODO: Move all these data sets into a separate file
-        var resources = {
+        var resourceList = {
             lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, unit: 'pieces' },
             fish: { color: '79888e', value: 6, weight: 2, abundance: 15 },
             fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, unit: 'pieces' },
@@ -55,17 +55,17 @@ angular.module('Geographr.game', [])
                 'duck': { color: '433a32', rarity: 0.8, materials: ['meat','bone'] }
             },
             mine: {
-                'salt': { color: 'a8a797', rarity: 0 },
-                'coal': { color: '191a1a', rarity: 0.2 },
-                'iron ore': { color: '593125', rarity: 0.4 },
-                'copper ore': { color: '924c36', rarity: 0.3 },
-                'silver': { color: 'b0b0b0', rarity: 0.8 },
-                'gold': { color: 'cab349', rarity: 0.85 },
-                'rough emerald': { color: '4f8e4f', rarity: 0.8 },
-                'rough ruby': { color: '8e4242', rarity: 0.85 },
-                'rough topaz': { color: 'a69748', rarity: 0.8 },
-                'rough sapphire': { color: '485ea6', rarity: 0.85 },
-                'rough diamond': { color: 'c8c3c5', rarity: 0.95 }
+                'salt': { color: 'a8a797', rarity: 0, profession: 'saltFarm' },
+                'coal': { color: '191a1a', rarity: 0.2, profession: 'blackSmith' },
+                'iron ore': { color: '593125', rarity: 0.4, profession: 'blackSmith' },
+                'copper ore': { color: '924c36', rarity: 0.3, profession: 'blackSmith' },
+                'silver': { color: 'b0b0b0', rarity: 0.8, profession: 'blackSmith' },
+                'gold': { color: 'cab349', rarity: 0.85, profession: 'blackSmith' },
+                'rough emerald': { color: '4f8e4f', rarity: 0.8, profession: 'jeweler' },
+                'rough ruby': { color: '8e4242', rarity: 0.85, profession: 'jeweler' },
+                'rough topaz': { color: 'a69748', rarity: 0.8, profession: 'jeweler' },
+                'rough sapphire': { color: '485ea6', rarity: 0.85, profession: 'jeweler' },
+                'rough diamond': { color: 'c8c3c5', rarity: 0.95, profession: 'jeweler' }
             }
         };
         var edibles = {
@@ -166,20 +166,20 @@ angular.module('Geographr.game', [])
         };
         var genCampEconomy = function(grid,terrain) {
             Math.seedrandom(grid);
-            var economy = {};
-            for(var resKey in resources) {
-                if(resources.hasOwnProperty(resKey)) {
-                    var res = resources[resKey];
+            var economy = {}; var resources = {};
+            for(var resKey in resourceList) { // Resource demands
+                if(resourceList.hasOwnProperty(resKey)) {
+                    var res = resourceList[resKey];
                     // TODO: Supply and demands influenced by location & terrain 
                     // Create module functions with coefficient parameters to handle this
                     var random = Math.random();
-                    economy[resKey] = {};
-                    economy[resKey].supply = 
+                    resources[resKey] = { color: res.color };
+                    resources[resKey].supply = 
                         parseInt((random * 10 * res.abundance)/res.value);
-                    economy[resKey].demand = 
+                    resources[resKey].demand = 
                         parseInt((1 - random)*100);
-                    economy[resKey].value = parseInt(res.value * (economy[resKey].demand / 50));
-                    economy[resKey].value = economy[resKey].value < 1 ? 1 : economy[resKey].value;
+                    resources[resKey].value = parseInt(res.value * (resources[resKey].demand / 50));
+                    resources[resKey].value = resources[resKey].value < 1 ? 1 : resources[resKey].value;
 //                    console.log(resKey,'-',parseInt(random*100),'---------------------------------');
 //                    console.log('supply:',economy[resKey].supply);
 //                    console.log('demand:',economy[resKey].demand);
@@ -187,6 +187,10 @@ angular.module('Geographr.game', [])
 //                    console.log('camp value:',economy[resKey].value);
                 }
             }
+            economy.resources = resources;
+            var blackSmithFactor = resources['coal'].demand + resources['iron'].demand + 
+                resources['tools'].demand + resources['weapons'].demand;
+            if(blackSmithFactor/400 < Math.random() * 0.6 + 0.4) { economy.hasBlackSmith = true; }
             return economy;
         };
         // Generate pool of resources for event
@@ -290,7 +294,7 @@ angular.module('Geographr.game', [])
                                 product.amount = Math.ceil(product.amount*((threshold-dist)/threshold));
                                 event.pool.splice(i,1); // Remove product from pool
                                 actCanvasUtility.drawCircle('main',[poolCopy[i].targetX,poolCopy[i].targetY],
-                                    3,'#ffffff'); // Show target
+                                    1+(dist/120),'#ffffff'); // Show target
                                 actCanvasUtility.drawLine('main',[click.x,click.y], // Show delta
                                     [poolCopy[i].targetX,poolCopy[i].targetY],'#00ff00');
                                 setTimeout(function() { // Redraw after 1 second
@@ -463,7 +467,7 @@ angular.module('Geographr.game', [])
                 }}
                 return output;
             },
-            resources: resources, event: event, eventMessages: eventMessages, eventProducts: eventProducts,
-            edibles: edibles
+            resourceList: resourceList, event: event, eventMessages: eventMessages, 
+            eventProducts: eventProducts, edibles: edibles
         }
 });

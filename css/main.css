@@ -92,15 +92,17 @@ canvas { display: block; }
 
 #uiContainer { top: 0; margin-bottom: 16px; }
 
+button.btn-item { margin: 0 4px 0 0; color: white;
+    text-shadow: 0 1px 1px #000, 1px 0 1px #000, 1px 1px 1px #000, 0 0 1px #000; }
+button.btn-item:hover { background-color: #24272b !important; }
+
 .change-effect { text-shadow: 0 0 0 rgba(255,255,255,0); line-height: 1.1em; }
 .actions { display: none; }
 
 #eventHUD { margin-top: -28px; min-height: 26px; }
 #eventHUD p { padding-top: 2px; margin-bottom: 8px; }
 #eventHUD .checkbox-inline { margin-left: 4px; }
-#eventHUD .event-products button { margin: 0 4px 4px 0; color: white; 
-    text-shadow: 0 1px 0 #000, 1px 0 0 #000, 1px 1px 0 #000, 0 0 1px #000; }
-#eventHUD .event-products button:hover { background-color: #24272b !important; }
+#eventHUD button.btn-item { margin-bottom: 4px; }
 
 .skills, .stats { width: 100%; }
 .skills .progress, .stats .progress { width: 130px; margin: 4px 0; float: right; }
@@ -120,11 +122,14 @@ canvas { display: block; }
 #uiContainer #autoEat table tr td { padding: 0; }
 #uiContainer #autoEat table tr td .checkbox-inline { padding-top: 0; height: 20px; }
 
-.object-well>button { margin-top: -5px; }
-.object-well table { width: 100%; margin-top: 10px; }
+.object-well h3 { color: #778187; font-size: 1.3em; margin-top: 5px; }
+.object-well table { width: 100%; margin: 10px 0; }
+.object-well .label { font-size: 1em; }
 .object-well .well { margin: 4px 0; }
 .object-well .well .input-group-sm > .form-control { height: 20px; padding: 0 3px; }
-.object-well .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
+.object-well .well .input-group-sm > .input-group-btn > .btn { height: 22px; width: 38px; padding: 0 1px; }
+.object-well table tr td.text-muted { color: #555; }
+.object-well .well .row { height: 30px; padding-top: 4px; }
 
 #inventory table.unstyled { width: 100%; }
 #inventory table.unstyled tr.last-of-type { border-bottom: 1px solid #50575c; }
@@ -134,8 +139,6 @@ canvas { display: block; }
     padding-left: 12px; padding-right: 12px;
     margin-top: 4px; margin-bottom: 2px;
 }
-#inventory table.unstyled tr.actions .well .input-group-sm > .form-control { height: 20px; padding: 0 3px; }
-#inventory table.unstyled tr.actions .well .input-group-sm > .input-group-btn > .btn { height: 22px; padding: 0 10px; }
 
 #uiContainer #inventory td.quantity { width: 52px; padding-right: 18px; }
 
@@ -157,8 +160,8 @@ button .glyphicon { margin-right: 3px; }
 
 .attach-top { position: relative; top: -6px; }
 
-#uiContainer table.unstyled { background: transparent; }
-#uiContainer table.unstyled tr td { padding: 2px 6px 0 0; border: none; color: #999; }
+table.unstyled { background: transparent; }
+table.unstyled tr td { padding: 2px 6px 0 0; border: none; color: #999; }
 strong { color: #ccc; }
 
 .item-color {
