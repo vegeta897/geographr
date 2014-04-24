@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.211; $scope.versionName = 'Sterling Freight'; $scope.needUpdate = false;
+        $scope.version = 0.22; $scope.versionName = 'Shared Sock'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -370,31 +370,44 @@ angular.module('Geographr.controllers', [])
         
         $scope.buyResource = function(resource,amount) {
             if(amount < 1 || amount > $scope.onPixel.camp.economy.resources[resource].supply) { return; }
-            if(parseInt($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value) < 0) {
+            if(Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value) < 0) {
                 return; }
             console.log('buying',amount,resource,'at',
                 $scope.onPixel.camp.economy.resources[resource].value,'gold per unit');
+            var invItem = { type: 'resource', name: resource, amount: parseInt(amount) }; addToInventory(invItem);
             var newDelta = $scope.onPixel.camp.deltas[resource] - amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
-            $scope.user.money = 
-                parseInt($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
+            $scope.user.money =
+                Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
             fireUser.child('money').set($scope.user.money);
-            var invItem = { type: 'resource', name: resource, amount: parseInt(amount) };
-            addToInventory(invItem);
         };
-        $scope.sellResource = function(resource,amount,haveAmount,fireID) {
+        $scope.sellResource = function(resource,amount,haveAmount,value,fireID) {
             if(amount < 1 || amount > haveAmount) { return; }
-            console.log('selling',amount,'at',
-                $scope.onPixel.camp.economy.resources[resource].value * 0.8,'gold per unit');
+            console.log('selling',amount,'at',value * 0.8,'gold per unit');
+            if(haveAmount - amount > 0) { $scope.inventory[fireID].amount = haveAmount - amount;
+                fireInventory.child(fireID+'/amount').set(haveAmount - amount);
+            } else { fireInventory.child(fireID).set(null); delete $scope.inventory[fireID]; }
             var newDelta = $scope.onPixel.camp.deltas[resource] + amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
-            $scope.user.money = 
-                parseInt($scope.user.money + amount * $scope.onPixel.camp.economy.resources[resource].value * 0.8); 
+            $scope.user.money = Math.round($scope.user.money + amount * value * 0.8); 
             fireUser.child('money').set($scope.user.money);
-            if(haveAmount - amount > 0) { fireInventory.child(fireID+'/amount').set(haveAmount - amount); }
-                else { fireInventory.child(fireID).set(null); } // Remove inventory if no amount remains
+        };
+        $scope.refineItem = function(item,amount,haveAmount,cost,fireID) {
+            if(amount < 1 || amount > haveAmount) { return; }
+            if(Math.round($scope.user.money - amount * cost * 1.5) < 0) { return; }
+            console.log('refining',amount,item,'at',cost * 1.5,'gold per unit');
+            if(haveAmount - amount > 0) {
+                fireInventory.child(fireID+'/amount').set(haveAmount - amount);
+                $scope.inventory[fireID].amount = haveAmount - amount;
+            } else { fireInventory.child(fireID).set(null); delete $scope.inventory[fireID]; }
+            $scope.user.money = Math.round($scope.user.money - amount * cost * 1.5);
+            fireUser.child('money').set($scope.user.money);
+            Math.seedrandom();
+            var getAmount = parseInt(amount) + Math.round(amount * (Math.random() / 1.5));
+            if(getAmount > amount) { console.log('got',getAmount-amount,'bonus',item,'!!'); }
+            var invItem = { type: 'resource', name: item, amount: getAmount }; addToInventory(invItem);
         };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
@@ -503,7 +516,7 @@ angular.module('Geographr.controllers', [])
         };
         // Add item or array of items to inventory, stacking if possible, and send to firebase
         var addToInventory = function(invItems) {
-            if(!invItems instanceof Array) { invItems = [invItems] }
+            if(Object.prototype.toString.call(invItems) !== '[object Array]') { invItems = [invItems] }
             for(var i = 0; i < invItems.length; i++) {
                 var invItem = invItems[i];
                 var fireID = fireInventory.push().name();
@@ -958,6 +971,8 @@ angular.module('Geographr.controllers', [])
                         if(resources.hasOwnProperty(resKey)) {
                             // TODO: Have deltas influence demands
                             campData.deltas[resKey] = 0; // Default 0 delta
+                            campData.economy.resources[resKey].invItem =
+                                $scope.hasItem({name: resKey, type:'resource'});
                             if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
                                 && campSnap.val().deltas.hasOwnProperty(resKey)) {
                                 // Apply delta against supply
@@ -1035,7 +1050,8 @@ angular.module('Geographr.controllers', [])
         };
         var onClientAction = function(snap) {
             // When a client action is received
-            console.log(localUsers[snap.val().user].nick,'did',snap.val().action,'at',new Date());
+            if(snap.val().user != 1 || snap.val().action != 'logIn') {
+                console.log(localUsers[snap.val().user].nick,'did',snap.val().action,'at',new Date()); }
             var action = snap.val().action.split(',');
             switch(action[0]) {
                 case 'createCamp':
@@ -1135,8 +1151,8 @@ angular.module('Geographr.controllers', [])
                        if(!localUsers.hasOwnProperty(key)) { continue; }
                        if(localUsers[key].hasOwnProperty('connections') &&
                            !snap.val()[key].hasOwnProperty('connections')) {
-                           console.log(localUsers[key].nick,'disconnected at',
-                               new Date(snap.val()[key].lastOnline));
+                           if(key != 1) { console.log(localUsers[key].nick,'disconnected at',
+                               new Date(snap.val()[key].lastOnline)); }
                            fireRef.child('scoreBoard/'+key+'/online').set(null);
                        }
                    }

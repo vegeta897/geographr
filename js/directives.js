@@ -1,5 +1,6 @@
 /* Directives and Filters */
-
+var firstBy=(function(){function e(f){f.thenBy=t;return f}function t(y,x){x=this; // Multi-sort
+    return e(function(a,b){return x(a,b)||y(a,b)})}return e})();
 var sortArrayByProperty = function(arr, sortby, descending) {
     if(arr.length == 0) { return arr; }
     if(arr[0].hasOwnProperty(sortby)) {
@@ -104,7 +105,7 @@ angular.module('Geographr.directives', [])
 .filter('int', function() {
     return function(number) {
         if(!number) { return number; }
-        return parseInt(number);
+        return Math.round(number);
     };
 })
 .filter('nlToArray', function() {
@@ -136,14 +137,18 @@ angular.module('Geographr.directives', [])
         switch(types[0]) {
             case 'edible':
                 for(var edKey in input) {
-                    if(input.hasOwnProperty(edKey)) {
-                        if(gameUtility.edibles.hasOwnProperty(input[edKey].name)) {
-                            if(types[1] != 'auto' || (types[1] == 'auto' &&
-                                !gameUtility.edibles[input[edKey].name].hasOwnProperty('effects'))) {
-                                list.push(input[edKey]);
-                            }
-                        } 
+                    if(!input.hasOwnProperty(edKey)) { continue; }
+                    if(!gameUtility.edibles.hasOwnProperty(input[edKey].name)) { continue; }
+                    if(types[1] != 'auto' || (types[1] == 'auto' &&
+                        !gameUtility.edibles[input[edKey].name].hasOwnProperty('effects'))) {
+                        list.push(input[edKey]);
                     }
+                }
+                break;
+            case 'blacksmith':
+                for(var bsKey in input) {
+                    if(!input.hasOwnProperty(bsKey)) { continue; }
+                    if(input[bsKey].profession == 'blacksmith') { list.push(input[bsKey]); }
                 }
                 break;
             default:
@@ -155,7 +160,9 @@ angular.module('Geographr.directives', [])
                 }
                 break;
         }
-        list = sortArrayByProperty(list,'name'); list = sortArrayByProperty(list,'type');
+        var sort = firstBy(function(i1,i2) { return i1.type < i2.type ? -1 : (i1.type > i2.type ? 1 : 0); })
+            .thenBy(function (i1, i2) { return i1.name < i2.name ? -1 : (i1.name > i2.name ? 1 : 0); });
+        list.sort(sort);
         for(var i = 0; i < list.length; i++) {
             list[i].lastOfType = (i < list.length - 1 && list[i].type != list[i+1].type);
         }

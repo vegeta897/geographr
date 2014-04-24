@@ -12,6 +12,9 @@ angular.module('Geographr.game', [])
             salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, unit: 'pouches' },
             coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, unit: 'chunks' },
             iron: { color: '59534a', value: 36, weight: 15, abundance: 15, unit: 'ingots' },
+            copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, unit: 'ingots' },
+            silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, unit: 'ingots' },
+            gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, unit: 'ingots' },
             wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, unit: 'sacks' },
             tools: { color: '5f5f5f', value: 180, weight: 16, abundance: 8 },
             weapons: { color: '5f5656', value: 240, weight: 26, abundance: 5 },
@@ -57,8 +60,8 @@ angular.module('Geographr.game', [])
             mine: {
                 'salt': { color: 'a8a797', rarity: 0, profession: 'saltFarm' },
                 'coal': { color: '191a1a', rarity: 0.2, profession: 'blacksmith' },
-                'iron ore': { color: '593125', rarity: 0.4, profession: 'blacksmith' },
-                'copper ore': { color: '924c36', rarity: 0.3, profession: 'blacksmith' },
+                'iron': { color: '593125', rarity: 0.4, profession: 'blacksmith' },
+                'copper': { color: '924c36', rarity: 0.3, profession: 'blacksmith' },
                 'silver': { color: 'b0b0b0', rarity: 0.8, profession: 'blacksmith' },
                 'gold': { color: 'cab349', rarity: 0.85, profession: 'blacksmith' },
                 'rough emerald': { color: '4f8e4f', rarity: 0.8, profession: 'jeweler' },
@@ -168,29 +171,38 @@ angular.module('Geographr.game', [])
             Math.seedrandom(grid);
             var economy = {}; var resources = {};
             for(var resKey in resourceList) { // Resource demands
-                if(resourceList.hasOwnProperty(resKey)) {
-                    var res = resourceList[resKey];
-                    // TODO: Supply and demands influenced by location & terrain 
-                    // Create module functions with coefficient parameters to handle this
-                    var random = Math.random();
-                    resources[resKey] = { color: res.color };
-                    resources[resKey].supply = 
-                        parseInt((random * 10 * res.abundance)/res.value);
-                    resources[resKey].demand = 
-                        parseInt((1 - random)*100);
-                    resources[resKey].value = parseInt(res.value * (resources[resKey].demand / 50));
-                    resources[resKey].value = resources[resKey].value < 1 ? 1 : resources[resKey].value;
-//                    console.log(resKey,'-',parseInt(random*100),'---------------------------------');
-//                    console.log('supply:',economy[resKey].supply);
-//                    console.log('demand:',economy[resKey].demand);
-//                    console.log('abundance:',res.abundance,'raw value:',res.value);
-//                    console.log('camp value:',economy[resKey].value);
-                }
+                if(!resourceList.hasOwnProperty(resKey)) { continue; }
+                var res = resourceList[resKey];
+                // TODO: Supply and demands influenced by location & terrain 
+                // Create module functions with coefficient parameters to handle this
+                var random = Math.random();
+                resources[resKey] = { color: res.color };
+                resources[resKey].supply =
+                    Math.round((random * 10 * res.abundance)/res.value);
+                resources[resKey].demand =
+                    Math.round((1 - random)*100);
+                resources[resKey].value = res.value * (resources[resKey].demand / 50);
+                resources[resKey].value = resources[resKey].value == 0 ? 0.1 : resources[resKey].value;
+//                console.log(resKey,'-',parseInt(random*100),'---------------------------------');
+//                console.log('supply:',economy[resKey].supply);
+//                console.log('demand:',economy[resKey].demand);
+//                console.log('abundance:',res.abundance,'raw value:',res.value);
+//                console.log('camp value:',economy[resKey].value);
             }
             economy.resources = resources;
-            var blacksmithFactor = resources['coal'].demand + resources['iron'].demand + 
-                resources['tools'].demand + resources['weapons'].demand;
-            if(blacksmithFactor/400 < Math.random() * 0.6 + 0.4) { economy.hasBlacksmith = true; }
+            var blacksmithFactor = resources['coal'].demand + resources['iron'].demand 
+                + resources['copper'].demand + resources['tools'].demand + resources['weapons'].demand;
+            if(blacksmithFactor/500 < Math.random() * 0.6 + 0.4) {
+                economy.blacksmith = {};
+                for(var minKey in eventProducts.mine) {
+                    if(!eventProducts.mine.hasOwnProperty(minKey)) { continue; }
+                    var mineral = eventProducts.mine[minKey];
+                    if(mineral.profession != 'blacksmith') { continue; }
+                    economy.blacksmith[minKey] = {};
+                    economy.blacksmith[minKey].value = resources[minKey] ? resources[minKey].value / 2 
+                        : mineral.rarity * 40;
+                }
+            }
             return economy;
         };
         // Generate pool of resources for event

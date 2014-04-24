@@ -30,8 +30,6 @@ random encounters possible for every moved grid (server-side?)
 
 find random objects/things/activities in the 9grid view
     - no click-fests!
-    - for minerals, you can sell the raw material for X gold, or pay the blacksmith to refine it for you
-        - when they refine it for you, dice roll to see how valuable it is (varies based on purity)
 
 carrier pigeon/bird flies between players at all times, delivering messages
     - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.
