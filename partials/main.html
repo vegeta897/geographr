@@ -39,33 +39,10 @@
         <div id="eventTutorial" ng-show="inEventTutorial">
             <img src="" id="tutorialImage" width="300" height="300" ng-src="img/{{ event.type || 'loading' }}.png" />
         </div>
-        <table ng-hide="inEvent" id="gridView">
-            <!-- TODO: Generate this with ng-repeat or a directive -->
-            <tr>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[5] == selectedObject}"
-                    ng-click="activateObject(5)">{{ onPixel.objects[5] | itemDisplay }}</td>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[3] == selectedObject}"
-                    ng-click="activateObject(3)">{{ onPixel.objects[3] | itemDisplay }}</td>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[6] == selectedObject}"
-                    ng-click="activateObject(6)">{{ onPixel.objects[6] | itemDisplay }}</td>
-            </tr>
-            <tr>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[2] == selectedObject}"
-                    ng-click="activateObject(2)">{{ onPixel.objects[2] | itemDisplay }}</td>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[0] == selectedObject}"
-                    ng-click="activateObject(0)">{{ onPixel.objects[0] | itemDisplay }}</td>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[1] == selectedObject}"
-                    ng-click="activateObject(1)">{{ onPixel.objects[1] | itemDisplay }}</td>
-            </tr>
-            <tr>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[7] == selectedObject}"
-                    ng-click="activateObject(7)">{{ onPixel.objects[7] | itemDisplay }}</td>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[4] == selectedObject}"
-                    ng-click="activateObject(4)">{{ onPixel.objects[4] | itemDisplay }}</td>
-                <td ng-class="{selected: selectedObject != null && onPixel.objects[8] == selectedObject}"
-                    ng-click="activateObject(8)">{{ onPixel.objects[8] | itemDisplay }}</td>
-            </tr>
-        </table>
+        <table ng-hide="inEvent" id="gridView"><tr ng-repeat="row in ['536','201','748']">
+            <td ng-repeat="col in row.split('')" ng-class="onPixel.objects[col].type" ng-click="activateObject(col)">
+                {{ onPixel.objects[col] | itemDisplay }}</td>
+        </tr></table>
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
         <div id="zoomCanvases">
@@ -181,8 +158,8 @@
                                 <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
                                     <td><div class="checkbox-inline text-muted"><label>
                                         <input ng-init="autoEatThis = item.autoEat"
-                                               ng-change="autoEat(item.name,autoEatThis)"
-                                               ng-model="autoEatThis" type="checkbox">
+                                             ng-change="autoEat(item.name,autoEatThis)"
+                                             ng-model="autoEatThis" type="checkbox">
                                     </label></div></td>
                                     <td>{{ item.name | capitalize }}</td>
                                     <td class="text-right"><strong data-model="item.amount" class="change-effect">
@@ -199,16 +176,17 @@
             <h2>Location <small>({{ user.location | grid }})</small></h2>
             <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
                 <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
-            <p ng-hide="onPixel.objects || onPixel.camp" class="text-muted">Nothing here.</p>
+            <p ng-hide="onPixel.camp" class="text-muted">Nothing here.</p>
             <div class="well object-well" ng-show="onPixel.camp">
                 <div class="row"><div class="col-xs-12">
                     <h3 class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
                     <button class="btn btn-default btn-sm pull-right" ng-click="showEco = !showEco">Resources</button>
                     <table class="unstyled" ng-show="showEco">
                         <tr><th>Resource</th><th class="text-right">Supply</th><th class="text-right">Demand</th></tr>
-                        <tr ng-repeat-start="(key,val) in onPixel.camp.economy.resources">
+                        <tr ng-repeat-start="(key,val) in onPixel.camp.economy.resources" 
+                            ng-show="showAllRes || (val.supply > 0 || val.invItem || hasItem({profession:'blacksmith',name:key}))">
                             <td><button data-toggle-panel class="btn btn-xs btn-item" 
-                                ng-style="{'background-color': '#'+val.color}" >{{ key | capitalize }}</button></td>
+                                ng-style="{'background-color': '#'+val.color}">{{ key | capitalize }}</button></td>
                             <td class="text-right" ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
                             <td style="color: #fff;" class="text-right" ng-style="{opacity:(val.demand+15)/115}">
                                 {{ item | iif : '*' : '' }}{{ val.demand }}</td>
@@ -259,6 +237,10 @@
                                 </div>
                             </div>
                         </td></tr>
+                        <tr><td colspan="3"><div class="checkbox-inline text-muted"><label>
+                            <input ng-model="showAllRes" type="checkbox">
+                             Show All Resources
+                        </label></div></td></tr>
                     </table>
                 </div></div>
                 <button ng-show="onPixel.camp.economy.blacksmith && hasItem({profession:'blacksmith'})" 
@@ -363,7 +345,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="row col-xs-12">
+                <div class="row col-xs-12" ng-show="selectedObject.visited">
                     <h3>Camp Services</h3>
                     <span ng-show="selectedObject.economy.blacksmith" style="background-color: #222;" 
                           class="label bigger-label">Blacksmith</span>

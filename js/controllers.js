@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.22; $scope.versionName = 'Shared Sock'; $scope.needUpdate = false;
+        $scope.version = 0.221; $scope.versionName = 'Shared Sock'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -945,6 +945,7 @@ angular.module('Geographr.controllers', [])
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
+            // TODO: Check if player is being moved by server when first loading app!
             console.log('moving player to',snap.val());
             if($scope.user.location) { 
                 fireRef.child('camps/' + $scope.user.location).off(); } // Stop listening to last grid

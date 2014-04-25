@@ -30,6 +30,7 @@ random encounters possible for every moved grid (server-side?)
 
 find random objects/things/activities in the 9grid view
     - no click-fests!
+    - puzzle type games!
 
 carrier pigeon/bird flies between players at all times, delivering messages
     - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.

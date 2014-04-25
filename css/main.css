@@ -56,8 +56,12 @@ canvas { display: block; }
 
 #gridView td { border: 1px solid #50575c; width: 98px; height: 98px; cursor: pointer; }
 #gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
-#gridView td.selected { border: 2px solid #909ea8; background-color: #30363d; }
-#gridView td.selected:hover { border: 2px solid #778187; background-color: #3d434c; }
+#gridView td.forage { border: 2px solid #7aa87d; background-color: #2f3d30; }
+#gridView td.forage:hover { background-color: #212b22; color: #fff; }
+#gridView td.hunt { border: 2px solid #a88986; background-color: #3d2d2c; }
+#gridView td.hunt:hover { background-color: #2b201f; color: #fff; }
+#gridView td.mine { border: 2px solid #a8a493; background-color: #3d3c38; }
+#gridView td.mine:hover { background-color: #292826; color: #fff; }
 
 .canvas-container canvas { position: absolute; }
 

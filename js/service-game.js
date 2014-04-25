@@ -48,7 +48,7 @@ angular.module('Geographr.game', [])
                 'onions': { color: 'aaa982', rarity: 0.7, avgQty: 1 }
             },
             hunt: {
-                'deer': { color: '6f4c32', rarity: 0.4, materials: ['meat','bone','pelt']},
+                'deer': { color: '6f4c32', rarity: 0.4, materials: ['meat','bone','pelt'] },
                 'boar': { color: '49413d', rarity: 0.7, materials: ['meat','bone','pelt'] },
                 'rabbit': { color: '6d5f58', rarity: 0, materials: ['meat','bone','pelt'] },
                 'fox': { color: '6d341e', rarity: 0.8, materials: ['meat','bone','pelt'] },
