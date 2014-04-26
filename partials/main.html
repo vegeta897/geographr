@@ -148,8 +148,8 @@
                             <table class="unstyled">
                                 <tr><th colspan="2"><h3>Automatic Eating</h3></th>
                                     <th class="text-right text-muted">Amount</th></tr>
-                                <tr ng-show="noEdibles"><td colspan="3"><span class="text-danger">
-                                Nothing left to eat!</span></td></tr>
+                                <tr ng-show="noEdibles || !inventory"><td colspan="3"><span class="text-danger">
+                                    Nothing left to eat!</span></td></tr>
                                 <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
                                     <td><div class="checkbox-inline text-muted"><label>
                                         <input ng-init="autoEatThis = item.autoEat"
@@ -184,7 +184,7 @@
                                 ng-style="{'background-color': '#'+val.color}">{{ key | capitalize }}</button></td>
                             <td class="text-right" ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
                             <td style="color: #fff;" class="text-right" ng-style="{opacity:(val.demand+15)/115}">
-                                {{ item | iif : '*' : '' }}{{ val.demand }}</td>
+                                {{ val.invItem | iif : '*' : '' }}{{ val.demand }}</td>
                         </tr>
                         <tr class="actions" ng-repeat-end><td colspan="3">
                             <div class="well well-sm">
@@ -217,8 +217,7 @@
                                         <span class="input-group-btn">
                                             <button ng-disabled="sellAmount > val.invItem.amount" 
                                                 class="btn btn-default btn-sm"
-                                                ng-click="sellResource(key,sellAmount,val.invItem.amount,
-                                                val.value,val.invItem.fireID)">Sell</button>
+                                                ng-click="sellResource(val.invItem,sellAmount,val.value)">Sell</button>
                                             <button class="btn btn-default btn-sm free"
                                                     ng-click="sellAmount = 1">1</button>
                                             <button class="btn btn-default btn-sm free" 
@@ -261,13 +260,11 @@
                                        id="inputBlacksmithAmount">
                                 <span class="input-group-btn">
                                     <button ng-disabled="blacksmithAmount > item.amount"
-                                            class="btn btn-default btn-sm free" ng-click="refineItem(item.name,
-                                        blacksmithAmount,item.amount,onPixel.camp.economy.blacksmith[item.name].value,
-                                        item.fireID)">Refine</button>
+                                        class="btn btn-default btn-sm free" ng-click="refineItem(item,blacksmithAmount,
+                                        onPixel.camp.economy.blacksmith[item.name].value)">Refine</button>
                                     <button ng-disabled="blacksmithAmount > item.amount"
-                                            class="btn btn-default btn-sm" ng-click="sellResource(item.name,
-                                        blacksmithAmount,item.amount,
-                                        onPixel.camp.economy.blacksmith[item.name].value,item.fireID)">Sell</button>
+                                        class="btn btn-default btn-sm" ng-click="sellResource(item,
+                                        blacksmithAmount,onPixel.camp.economy.blacksmith[item.name].value)">Sell</button>
                                     <button class="btn btn-default btn-sm"
                                             ng-click="blacksmithAmount = 1">1</button>
                                     <button class="btn btn-default btn-sm"

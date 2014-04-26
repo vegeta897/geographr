@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.222; $scope.versionName = 'Shared Sock'; $scope.needUpdate = false;
+        $scope.version = 0.23; $scope.versionName = 'Diplomatic Mind'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -293,7 +293,7 @@ angular.module('Geographr.controllers', [])
                 changeHunger(userID,0);
             } else { $scope.user.autoEat.splice(jQuery.inArray(food,$scope.user.autoEat),1); }
             if($scope.user.autoEat.length == 0) { // Send to firebase
-                fireUser.child('autoEat').set(null); } else { fireUser.child('autoEat').set($scope.user.autoEat); }
+                fireUser.child('autoEat').remove(); } else { fireUser.child('autoEat').set($scope.user.autoEat); }
         };
         $scope.movePlayer = function(dir) {
             if(dir == 'startStop') { // If starting or stopping movement
@@ -378,26 +378,28 @@ angular.module('Geographr.controllers', [])
                 Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
             fireUser.child('money').set($scope.user.money);
         };
-        $scope.sellResource = function(resource,amount,haveAmount,value,fireID) {
-            if(amount < 1 || amount > haveAmount) { return; }
+        $scope.sellResource = function(item,amount,value) {
+            if(amount < 1 || amount > item.amount) { return; }
             console.log('selling',amount,'at',value * 0.8,'gold per unit');
-            if(haveAmount - amount > 0) { $scope.inventory[fireID].amount = haveAmount - amount;
-                fireInventory.child(fireID+'/amount').set(haveAmount - amount);
-            } else { fireInventory.child(fireID).set(null); delete $scope.inventory[fireID]; }
-            var newDelta = $scope.onPixel.camp.deltas[resource] + amount;
+            if(item.amount - amount > 0) { $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
+                fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
+            } else { fireInventory.child(item.type+':'+item.name).remove(); 
+                delete $scope.inventory[item.type+':'+item.name]; }
+            var newDelta = $scope.onPixel.camp.deltas[item.name] + amount;
             newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
-            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
+            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+item.name).set(newDelta); // Update delta
             $scope.user.money = Math.round($scope.user.money + amount * value * 0.8); 
             fireUser.child('money').set($scope.user.money);
         };
-        $scope.refineItem = function(item,amount,haveAmount,cost,fireID) {
-            if(amount < 1 || amount > haveAmount) { return; }
+        $scope.refineItem = function(item,amount,cost) {
+            if(amount < 1 || amount > item.amount) { return; }
             if(Math.round($scope.user.money - amount * cost * 1.5) < 0) { return; }
             console.log('refining',amount,item,'at',cost * 1.5,'gold per unit');
-            if(haveAmount - amount > 0) {
-                fireInventory.child(fireID+'/amount').set(haveAmount - amount);
-                $scope.inventory[fireID].amount = haveAmount - amount;
-            } else { fireInventory.child(fireID).set(null); delete $scope.inventory[fireID]; }
+            if(item.amount - amount > 0) {
+                fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
+                $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
+            } else { fireInventory.child(item.type+':'+item.name).remove(); 
+                delete $scope.inventory[item.type+':'+item.name]; }
             $scope.user.money = Math.round($scope.user.money - amount * cost * 1.5);
             fireUser.child('money').set($scope.user.money);
             Math.seedrandom();
@@ -486,11 +488,7 @@ angular.module('Geographr.controllers', [])
         var cleanInventory = function(inventory) { // Clean un-needed properties before storing on firebase
             var inventoryCopy = angular.copy(inventory);
             for(var invKey in inventoryCopy) {
-                if(!inventoryCopy.hasOwnProperty(invKey)) { continue; }
-                var item = inventoryCopy[invKey];
-                delete item.color; delete item.materials; delete item.rarity; delete item.weight; delete item.fireID;
-                delete item.avgQty; delete item.value; delete item.effects; delete item.unit; delete item.abundance;
-                delete item.profession; delete item.lastOfType; delete item.autoEat;
+                if(inventoryCopy.hasOwnProperty(invKey)) { inventoryCopy[invKey] = inventoryCopy[invKey].amount; }
             }
             return inventoryCopy;
         };
@@ -505,14 +503,16 @@ angular.module('Geographr.controllers', [])
             }
             item.color = parent.color; item.value = parent.value; item.weight = parent.weight;
             item.unit = parent.unit; item.materials = parent.materials; item.profession = parent.profession;
+            if($scope.user.hasOwnProperty('autoEat') &&
+                jQuery.inArray(item.name,$scope.user.autoEat) >= 0) { item.autoEat = true; }
             return item;
         };
         // Add item or array of items to inventory, stacking if possible, and send to firebase
         var addToInventory = function(invItems) {
+            if(!$scope.inventory) { $scope.inventory = {}; }
             if(Object.prototype.toString.call(invItems) !== '[object Array]') { invItems = [invItems] }
             for(var i = 0; i < invItems.length; i++) {
                 var invItem = invItems[i];
-                var fireID = fireInventory.push().name();
                 if($scope.hasOwnProperty('inventory')) {
                     for(var key in $scope.inventory) {
                         if($scope.inventory.hasOwnProperty(key) &&
@@ -521,19 +521,17 @@ angular.module('Geographr.controllers', [])
                             $scope.inventory[key].amount += invItem.amount; invItem.amount = 0;
                         }
                     }
-                    if(invItem.amount > 0) { $scope.inventory[fireID] = invItem; }
-                } else { $scope.inventory = {}; $scope.inventory[fireID] = invItem; }
+                    if(invItem.amount > 0) { $scope.inventory[invItem.type+':'+invItem.name] = invItem; }
+                } else { $scope.inventory = {}; $scope.inventory[invItem.type+':'+invItem.name] = invItem; }
             }
             fireInventory.set(angular.copy(cleanInventory($scope.inventory)));
         };
         
         var updateInventory = function(snapshot) {
-            var itemAdded = snapshot.val();
-            itemAdded.fireID = snapshot.name();
+            var itemAdded = { 
+                type: snapshot.name().split(':')[0], name: snapshot.name().split(':')[1], amount: snapshot.val() };
             $timeout(function(){
                 itemAdded = dressItem(itemAdded);
-                if($scope.user.hasOwnProperty('autoEat') &&
-                    jQuery.inArray(itemAdded.name,$scope.user.autoEat) >= 0) { itemAdded.autoEat = true; }
                 if(!$scope.inventory) { $scope.inventory = {}; }
                 $scope.inventory[snapshot.name()] = itemAdded;
                 checkEdibles();
@@ -586,7 +584,7 @@ angular.module('Geographr.controllers', [])
                     grid: $scope.overPixel.x + ':' + $scope.overPixel.y
                 }
             );
-            fireInventory.child(object.fireID).remove();
+            fireInventory.child(object.type+':'+object.name).remove();
             if(object.type == 'camp') {
                 $scope.camp.grid = $scope.overPixel.x + ':' + $scope.overPixel.y;
                 fireUser.child('camp').update($scope.camp);
@@ -852,9 +850,7 @@ angular.module('Geographr.controllers', [])
             $timeout(function(){unPing()},1600); // Keep ping for 5 seconds
         };
         // Un-ping a pixel
-        var unPing = function() {
-            fireRef.child('meta/pings/'+pinging[0] + ":" + pinging[1]).set(null); pinging = false;
-        };
+        var unPing = function() { fireRef.child('meta/pings/'+pinging[0]+":"+pinging[1]).remove(); pinging=false; };
         var drawPing = function(snapshot) { canvasUtility.drawPing(fullPingContext,snapshot.name().split(":")); };
         var hidePing = function(snapshot) { canvasUtility.clearPing(fullPingContext,snapshot.name().split(":")); };
 
@@ -874,9 +870,7 @@ angular.module('Geographr.controllers', [])
             canvasUtility.fillCanvas(fullTerrainContext,'2c3d4b');
             canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
         };
-        $scope.drawIso = function() {
-            canvasUtility.drawIso(fullTerrainContext,localTerrain);
-        };
+        $scope.drawIso = function() { canvasUtility.drawIso(fullTerrainContext,localTerrain); };
         // Draw an object, whether adding, changing, or removing
         var drawObject = function(coords,value) {
             if(!$scope.showObjects) { return; }
@@ -915,13 +909,9 @@ angular.module('Geographr.controllers', [])
     
         var sortArrayByProperty = function(arr, sortby, descending) {
             if(arr[0].hasOwnProperty(sortby)) {
-                if(descending) {
-                    arr.sort(function(obj1, obj2) {return obj2[sortby] - obj1[sortby]})
-                } else {
-                    arr.sort(function(obj1, obj2) {return obj1[sortby] - obj2[sortby]})
-                }
-            }
-            return arr;
+                if(descending) { arr.sort(function(obj1, obj2) { return obj2[sortby] - obj1[sortby]}); } else {
+                    arr.sort(function(obj1, obj2) { return obj1[sortby] - obj2[sortby]}); }
+            } return arr;
         };
         
         var updateScoreBoard = function(snap) {
@@ -964,8 +954,8 @@ angular.module('Geographr.controllers', [])
                         if(resources.hasOwnProperty(resKey)) {
                             // TODO: Have deltas influence demands
                             campData.deltas[resKey] = 0; // Default 0 delta
-                            campData.economy.resources[resKey].invItem =
-                                $scope.hasItem({name: resKey, type:'resource'});
+                            campData.economy.resources[resKey].invItem =  $scope.inventory ? 
+                                $scope.inventory['resource:'+resKey] : undefined;
                             if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
                                 && campSnap.val().deltas.hasOwnProperty(resKey)) {
                                 // Apply delta against supply
@@ -1015,7 +1005,7 @@ angular.module('Geographr.controllers', [])
         
         var changeHunger = function(hungryUserID,amount) {
             var user = localUsers.hasOwnProperty(hungryUserID) ? localUsers[hungryUserID] : $scope.user;
-            user.inventory = hungryUserID == userID ? $scope.inventory : user.inventory;
+            user.inventory = hungryUserID == userID ? cleanInventory($scope.inventory) : user.inventory;
             user.stats.hunger -= amount;
             var neededHunger = 100 - user.stats.hunger;
             if(user.hasOwnProperty('autoEat')) {
@@ -1023,22 +1013,12 @@ angular.module('Geographr.controllers', [])
                 for(var nKey in result.newInv) { // Set new item quantities, delete item if 0
                     if(result.newInv.hasOwnProperty(nKey)) {
                         if(result.newInv[nKey] > 0) {
-                            fireRef.child('users/'+hungryUserID+'/inventory/'+nKey+'/amount').set(result.newInv[nKey]);
-                        } else { fireRef.child('users/'+hungryUserID+'/inventory/'+nKey).set(null); }
+                            fireRef.child('users/'+hungryUserID+'/inventory/'+nKey).set(result.newInv[nKey]);
+                        } else { fireRef.child('users/'+hungryUserID+'/inventory/'+nKey).remove(); }
                     }
                 }
             }
             fireRef.child('users/'+hungryUserID+'/stats/hunger').set(100 - result.newNeeded);
-        };
-            
-        var addClient = function(snap) {
-            // When a client logs in
-        };
-        var changeClient = function(snap) {
-            // When a client's info changes
-        };
-        var removeClient = function(snap) {
-            // When a client logs out
         };
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
@@ -1053,7 +1033,6 @@ angular.module('Geographr.controllers', [])
                 prepareTerrain();
             });
         };
-        
         var initTerrain = function() {
             if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
                 fireRef.child('lastTerrainUpdate').once('value',function(snap) {
@@ -1071,11 +1050,10 @@ angular.module('Geographr.controllers', [])
                     }
                 });
             } else { downloadTerrain(); }
-        };
-        
-       var prepareTerrain = function() {
-           $scope.terrainReady = true;
-           fireRef.child('campList').once('value',function(snap) {
+       };
+        var prepareTerrain = function() {
+            $scope.terrainReady = true;
+            fireRef.child('campList').once('value',function(snap) {
                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
                    var nativeLocations = gameUtility.genNativeCamps(localTerrain);
                    fireRef.child('camps').set(nativeLocations); return;
@@ -1089,13 +1067,10 @@ angular.module('Geographr.controllers', [])
                    else { localObjects[campList[i]] = [camp]; }
                }
            });
-           if(userID == 2) { // If server
-               canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
-               console.log('server ready!');
-               fireRef.child('clients/logged').on('child_added', addClient);
-               fireRef.child('clients/logged').on('child_changed', changeClient);
-               fireRef.child('clients/logged').on('child_removed', removeClient);
-               var updateUsers = function(snap) {
+            if(userID == 2) { // If server
+                canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
+                console.log('server ready!');
+                var updateUsers = function(snap) {
                    for(var key in snap.val()) {
                        if(!snap.val().hasOwnProperty(key)) { continue; }
                        if(!localUsers.hasOwnProperty(key)) { continue; }
@@ -1103,86 +1078,85 @@ angular.module('Geographr.controllers', [])
                            !snap.val()[key].hasOwnProperty('connections')) {
                            if(key != 1) { console.log(localUsers[key].nick,'disconnected at',
                                new Date(snap.val()[key].lastOnline)); }
-                           fireRef.child('scoreBoard/'+key+'/online').set(null);
+                           fireRef.child('scoreBoard/'+key+'/online').remove();
                        }
                    }
                    localUsers = snap.val();
                };
-               fireRef.child('users').on('value', updateUsers);
-               fireServer.on('child_added', function(snap) { // When a client action is received
-                   if(snap.val().user != 1 || snap.val().action != 'logIn') {
-                       console.log(localUsers[snap.val().user].nick,'did',snap.val().action,'at',new Date()); }
-                   var action = snap.val().action.split(',');
-                   switch(action[0]) {
-                       case 'createCamp':
-                           var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
-                           fireRef.child('users/'+snap.val().user).update({
-                               camp: { grid: startGrid, color: colorUtility.generate('camp').hex },
-                               location: startGrid, money: 200, stats: { hunger: 100 }
-                           });
-                           fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
-                           fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(localUsers[snap.val().user].nick);
-                           break;
-                       case 'move':
-                           var movePath = snap.val().path, baseMoveSpeed = 5000; // 5 seconds
-                           fireRef.child('users/'+snap.val().user+'/movePath').set(movePath);
-                           var move = function() {
-                               fireRef.child('users/'+snap.val().user).update(
-                                   { location: movePath.splice(0,1)[0], movePath: movePath });
-                               if(movePath.length < 1 || !localTerrain.hasOwnProperty(movePath[0])) {
-                                   clearTimeout(moveTimers[snap.val().user]);
-                                   fireRef.child('users/'+snap.val().user+'/movePath').set(null);
-                               } else {
-                                   moveTimers[snap.val().user] = setTimeout(move,
-                                       baseMoveSpeed * (1 + localTerrain[movePath[0]] / 60));
-                               }
-                               changeHunger(snap.val().user,3); // Use 3 hunger
-                           };
-                           moveTimers[snap.val().user] = setTimeout(move,
-                               baseMoveSpeed * (1 + localTerrain[movePath[0]] / 60));
-                           break;
-                       case 'stop': 
-                           clearTimeout(moveTimers[snap.val().user]); 
-                           fireRef.child('users/'+snap.val().user+'/movePath').set(null);
-                           break;
-                       case 'logIn': fireRef.child('scoreBoard/'+snap.val().user+'/online').set(true); break;
-                       default: break;
-                   }
-                   fireServer.child(snap.name()).set(null); // Delete the action
-               });
-               fireRef.child('status').set('online');
-               var loginEmail = localStorage.get('serverLoginEmail');
-               var loginPassword = localStorage.get('serverLoginPassword');
-               var stayAwake = function() {
-                   fireRef.child('status').set('online');
-                   fireRef.child('serverTest').set('test');
-                   fireRef.child('serverTest').set(null);
-                   auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
-               };
-               setInterval(stayAwake, 3600000); // Re-authenticate every hour
-               fireRef.child('status').onDisconnect().set('offline');
-               canvasUtility.fillCanvas(fullFogContext,'erase');
-               zoomFogCanvas.style.visibility="hidden";
-           } else { // If regular user
-               fireUser.child('location').on('value', movePlayer);
-               fireUser.child('stats/hunger').on('value', function(snap) {
-                   $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
-                   $scope.user.stats.hunger = snap.val();
-               });
-               var myConnectionsRef = fireUser.child('connections');
-               var lastOnlineRef = fireUser.child('lastOnline');
-               var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
-               connectedRef.on('value', function(snap) {
-                   if (snap.val() === true) {
-                       var con = myConnectionsRef.push(true);
-                       fireServer.push({ user: userID, action: 'logIn' });
-                       con.onDisconnect().remove();
-                       lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
-                   }
-               });
-           }
-           
-       };
+                fireRef.child('users').on('value', updateUsers);
+                fireServer.on('child_added', function(snap) { // When a client action is received
+                    if(snap.val().user != 1 || snap.val().action != 'logIn') {
+                        console.log(localUsers[snap.val().user].nick,'did',snap.val().action,'at',new Date()); }
+                    var action = snap.val().action.split(',');
+                    switch(action[0]) {
+                        case 'createCamp':
+                            var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
+                            fireRef.child('users/'+snap.val().user).update({
+                                camp: { grid: startGrid, color: colorUtility.generate('camp').hex },
+                                location: startGrid, money: 200, stats: { hunger: 100 }
+                            });
+                            fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
+                            fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(localUsers[snap.val().user].nick);
+                            break;
+                        case 'move':
+                            var movePath = snap.val().path, baseMoveSpeed = 5000; // 5 seconds
+                            fireRef.child('users/'+snap.val().user+'/movePath').set(movePath);
+                            var move = function() {
+                                fireRef.child('users/'+snap.val().user).update(
+                                    { location: movePath.splice(0,1)[0], movePath: movePath });
+                                if(movePath.length < 1 || !localTerrain.hasOwnProperty(movePath[0])) {
+                                    clearTimeout(moveTimers[snap.val().user]);
+                                    fireRef.child('users/'+snap.val().user+'/movePath').remove();
+                                } else {
+                                    moveTimers[snap.val().user] = setTimeout(move,
+                                        baseMoveSpeed * (1 + localTerrain[movePath[0]] / 60));
+                                }
+                                changeHunger(snap.val().user,3); // Use 3 hunger
+                            };
+                            moveTimers[snap.val().user] = setTimeout(move,
+                                baseMoveSpeed * (1 + localTerrain[movePath[0]] / 60));
+                            break;
+                        case 'stop': 
+                            clearTimeout(moveTimers[snap.val().user]); 
+                            fireRef.child('users/'+snap.val().user+'/movePath').remove();
+                            break;
+                        case 'logIn': fireRef.child('scoreBoard/'+snap.val().user+'/online').set(true); break;
+                        default: break;
+                    }
+                    fireServer.child(snap.name()).remove(); // Delete the action
+                });
+                fireRef.child('status').set('online');
+                var loginEmail = localStorage.get('serverLoginEmail');
+                var loginPassword = localStorage.get('serverLoginPassword');
+                var stayAwake = function() {
+                    fireRef.child('status').set('online');
+                    fireRef.child('serverTest').set('test');
+                    fireRef.child('serverTest').remove();
+                    auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
+                };
+                setInterval(stayAwake, 3600000); // Re-authenticate every hour
+                fireRef.child('status').onDisconnect().set('offline');
+                canvasUtility.fillCanvas(fullFogContext,'erase');
+                zoomFogCanvas.style.visibility="hidden";
+            } else { // If regular user
+                fireUser.child('location').on('value', movePlayer);
+                fireUser.child('stats/hunger').on('value', function(snap) {
+                    $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
+                    $scope.user.stats.hunger = snap.val();
+                });
+                var myConnectionsRef = fireUser.child('connections');
+                var lastOnlineRef = fireUser.child('lastOnline');
+                var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
+                connectedRef.on('value', function(snap) {
+                    if (snap.val() === true) {
+                        var con = myConnectionsRef.push(true);
+                        fireServer.push({ user: userID, action: 'logIn' });
+                        con.onDisconnect().remove();
+                        lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
+                    }
+                });
+            }
+        };
         
         fireRef.child('labels').once('value',function(snap) {
             localLabels = snap.val();

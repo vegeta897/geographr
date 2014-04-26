@@ -306,7 +306,7 @@ angular.module('Geographr.game', [])
                 event.pool = createEventPool(type); event.result = {};
                 event.seed = randomIntRange(0,10000); // For consistent redrawing
                 switch(type) {
-                    case 'hunt': createEventTimers(type,4,500,800); break;
+                    case 'hunt': createEventTimers(type,4,400,800); break;
                     case 'mine': event.clicks = []; break;
                 }
                 actCanvasUtility.drawActivity(type,event);
@@ -350,11 +350,10 @@ angular.module('Geographr.game', [])
                             var animal = poolCopy[Math.floor(event.step/5)];
                             dist = (click.x - animal.targetX)*(click.x - animal.targetX) +
                                 (click.y - animal.targetY)*(click.y - animal.targetY);
-                            threshold = 100;
-                            if(dist < threshold) {
+                            if(dist < Math.pow(event.skill + 5,2)) {
                                 event.result.success = true;
                                 actCanvasUtility.drawCircle('main',[animal.targetX,animal.targetY],
-                                    10,'#ff0000');
+                                    12,'#ff0000');
                                 product = animal.product; product.amount = 1; delete product.rarity;
                                 event.result.products.push(product);
                             }
@@ -477,7 +476,8 @@ angular.module('Geographr.game', [])
                 for(var a = 0; a < user.autoEat.length; a++) {
                     for(var invKey in user.inventory) {
                         if(user.inventory.hasOwnProperty(invKey) && neededHunger > 0) {
-                            var invItem = user.inventory[invKey];
+                            var invItem = { type: invKey.split(':')[0], name: invKey.split(':')[1],
+                                amount: user.inventory[invKey] };
                             if(edibles.hasOwnProperty(invItem.name) && invItem.name == user.autoEat[a]
                                 && neededHunger > 0) {
                                 var foodItem = edibles[invItem.name];

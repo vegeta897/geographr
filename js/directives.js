@@ -1,6 +1,4 @@
 /* Directives and Filters */
-var firstBy=(function(){function e(f){f.thenBy=t;return f}function t(y,x){x=this; // Multi-sort
-    return e(function(a,b){return x(a,b)||y(a,b)})}return e})();
 var sortArrayByProperty = function(arr, sortby, descending) {
     if(arr.length == 0) { return arr; }
     if(arr[0].hasOwnProperty(sortby)) {
@@ -153,16 +151,12 @@ angular.module('Geographr.directives', [])
                 break;
             default:
                 for(var key in input) {
-                    if(input.hasOwnProperty(key) && jQuery.inArray(input[key].type,types) >= 0 ) {
-                        input[key].name = input[key].name ? input[key].name : key;
+                    if(input.hasOwnProperty(key) && jQuery.inArray(key.split(':')[0],types) >= 0 ) {
                         list.push(input[key]);
                     }
                 }
                 break;
         }
-        var sort = firstBy(function(i1,i2) { return i1.type < i2.type ? -1 : (i1.type > i2.type ? 1 : 0); })
-            .thenBy(function (i1, i2) { return i1.name < i2.name ? -1 : (i1.name > i2.name ? 1 : 0); });
-        list.sort(sort);
         for(var i = 0; i < list.length; i++) {
             list[i].lastOfType = (i < list.length - 1 && list[i].type != list[i+1].type);
         }
