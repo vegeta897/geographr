@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.23; $scope.versionName = 'Diplomatic Mind'; $scope.needUpdate = false;
+        $scope.version = 0.231; $scope.versionName = 'Diplomatic Mind'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -971,7 +971,6 @@ angular.module('Geographr.controllers', [])
             }
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
             canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
-            $scope.movePath.splice($scope.movePath.indexOf(snap.val()),1);
             var firstWater;
             for(var i = 0; i < $scope.movePath.length; i++) {
                 if(visiblePixels.hasOwnProperty($scope.movePath[i]) &&

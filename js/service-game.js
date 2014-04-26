@@ -213,7 +213,7 @@ angular.module('Geographr.game', [])
             economy.resources = resources;
             var blacksmithFactor = resources['coal'].demand + resources['iron'].demand 
                 + resources['copper'].demand + resources['tools'].demand + resources['weapons'].demand;
-            if(blacksmithFactor/500 < Math.random() * 0.6 + 0.4) {
+            if(blacksmithFactor/500 < Math.random() * 0.7 + 0.3) {
                 economy.blacksmith = {};
                 for(var minKey in eventProducts.mine) {
                     if(!eventProducts.mine.hasOwnProperty(minKey)) { continue; }
