@@ -75,8 +75,8 @@ angular.module('Geographr.colors', [])
             } else if (avgHue < 0) {
                 avgHue = 360 + (avgHue % 360);
             }
-            if(avgSat > 1) { avgSat = 1; } else if(avgSat < 0) { avgSat = 0; }
-            if(avgVal > 1) { avgVal = 1; } else if(avgVal < 0) { avgVal = 0; }
+            avgSat = Math.max(Math.min(avgSat,1),0);
+            avgVal = Math.max(Math.min(avgVal,1),0);
             if(totalColors == 0) {
                 return false;
             } else {

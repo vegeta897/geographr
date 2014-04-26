@@ -173,7 +173,7 @@ angular.module('Geographr.actCanvas', [])
                                                 }
                                             }
                                         }
-                                        strength = strength > 0.8 ? 0.8 : strength; // 80% strength cap
+                                        strength = Math.min(strength, 0.8); // 80% strength cap
                                         color = colorUtility.generate({
                                             strength: strength, oldColor: color.hsv, 
                                             newColor: colorUtility.hexToHSV(prod.color)

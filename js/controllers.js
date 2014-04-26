@@ -206,8 +206,7 @@ angular.module('Geographr.controllers', [])
             }
             var x = lastZoomPosition[0], y = lastZoomPosition[1]; // Fix zoom area going off edge
             if(x < 0) { x = 0; } if(y < 0) { y = 0; }
-            if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
-            if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
+            x = Math.min(300 - zoomSize[0],Math.max(x,0)); y = Math.min(300 - zoomSize[1],Math.max(y,0));
             $scope.zoomPosition = lastZoomPosition = [x,y];
             localStorage.set('zoomPosition',$scope.zoomPosition);
             canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
@@ -336,7 +335,7 @@ angular.module('Geographr.controllers', [])
                 if($scope.onPixel.camp) { // If there is a camp here
                 } else { // If no camp, create some events/activities
                     var looks = $scope.lookCount;
-                    createActivity(0.25*((looks=looks/6-1)*looks*looks + 1) + 0.7);
+                    createActivity(0.25*((looks=looks/6-1)*looks*looks + 1) + 0.75);
                 }
                 $timeout(function(){ 
                     $scope.looking = false;
@@ -411,7 +410,7 @@ angular.module('Geographr.controllers', [])
         };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
-            var activities = { forage: 1, hunt: 0.3, mine: 0.2 }; // TODO: Influenced by terrain
+            var activities = gameUtility.getActivityChances(localTerrain,$scope.user.location,campList);
             for(var actKey in activities) {
                 if(activities.hasOwnProperty(actKey)) {
                     if(Math.random() > 1-chance*activities[actKey] 
@@ -468,11 +467,8 @@ angular.module('Geographr.controllers', [])
                 increments++;
                 $timeout(function() { 
                     $scope.waitProgress = Math.floor((increments/2 / seconds) * 100);
-                    $scope.waitProgress = $scope.waitProgress > 100 ? 100 : $scope.waitProgress;
-                    if(increments/2  > seconds) {
-                        clearInterval(waitTimer); //$scope.waitProgress = 0;
-                        //progressBar.css({'-webkit-transition': 'width 0s', 'transition': 'width 0s' });
-                    }
+                    $scope.waitProgress = Math.min($scope.waitProgress,100);
+                    if(increments/2 > seconds) { clearInterval(waitTimer); }
                 });
             },500)
         };
@@ -661,9 +657,8 @@ angular.module('Geographr.controllers', [])
             var panOffset = [x - panOrigin[0], y - panOrigin[1]];
             if(panOffset[0] == 0 && panOffset[1] == 0) { return; }
             var newPosition = [$scope.zoomPosition[0]-panOffset[0],$scope.zoomPosition[1]-panOffset[1]];
-            if(newPosition[0] < 0) { newPosition[0] = 0; } if(newPosition[1] < 0) { newPosition[1] = 0; }
-            if(newPosition[0] > 300 - zoomSize[0]) { newPosition[0] = 300 - zoomSize[0]; }
-            if(newPosition[1] > 300 - zoomSize[1]) { newPosition[1] = 300 - zoomSize[1]; }
+            newPosition[0] = Math.min(Math.max(newPosition[0],0),300 - zoomSize[0]);
+            newPosition[1] = Math.min(Math.max(newPosition[1],0),300 - zoomSize[1]);
             viewCenter = [newPosition[0]+zoomSize[0]/2,newPosition[1]+zoomSize[1]/2];
             changeZoomPosition(newPosition[0],newPosition[1]);
             dimPixel();

@@ -106,6 +106,17 @@ angular.module('Geographr.game', [])
             }
             return picked;
         };
+        var getBoxNeighbors = function(nodes,x,y,dist) { // Check a box area around x,y
+            var neighbors = [];
+            x = parseInt(x); y = parseInt(y);
+            for(var i = dist*-1; i <= dist; i++) {
+                for(var ii = dist*-1; ii <= dist; ii++) {
+                    var nx = (x+i), ny = (y+ii);
+                    if(nodes.hasOwnProperty(nx+':'+ny)) {neighbors.push(nx+':'+ny); }
+                }
+            }
+            return neighbors;
+        };
         var getNeighbors = function(loc,dist) { // Check a diamond area around x,y
             var neighbors = [];
             loc = [parseInt(loc[0]),parseInt(loc[1])];
@@ -132,28 +143,22 @@ angular.module('Geographr.game', [])
             return neighbors;
         };
         var isCampNear = function(camps,loc,dist) { // Check a diamond area around x,y for a camp
-            var neighbors = [];
             loc = [parseInt(loc[0]),parseInt(loc[1])];
-            for(var i = dist*-1; i <= dist; i++) {
-                for(var ii = dist*-1; ii <= dist; ii++) {
-                    var total = Math.abs(i)+Math.abs(ii);
-                    if(total <= dist && total > 0) {
-                        if(camps.indexOf((loc[0]+i)+':'+(loc[1]+ii)) >= 0) { return true; }
-                    }
+            for(var i = dist*-1; i <= dist; i++) { for(var ii = dist*-1; ii <= dist; ii++) {
+                var total = Math.abs(i)+Math.abs(ii);
+                if(total <= dist && total > 0) {
+                    if(jQuery.inArray((loc[0]+i)+':'+(loc[1]+ii),camps) >= 0) { return true; }
                 }
-            }
+            }}
             return false;
         };
-        var getBoxNeighbors = function(nodes,x,y,dist) { // Check a box area around x,y
-            var neighbors = [];
-            x = parseInt(x); y = parseInt(y);
-            for(var i = dist*-1; i <= dist; i++) {
-                for(var ii = dist*-1; ii <= dist; ii++) {
-                    var nx = (x+i), ny = (y+ii);
-                    if(nodes.hasOwnProperty(nx+':'+ny)) {neighbors.push(nx+':'+ny); }
-                }
+        var getNearWater = function(terrain,location,distance) {
+            location = {x: parseInt(location[0]), y: parseInt(location[1]) };
+            var inRange = getCircle([location.x,location.y],distance), nearWater = [];
+            for(var i = 0; i < inRange.length; i++) {
+                if(!terrain.hasOwnProperty(inRange[i])) { nearWater.push(inRange[i]); }
             }
-            return neighbors;
+            return nearWater;
         };
         var getNearest = function(ox,oy,near,exclude) {
             var nearest = {coords: '', dist: 999};
@@ -166,6 +171,22 @@ angular.module('Geographr.game', [])
                 }
             }
             return nearest.coords;
+        };
+        var getCoastDistance = function(terrain,location) { // Returns squared distance of nearest water
+            location = {x: parseInt(location.split(':')[0]), y: parseInt(location.split(':')[1]) };
+            var searchDist = 0, nearWater;
+            for(var i = 1; i < 50; i++) {
+                nearWater = getNearWater(terrain,[location.x,location.y],i*4);
+                if(nearWater.length > 0) { searchDist = i*4; break; }
+            }
+            var closest = 50000;
+            for(var w = 0; w < nearWater.length; w++) {
+                var distX = Math.abs(nearWater[w].split(':')[0] - location.x), 
+                    distY = Math.abs(nearWater[w].split(':')[1] - location.y);
+                closest = Math.min(closest,distX*distX + distY*distY);
+                if(closest <= 1) { break; }
+            }
+            return closest;
         };
         var genCampEconomy = function(grid,terrain) {
             Math.seedrandom(grid);
@@ -379,13 +400,25 @@ angular.module('Geographr.game', [])
                 }
                 return visible;
             },
+            getActivityChances: function(terrain,location,camps) {
+                var chances = {
+                    forage: 7/terrain[location], hunt: 10/terrain[location], mine: terrain[location] / 40 
+                };
+                for(var act in chances) { if(!chances.hasOwnProperty(act)) { continue; } 
+                    chances[act] = Math.min(chances[act], 1); }
+                // TODO: Abstract these camp and coast proximity factors
+                chances.forage = isCampNear(camps,location,1) ? chances.forage * 0.8 : chances.forage;
+                chances.hunt = isCampNear(camps,location,1) ? chances.hunt * 0.6 : chances.hunt * 0.8;
+                var coastDist = getCoastDistance(terrain,location);
+                chances.forage = chances.forage * (1-0.8*(1-Math.min(coastDist,3)/3)); // Less forage near coast
+                chances.hunt = chances.hunt * (1-0.8*(1-Math.min(coastDist,9)/9)); // Less hunting near coast
+                return chances;
+            },
             createUserCamp: function(terrain,camps) {
                 Math.seedrandom();
                 for(var i = 0; i < 5000; i++) {
                     var x = randomIntRange(20,279), y = randomIntRange(20,279);
-                    if(terrain[x+':'+y] && !camps[x+':'+y] && terrain[x+':'+y] < 10) { 
-                        return x+':'+y; 
-                    }
+                    if(terrain[x+':'+y] && !camps[x+':'+y] && terrain[x+':'+y] < 10) { return x+':'+y; }
                 }
                 return false;
             },
