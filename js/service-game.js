@@ -482,7 +482,7 @@ angular.module('Geographr.game', [])
                                 && neededHunger > 0) {
                                 var foodItem = edibles[invItem.name];
                                 var eatAmount = Math.floor(neededHunger/foodItem.calories);
-                                eatAmount = eatAmount > invItem.amount ? invItem.amount : eatAmount;
+                                eatAmount = Math.min(eatAmount,invItem.amount);
                                 neededHunger -= foodItem.calories * eatAmount;
                                 if(eatAmount > 0) { newQuantities[invKey] = invItem.amount - eatAmount; }
                             }

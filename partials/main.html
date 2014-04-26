@@ -101,12 +101,9 @@
     <div class="row">
         <div id="info" class="col-xs-3">
             <div ng-show="showCommits" id="commits">
-                <table class="table">
-                    <tr ng-repeat="commit in commits"><td><span class="text-muted">
-                        {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td><td>
-                        {{ commit.message }}
-                    </td></tr>
-                </table>
+                <table class="table"><tr ng-repeat="commit in commits"><td><span class="text-muted">
+                    {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td>
+                    <td>{{ commit.message }}</td></tr></table>
             </div>
             <div id="eventHUD">
                 <div ng-show="inEventTutorial" class="checkbox-inline text-muted"><label>
@@ -115,12 +112,10 @@
                 <p ng-show="event.message" ng-bind-html="event.message"></p>
                 <p ng-hide="event.message">&nbsp;</p>
                 <div class="well" ng-show="event.products.length > 0">
-                    <p class="event-products">
-                        <button ng-click="takeFromEvent($index)" ng-style="{'background-color': '#'+product.color}"
-                            class="btn btn-xs btn-item" ng-repeat="product in event.products">
+                    <p class="event-products"><button ng-click="takeFromEvent($index)" class="btn btn-xs btn-item"
+                        ng-style="{'background-color': '#'+product.color}" ng-repeat="product in event.products">
                             {{ product.amount }}x {{ product.name }}
-                        </button>
-                    </p>
+                    </button></p>
                     <button ng-click="takeFromEvent('all')" class="btn btn-sm btn-default">Take All</button>
                 </div>
             </div>
