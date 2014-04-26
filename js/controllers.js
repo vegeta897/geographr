@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.231; $scope.versionName = 'Diplomatic Mind'; $scope.needUpdate = false;
+        $scope.version = 0.232; $scope.versionName = 'Diplomatic Mind'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -40,7 +40,8 @@ angular.module('Geographr.controllers', [])
                 });
                 var initUser = function() { fireUser.once('value', function(snap) { $timeout(function() {
                     $scope.user = snap.val(); $scope.userInit = true; $scope.authStatus = 'logged';
-                    $scope.camp = snap.val().camp; $scope.movePath = snap.val().movePath || [];
+                    $scope.camp = snap.val().camp; 
+                    $scope.movePath = snap.val().movement ? snap.val().movement.movePath || [] : [];
                     $scope.moving = $scope.movePath.length > 0;
                     visiblePixels = snap.val().hasOwnProperty('visiblePixels') ? snap.val().visiblePixels : {};
                     fireRef.child('scoreBoard').on('value', updateScoreBoard);
@@ -173,8 +174,8 @@ angular.module('Geographr.controllers', [])
         $scope.reset = function() {
             fireUser.once('value',function(snap) {
                 var cleaned = snap.val(); 
-                cleaned.camp = cleaned.location = cleaned.visiblePixels = 
-                    cleaned.visitedCamps = cleaned.inventory = null;
+                cleaned.camp = cleaned.movement = cleaned.visiblePixels = cleaned.autoEat = cleaned.money =
+                    cleaned.visitedCamps = cleaned.inventory = cleaned.skills = cleaned.stats = null;
                 cleaned.new = true; fireUser.set(cleaned);
             });
         };
@@ -928,27 +929,27 @@ angular.module('Geographr.controllers', [])
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
             // TODO: Check if player is being moved by server when first loading app!
-            console.log('moving player to',snap.val());
+            console.log('moving player to',snap.val().location);
             if($scope.user.location) { 
                 fireRef.child('camps/' + $scope.user.location).off(); } // Stop listening to last grid
-            $scope.user.location = snap.val();
+            $scope.user.location = snap.val().location;
             $scope.onPixel = { 
-                terrain: localTerrain[snap.val()] ? 'Land' : 'Water', 
-                objects: localObjects[snap.val()], elevation: (localTerrain[snap.val()] || 0)
+                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', 
+                objects: localObjects[snap.val().location], elevation: (localTerrain[snap.val()] || 0)
             };
             availableActivities = [];
             $scope.cantLook = false; $scope.lookCount = 0;
-            if(campList.indexOf(snap.val()) >= 0) { // If there is a camp here
+            if(jQuery.inArray(snap.val().location,campList) >= 0) { // If there is a camp here
                 if(!$scope.user.hasOwnProperty('visitedCamps')) {
-                    $scope.user.visitedCamps = [snap.val()];
+                    $scope.user.visitedCamps = [snap.val().location];
                     fireUser.child('visitedCamps').set($scope.user.visitedCamps);
-                } else if(jQuery.inArray(snap.val(),$scope.user.visitedCamps) < 0) {
-                    $scope.user.visitedCamps.push(snap.val());
+                } else if(jQuery.inArray(snap.val().location,$scope.user.visitedCamps) < 0) {
+                    $scope.user.visitedCamps.push(snap.val().location);
                     fireUser.child('visitedCamps').update($scope.user.visitedCamps);
                 }
-                fireRef.child('camps/' + snap.val()).on('value',function(campSnap) {
+                fireRef.child('camps/' + snap.val().location).on('value',function(campSnap) {
                     var resources = gameUtility.resourceList;
-                    var campData = gameUtility.expandCamp(snap.val(),localTerrain);
+                    var campData = gameUtility.expandCamp(snap.val().location,localTerrain);
                     campData.deltas = {};
                     for(var resKey in resources) {
                         if(resources.hasOwnProperty(resKey)) {
@@ -969,9 +970,9 @@ angular.module('Geographr.controllers', [])
             } else { // If no camp, create some events/activities
                 createActivity(0.7);
             }
-            visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val());
+            visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val().location);
             canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
-            var firstWater;
+            var firstWater; $scope.movePath = snap.val().movePath || [];
             for(var i = 0; i < $scope.movePath.length; i++) {
                 if(visiblePixels.hasOwnProperty($scope.movePath[i]) &&
                     !localTerrain.hasOwnProperty($scope.movePath[i])) { // If water
@@ -987,7 +988,7 @@ angular.module('Geographr.controllers', [])
             fireUser.child('visiblePixels').set(visiblePixels);
             $timeout(function(){
                 canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0);
-                var x = snap.val().split(':')[0], y = snap.val().split(':')[1];
+                var x = snap.val().location.split(':')[0], y = snap.val().location.split(':')[1];
                 var offX = x > 277 ? 277 - x : x < 22 ? 22 - x : 0; // Keep zoom view in-bounds
                 var offY = y > 284 ? 284 - y : y < 14 ? 14 - y : 0;
                 $scope.zoomPosition = [x - 22 + offX, y - 14 + offY];
@@ -1092,16 +1093,16 @@ angular.module('Geographr.controllers', [])
                             var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                             fireRef.child('users/'+snap.val().user).update({
                                 camp: { grid: startGrid, color: colorUtility.generate('camp').hex },
-                                location: startGrid, money: 200, stats: { hunger: 100 }
+                                movement: {location: startGrid}, money: 200, stats: { hunger: 100 }
                             });
                             fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
                             fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(localUsers[snap.val().user].nick);
                             break;
                         case 'move':
                             var movePath = snap.val().path, baseMoveSpeed = 5000; // 5 seconds
-                            fireRef.child('users/'+snap.val().user+'/movePath').set(movePath);
+                            fireRef.child('users/'+snap.val().user+'/movement/movePath').set(movePath);
                             var move = function() {
-                                fireRef.child('users/'+snap.val().user).update(
+                                fireRef.child('users/'+snap.val().user+'/movement').update(
                                     { location: movePath.splice(0,1)[0], movePath: movePath });
                                 if(movePath.length < 1 || !localTerrain.hasOwnProperty(movePath[0])) {
                                     clearTimeout(moveTimers[snap.val().user]);
@@ -1138,7 +1139,7 @@ angular.module('Geographr.controllers', [])
                 canvasUtility.fillCanvas(fullFogContext,'erase');
                 zoomFogCanvas.style.visibility="hidden";
             } else { // If regular user
-                fireUser.child('location').on('value', movePlayer);
+                fireUser.child('movement').on('value', movePlayer);
                 fireUser.child('stats/hunger').on('value', function(snap) {
                     $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
                     $scope.user.stats.hunger = snap.val();

@@ -152,11 +152,12 @@ angular.module('Geographr.directives', [])
             default:
                 for(var key in input) {
                     if(input.hasOwnProperty(key) && jQuery.inArray(key.split(':')[0],types) >= 0 ) {
-                        list.push(input[key]);
+                        var item = input[key]; item.key = key; list.push(input[key]);
                     }
                 }
                 break;
         }
+        list.sort(function(a, b) { return a.key > b.key; });
         for(var i = 0; i < list.length; i++) {
             list[i].lastOfType = (i < list.length - 1 && list[i].type != list[i+1].type);
         }
