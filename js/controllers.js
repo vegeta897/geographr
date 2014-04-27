@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.241; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
+        $scope.version = 0.242; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -64,10 +64,7 @@ angular.module('Geographr.controllers', [])
                     });
                 });});};
                 auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
-                    if(userID == 2) {
-                        console.log('server re-authed!');
-                        return;
-                    }
+                    if(userID == 2) { console.log('server re-authed!'); return; }
                     $timeout(function() {
                         if(error) {
                             console.log(error, $scope.loginEmail, $scope.loginPassword);
@@ -398,19 +395,20 @@ angular.module('Geographr.controllers', [])
         };
         $scope.refineItem = function(item,amount,cost) {
             if(amount < 1 || amount > item.amount) { return; }
-            if(Math.round($scope.user.money - amount * cost * 1.5) < 0) { return; }
-            console.log('refining',amount,item,'at',cost * 1.5,'gold per unit');
+            if(Math.round($scope.user.money - amount * cost * 2) < 0) { return; }
+            console.log('refining',amount,item.name,'at',cost * 2,'gold per unit');
+            Math.seedrandom();
+            var getAmount = parseInt(amount) + Math.round(amount * (Math.random() / 1.5));
+            if(getAmount > amount) { console.log('got',getAmount-amount,'bonus',item.name,'!!'); }
+            var invItem = { type: 'resource', name: item.name, amount: getAmount }; addToInventory(invItem);
+            $scope.onPixel.camp.economy.resources[item.name].invItem = $scope.inventory['resource:'+item.name];
             if(item.amount - amount > 0) {
                 fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
                 $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
             } else { fireInventory.child(item.type+':'+item.name).remove(); 
                 delete $scope.inventory[item.type+':'+item.name]; }
-            $scope.user.money = Math.round($scope.user.money - amount * cost * 1.5);
+            $scope.user.money = Math.round($scope.user.money - amount * cost * 2);
             fireUser.child('money').set($scope.user.money);
-            Math.seedrandom();
-            var getAmount = parseInt(amount) + Math.round(amount * (Math.random() / 1.5));
-            if(getAmount > amount) { console.log('got',getAmount-amount,'bonus',item,'!!'); }
-            var invItem = { type: 'resource', name: item, amount: getAmount }; addToInventory(invItem);
         };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
@@ -419,7 +417,6 @@ angular.module('Geographr.controllers', [])
                 if(activities.hasOwnProperty(actKey)) {
                     if(Math.random() > 1-chance*activities[actKey] 
                         && jQuery.inArray(actKey,availableActivities) < 0) { // No duplicate activities
-                        console.log('creating', actKey, 'activity');
                         var activity = { type: actKey, activity: true };
                         if($scope.onPixel.objects) { 
                             $scope.onPixel.objects.push(activity); availableActivities.push(actKey);
@@ -956,7 +953,7 @@ angular.module('Geographr.controllers', [])
                         if(resources.hasOwnProperty(resKey)) {
                             // TODO: Have deltas influence demands
                             campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
-                            campData.economy.resources[resKey].invItem =  $scope.inventory ? 
+                            campData.economy.resources[resKey].invItem = $scope.inventory ? 
                                 $scope.inventory['resource:'+resKey] : undefined;
                             if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
                                 && campSnap.val().deltas.hasOwnProperty(resKey)) {
@@ -1221,7 +1218,7 @@ angular.module('Geographr.controllers', [])
                     $scope.commits.push({
                         message:results.data[i].commit.message,date:Date.parse(results.data[i].commit.committer.date)
                     });
-                    if($scope.commits.length > 7) { break; }
+                    if($scope.commits.length > 9) { break; }
                 }
             }
         });
