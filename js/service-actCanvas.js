@@ -126,9 +126,10 @@ angular.module('Geographr.actCanvas', [])
                                         case 3: edge = [Math.floor(Math.random()*260+20),280]; break;
                                     }
                                     var delta = [edge[0] - animal.targetX,edge[1] - animal.targetY];
-                                    drawCircle('main',[animal.targetX + delta[0]*distance,
-                                        animal.targetY + delta[1]*distance],event.skill+5,'#'+animal.product.color);
-
+                                    var size =  3 + animal.product.weight / 70;
+                                    drawCircle('main',
+                                        [animal.targetX + delta[0]*distance,animal.targetY + delta[1]*distance],
+                                        event.skill+size,'#'+animal.product.color);
                                 }
                                 eventMainContext.shadowColor = 'rgba(0,0,0,0)';
                             }

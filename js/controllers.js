@@ -935,7 +935,7 @@ angular.module('Geographr.controllers', [])
             $scope.user.location = snap.val().location;
             $scope.onPixel = { 
                 terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', 
-                objects: localObjects[snap.val().location], elevation: (localTerrain[snap.val()] || 0)
+                objects: localObjects[snap.val().location], elevation: (localTerrain[snap.val().location] || 0)
             };
             availableActivities = [];
             $scope.cantLook = false; $scope.lookCount = 0;

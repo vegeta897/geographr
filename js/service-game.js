@@ -48,14 +48,14 @@ angular.module('Geographr.game', [])
                 'onions': { color: 'aaa982', rarity: 0.7, avgQty: 1 }
             },
             hunt: {
-                'deer': { color: '6f4c32', rarity: 0.4, materials: ['meat','bone','pelt'] },
-                'boar': { color: '49413d', rarity: 0.7, materials: ['meat','bone','pelt'] },
-                'rabbit': { color: '6d5f58', rarity: 0, materials: ['meat','bone','pelt'] },
-                'fox': { color: '6d341e', rarity: 0.8, materials: ['meat','bone','pelt'] },
-                'wolf': { color: '4b4c4f', rarity: 0.9, materials: ['meat','bone','pelt'] },
-                'mole': { color: '433a32', rarity: 0.9, materials: ['meat','bone','pelt'] },
-                'pheasant': { color: '713926', rarity: 0.7, materials: ['meat','bone'] },
-                'duck': { color: '433a32', rarity: 0.8, materials: ['meat','bone'] }
+                'deer': { color: '6f4c32', rarity: 0.4, weight: 200, materials: ['meat','bone','pelt'] },
+                'boar': { color: '49413d', rarity: 0.7, weight: 150, materials: ['meat','bone','pelt'] },
+                'rabbit': { color: '6d5f58', rarity: 0, weight: 3, materials: ['meat','bone','pelt'] },
+                'fox': { color: '6d341e', rarity: 0.8, weight: 12, materials: ['meat','bone','pelt'] },
+                'wolf': { color: '4b4c4f', rarity: 0.9, weight: 70, materials: ['meat','bone','pelt'] },
+                'mole': { color: '433a32', rarity: 0.9, weight: 2, materials: ['meat','bone','pelt'] },
+                'pheasant': { color: '713926', rarity: 0.7, weight: 1, materials: ['meat','bone'] },
+                'duck': { color: '433a32', rarity: 0.8, weight: 3, materials: ['meat','bone'] }
             },
             mine: {
                 'salt': { color: 'a8a797', rarity: 0, profession: 'saltFarm' },
@@ -348,9 +348,8 @@ angular.module('Geographr.game', [])
                     case 'hunt':
                         if(event.step % 5 == 4) { // Clicked on-time
                             var animal = poolCopy[Math.floor(event.step/5)];
-                            dist = (click.x - animal.targetX)*(click.x - animal.targetX) +
-                                (click.y - animal.targetY)*(click.y - animal.targetY);
-                            if(dist < Math.pow(event.skill + 5,2)) {
+                            dist = Math.pow(click.x - animal.targetX,2) + Math.pow(click.y - animal.targetY,2);
+                            if(dist <= Math.pow(event.skill + 3 + animal.product.weight / 70,2)) {
                                 event.result.success = true;
                                 actCanvasUtility.drawCircle('main',[animal.targetX,animal.targetY],
                                     12,'#ff0000');
