@@ -168,7 +168,7 @@ angular.module('Geographr.actCanvas', [])
                                                             event.pool[p].targetY[2] == y1) {
                                                             strength = depth == 2 ?
                                                                 strength + Math.random()*0.1*skillFactor + 
-                                                                    (1-prod.rarity)/5 : 0;
+                                                                    (1-prod.rarity)/4 : 0;
                                                         }
                                                     }
                                                 }

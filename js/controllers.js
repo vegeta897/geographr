@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.232; $scope.versionName = 'Diplomatic Mind'; $scope.needUpdate = false;
+        $scope.version = 0.24; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -372,8 +372,9 @@ angular.module('Geographr.controllers', [])
             console.log('buying',amount,resource,'at',
                 $scope.onPixel.camp.economy.resources[resource].value,'gold per unit');
             var invItem = { type: 'resource', name: resource, amount: parseInt(amount) }; addToInventory(invItem);
-            var newDelta = $scope.onPixel.camp.deltas[resource] - amount;
-            newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
+            var newDelta = $scope.onPixel.camp.deltas[resource];
+            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
+            newDelta.amount -= amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
             $scope.user.money =
                 Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
@@ -386,8 +387,9 @@ angular.module('Geographr.controllers', [])
                 fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
             } else { fireInventory.child(item.type+':'+item.name).remove(); 
                 delete $scope.inventory[item.type+':'+item.name]; }
-            var newDelta = $scope.onPixel.camp.deltas[item.name] + amount;
-            newDelta = newDelta == 0 ? null : newDelta; // Don't save 0 deltas on firebase
+            var newDelta = $scope.onPixel.camp.deltas[item.name];
+            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
+            newDelta.amount += amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
             fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+item.name).set(newDelta); // Update delta
             $scope.user.money = Math.round($scope.user.money + amount * value * 0.8); 
             fireUser.child('money').set($scope.user.money);
@@ -515,10 +517,8 @@ angular.module('Geographr.controllers', [])
             for(var i = 0; i < invItems.length; i++) {
                 var invItem = invItems[i];
                 if($scope.hasOwnProperty('inventory')) {
-                    for(var key in $scope.inventory) {
-                        if($scope.inventory.hasOwnProperty(key) &&
-                            $scope.inventory[key].name == invItem.name &&
-                            $scope.inventory[key].type == invItem.type) {
+                    for(var key in $scope.inventory) { if(!$scope.inventory.hasOwnProperty(key)) { continue; }
+                        if($scope.inventory[key].name == invItem.name && $scope.inventory[key].type == invItem.type) {
                             $scope.inventory[key].amount += invItem.amount; invItem.amount = 0;
                         }
                     }
@@ -954,13 +954,13 @@ angular.module('Geographr.controllers', [])
                     for(var resKey in resources) {
                         if(resources.hasOwnProperty(resKey)) {
                             // TODO: Have deltas influence demands
-                            campData.deltas[resKey] = 0; // Default 0 delta
+                            campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
                             campData.economy.resources[resKey].invItem =  $scope.inventory ? 
                                 $scope.inventory['resource:'+resKey] : undefined;
                             if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
                                 && campSnap.val().deltas.hasOwnProperty(resKey)) {
                                 // Apply delta against supply
-                                campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey];
+                                campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey].amount;
                                 campData.deltas[resKey] = campSnap.val().deltas[resKey];
                             }
                         }
@@ -1128,14 +1128,38 @@ angular.module('Geographr.controllers', [])
                 fireRef.child('status').set('online');
                 var loginEmail = localStorage.get('serverLoginEmail');
                 var loginPassword = localStorage.get('serverLoginPassword');
-                var stayAwake = function() {
+                setInterval(function() {
                     fireRef.child('status').set('online');
                     fireRef.child('serverTest').set('test');
                     fireRef.child('serverTest').remove();
                     auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
-                };
-                setInterval(stayAwake, 3600000); // Re-authenticate every hour
+                }, 3600000); // Re-authenticate every hour
                 fireRef.child('status').onDisconnect().set('offline');
+                
+                var passTime = function() {
+                    fireRef.child('camps').once('value',function(snap) { if(!snap.val()) { return; }
+                        var theTime = new Date().getTime();
+                        var camps = snap.val(), newCamps = angular.copy(camps);
+                        for(var camp in camps) { if(!camps.hasOwnProperty(camp)) { continue; }
+                            var deltas = camps[camp].deltas; if(!deltas) { continue; }
+                            var campInfo = gameUtility.expandCamp(camp,localTerrain);
+                            for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
+                                var demand = campInfo.economy.resources[resource].demand;
+                                // Understocked: 0.5hr + % demand of 4hr
+                                // Overstocked: 1hr - % demand of 30min
+                                var interval = camps[camp].deltas[resource].amount < 0 ? 1800000 + demand/100 * 14400000
+                                    : 3600000 - demand/100 * 1800000; 
+                                if(theTime < camps[camp].deltas[resource].time + interval) { continue; }
+                                newCamps[camp].deltas[resource].amount += camps[camp].deltas[resource].amount < 0 ? 1 : -1;
+                                newCamps[camp].deltas[resource].time = new Date().getTime();
+                                newCamps[camp].deltas[resource] = newCamps[camp].deltas[resource].amount == 0 ?
+                                    null : newCamps[camp].deltas[resource];
+                            }
+                        }
+                        fireRef.child('camps').set(newCamps);
+                    });
+                };
+                setInterval(passTime,300000); passTime();
                 canvasUtility.fillCanvas(fullFogContext,'erase');
                 zoomFogCanvas.style.visibility="hidden";
             } else { // If regular user
@@ -1187,8 +1211,6 @@ angular.module('Geographr.controllers', [])
         };
     
         jQuery(window).keydown(onKeyDown).keyup(function() { keyUpped = true; });
-        //$scope.changeZoom($scope.zoomLevel); // Apply initial zoom on load
-        //changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]); // Apply zoom position to full view
 
         jQuery.ajax({ // Get last 8 commits from github
             url: 'https://api.github.com/repos/vegeta897/geographr/commits',
