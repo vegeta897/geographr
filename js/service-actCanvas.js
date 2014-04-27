@@ -136,8 +136,8 @@ angular.module('Geographr.actCanvas', [])
                         }
                         break;
                     case 'mine':
-                        var sizes = [100,25,5], gridCounts = [3,4,5];
-                        var skillFactor = 1 + event.skill/10;
+                        var sizes = [60,20,10], gridCounts = [5,3,2];
+                        var skillFactor = 1 + event.skill/30;
                         var drawGrid = function(x,y,depth) {
                             var size = sizes[depth];
                             var squares = gridCounts[depth];
@@ -147,38 +147,41 @@ angular.module('Geographr.actCanvas', [])
                                     var color = colorUtility.generate('mine-rock');
                                     for(p = 0; p < event.pool.length; p++) {
                                         var prod = event.pool[p].product;
-                                        var strength = 0;
+                                        var hasMineral = false;
                                         var qX = depth > 0 ? Math.floor(x/sizes[0]) : x1;
                                         var qY = depth > 0 ? Math.floor(y/sizes[0]) : y1;
                                         if(event.pool[p].targetX[0] == qX &&
                                             event.pool[p].targetY[0] == qY) {
-                                            strength = depth == 0 ? 
-                                                strength + Math.random()*0.1*skillFactor +
-                                                    (1-prod.rarity)/3 : 0;
+                                            hasMineral = depth < 1;
                                             if(depth > 0) {
-                                                qX = depth > 1 ? Math.floor(x/sizes[1])%4 : x1;
-                                                qY = depth > 1 ? Math.floor(y/sizes[1])%4 : y1;
+                                                qX = depth > 1 ? Math.floor(x/sizes[1])%gridCounts[1] : x1;
+                                                qY = depth > 1 ? Math.floor(y/sizes[1])%gridCounts[1] : y1;
                                                 if(event.pool[p].targetX[1] == qX &&
                                                     event.pool[p].targetY[1] == qY) {
-                                                    strength = depth == 1 ? 
-                                                        strength + Math.random()*0.1*skillFactor +
-                                                            (1-prod.rarity)/4 : 0;
+                                                    hasMineral = depth < 2;
                                                     if(depth > 1) {
                                                         if(event.pool[p].targetX[2] == x1 &&
                                                             event.pool[p].targetY[2] == y1) {
-                                                            strength = depth == 2 ?
-                                                                strength + Math.random()*0.1*skillFactor + 
-                                                                    (1-prod.rarity)/4 : 0;
+                                                            hasMineral = true;
                                                         }
                                                     }
                                                 }
                                             }
                                         }
-                                        strength = Math.min(strength, 0.8); // 80% strength cap
-                                        color = colorUtility.generate({
-                                            strength: strength, oldColor: color.hsv, 
-                                            newColor: colorUtility.hexToHSV(prod.color)
-                                        });
+                                        if(hasMineral) {
+                                            color.hsv = {
+                                                hue: colorUtility.hexToHSV(prod.color).hue,
+                                                sat: 0,
+                                                val: color.hsv.val
+                                            };
+                                            var strength = Math.min(0.8,Math.random()*0.3*skillFactor+0.05);
+                                            var newColor = colorUtility.hexToHSV(prod.color);
+                                            newColor.sat = newColor.sat / 2;
+                                            newColor.val += (color.hsv.val - newColor.val) / 2;
+                                            color = colorUtility.generate({
+                                                strength: strength, oldColor: color.hsv, newColor: newColor
+                                            });
+                                        }
                                     }
                                     eventMainContext.fillStyle = '#' + color.hex;
                                     eventMainContext.fillRect(
@@ -200,16 +203,7 @@ angular.module('Geographr.actCanvas', [])
                             }
                         };
                         drawGrid(0,0,0);
-//                        for(p = 0; p < event.pool.length; p++) {
-//                            eventMainContext.fillStyle = '#ff0000';
-//                            eventMainContext.fillRect(
-//                                event.pool[p].targetX[0]*100+event.pool[p].targetX[1]*25+
-//                                    event.pool[p].targetX[2]*5,
-//                                event.pool[p].targetY[0]*100+event.pool[p].targetY[1]*25+
-//                                    event.pool[p].targetY[2]*5,5,5);
-//                        }
                         
-                        if(event.clicks.length == 0) { return false; }
                         var clickDepth = 0, clicked = {}, quantClick;
                         for(var c = 0; c < event.clicks.length; c++) {
                             clickDepth = 0;
@@ -236,6 +230,15 @@ angular.module('Geographr.actCanvas', [])
                                 clicked[quantClick.x[0]+':'+quantClick.y[0]] = true;
                             }
                         }
+//                        for(p = 0; p < event.pool.length; p++) {
+//                            eventMainContext.fillStyle = '#ff0000';
+//                            eventMainContext.fillRect(
+//                                event.pool[p].targetX[0]*sizes[0]+event.pool[p].targetX[1]*sizes[1]+
+//                                    event.pool[p].targetX[2]*sizes[2]+4,
+//                                event.pool[p].targetY[0]*sizes[0]+event.pool[p].targetY[1]*sizes[1]+
+//                                    event.pool[p].targetY[2]*sizes[2]+4,2,2);
+//                        }
+                        if(event.clicks.length == 0) { return false; }
                         var result = { onTarget: false };
                         for(p = 0; p < event.pool.length; p++) {
                             for(var d = 0; d <= clickDepth; d++) {

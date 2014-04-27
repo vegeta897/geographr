@@ -34,7 +34,7 @@ angular.module('Geographr.game', [])
             failure: {
                 forage: 'You search for plants but <strong>find nothing</strong>.',
                 hunt: 'You <strong>scared off</strong> the animal!',
-                mine: 'You <strong>fumbled too much</strong> and give up for now.'
+                mine: 'You\'re <strong>too tired</strong> to continue mining.'
             }
         };
         var eventProducts = {
@@ -258,19 +258,19 @@ angular.module('Geographr.game', [])
                     }
                     break;
                 case 'mine':
-                    number = randomIntRange(6,16);
+                    number = randomIntRange(4,14);
                     for(i = 0; i < number; i++) {
                         product = pickProduct(eventType);
                         product.type = 'mineral';
                         item = { product: product,
-                            targetX: [randomIntRange(0,2),randomIntRange(0,3),randomIntRange(0,4)], 
-                            targetY: [randomIntRange(0,2),randomIntRange(0,3),randomIntRange(0,4)] };
+                            targetX: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)], 
+                            targetY: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)] };
                         while(jQuery.inArray([item.targetX.join(':'),
                             item.targetY.join(':')].join(':'),coordsChosen) >= 0) {
                             item.targetX = 
-                                [randomIntRange(0,2),randomIntRange(0,3),randomIntRange(0,4)].join(':');
+                                [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)];
                             item.targetY =
-                                [randomIntRange(0,2),randomIntRange(0,3),randomIntRange(0,4)].join(':');
+                                [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)];
                         }
                         coordsChosen.push([item.targetX.join(':'),item.targetY.join(':')].join(':'));
                         pool.push(item);
@@ -307,9 +307,10 @@ angular.module('Geographr.game', [])
                 event.seed = randomIntRange(0,10000); // For consistent redrawing
                 switch(type) {
                     case 'hunt': createEventTimers(type,4,400,800); break;
-                    case 'mine': event.clicks = []; break;
+                    case 'mine': event.clicks = []; event.energy = 10; break;
                 }
                 actCanvasUtility.drawActivity(type,event);
+                return event.energy;
             },
             playActivity: function(type,click,skill) {
                 event.skill = skill ? Math.floor(skill / 10) : 0;
@@ -356,16 +357,20 @@ angular.module('Geographr.game', [])
                                 product = animal.product; product.amount = 1; delete product.rarity;
                                 event.result.products.push(product);
                             }
+                        } else if(event.step != 'end' && event.step != 'start') {
+                            var origStep = event.step; event.step = 'start';
+                            actCanvasUtility.drawActivity('hunt',event); event.step = origStep;
+                            if(event.step > (poolCopy.length-1) * 5) { event.step = poolCopy.length*5; }
+                            else { event.step += 5 - event.step % 5 - 1; }
                         }
                         if(event.step == 'end') { event.result.ended = true; }
-                        if(!event.result.success) { // If event failed
-                            clearTimeout(event.timer); event.result.ended = true; }
                         break;
                     case 'mine':
-                        event.clicks.push([click.x,click.y]);
+                        event.clicks.push([click.x,click.y]); event.energy -= 1;
                         var result = actCanvasUtility.drawActivity(type,event);
                         if(result.onTarget) {
                             if(result.mined) {
+                                event.energy += 1;
                                 event.pool.splice(result.mined.poolIndex,1); // Remove product from pool
                                 actCanvasUtility.drawActivity(type,event); // Redraw after removing mineral
                                 product = angular.copy(result.mined.product); 
@@ -373,9 +378,11 @@ angular.module('Geographr.game', [])
                                 event.result.products.push(product);
                                 event.result.success = true; // Success, found a mineral!
                             }
-                            event.result.continue = true; // On target, continue activity
-                        } else { event.result.ended = true; } // Not on target, activity failed
+                        } else { event.energy -= 0.5; } // Not on target, energy penalty
+                        if(event.energy > 0) { event.result.continue = true; }
                         if(event.pool.length == 0) { event.result.ended = true; }
+                        else if(event.energy <= 0) { event.result.success = false; event.result.ended = true; }
+                        event.result.energy = event.energy;
                         break;
                 }
                 event.result.message = event.result.success || event.step == 'end' ? 

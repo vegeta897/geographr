@@ -108,6 +108,12 @@
                 <div ng-show="inEventTutorial" class="checkbox-inline text-muted"><label>
                     <input ng-change="updateSkips()" ng-model="skipTutorial" type="checkbox"> Don't show me this again
                 </label></div>
+                <div class="row" ng-show="event.result.energy">
+                    <div class="col-xs-3">Energy</div>
+                    <div class="progress col-xs-8 hard-left hard-right">
+                        <div class="progress-bar" ng-style="{width: event.result.energy*10+'%'}" 
+                             ng-class="{ low: event.result.energy <= 2 }"></div></div>
+                </div>
                 <p ng-show="event.message" ng-bind-html="event.message"></p>
                 <p ng-hide="event.message">&nbsp;</p>
                 <div class="well" ng-show="event.products.length > 0">
@@ -140,7 +146,7 @@
                 <table class="unstyled stats">
                     <tr><td><a data-toggle-panel href="#">Hunger</a></td><td><div class="progress">
                         <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
-                             ng-class="{ hungry: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
+                             ng-class="{ low: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
                     </div></td></tr>
                     <tr id="autoEat" class="actions start-open" ng-show="user.camp"><td colspan="2">
                         <div class="well well-sm">

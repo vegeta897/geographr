@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.24; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
+        $scope.version = 0.241; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -267,12 +267,14 @@ angular.module('Geographr.controllers', [])
                     tutorialImage.on('mousedown',function() {
                         $timeout(function() { $scope.inEventTutorial = false; });
                         tutorialImage.unbind('mousedown');
-                        actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                        gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]);
+                        setTimeout(function(){actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);},300);
+                        $scope.event.result = {
+                            energy: gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]) };
                     });
                 } else {
-                    actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);
-                    gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]);
+                    setTimeout(function(){actCanvasUtility.eventHighCanvas.on('mousedown',eventOnClick);},300);
+                    $scope.event.result = { 
+                        energy: gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]) };
                 }
             });
         };
@@ -927,8 +929,7 @@ angular.module('Geographr.controllers', [])
         
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
-            if(!snap.val()) { return; }
-            // TODO: Check if player is being moved by server when first loading app!
+            if(!snap.val() || snap.val().location == $scope.user.location) { return; }
             console.log('moving player to',snap.val().location);
             if($scope.user.location) { 
                 fireRef.child('camps/' + $scope.user.location).off(); } // Stop listening to last grid

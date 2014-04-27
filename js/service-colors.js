@@ -153,7 +153,7 @@ angular.module('Geographr.colors', [])
                             hsv = {
                                 hue: Math.floor(Math.random()*30 + 5),
                                 sat: Math.round(Math.random()*3)/100,
-                                val: Math.round(Math.random()*10 + 30)/100
+                                val: Math.round(Math.random()*5 + 35)/100
                             }; break;
                     }
                 } else {
@@ -174,6 +174,7 @@ angular.module('Geographr.colors', [])
             hexToRGB: hexToRGB,
             rgbToHSV: rgbToHSV,
             hsvToHSL: hsvToHSL,
+            hsvToHex: hsvToHex,
             hexToHSV: hexToHSV
         }
 });

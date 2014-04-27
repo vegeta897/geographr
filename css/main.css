@@ -57,11 +57,11 @@ canvas { display: block; }
 #gridView td { border: 1px solid #50575c; width: 98px; height: 98px; cursor: pointer; }
 #gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
 #gridView td.forage { border: 2px solid #7aa87d; background-color: #2f3d30; }
-#gridView td.forage:hover { background-color: #212b22; color: #fff; }
+#gridView td.forage:hover { background-color: #273227; color: #fff; }
 #gridView td.hunt { border: 2px solid #a88986; background-color: #3d2d2c; }
-#gridView td.hunt:hover { background-color: #2b201f; color: #fff; }
+#gridView td.hunt:hover { background-color: #332625; color: #fff; }
 #gridView td.mine { border: 2px solid #a8a493; background-color: #3d3c38; }
-#gridView td.mine:hover { background-color: #292826; color: #fff; }
+#gridView td.mine:hover { background-color: #31302d; color: #fff; }
 
 .canvas-container canvas { position: absolute; }
 
@@ -112,6 +112,7 @@ span.bigger-label { padding: 0.2em 0.5em 0.3em; border-radius: 5px; }
 .actions { display: none; }
 
 #eventHUD { margin-top: -28px; min-height: 26px; }
+#eventHUD .row { margin-top: 8px; }
 #eventHUD p { padding-top: 2px; margin-bottom: 8px; }
 #eventHUD .checkbox-inline { margin-left: 4px; }
 #eventHUD button.btn-item { margin-bottom: 4px; }
@@ -124,8 +125,6 @@ span.bigger-label { padding: 0.2em 0.5em 0.3em; border-radius: 5px; }
     -webkit-transition: background-color 0.6s ease, width 0.6s ease;
     transition: background-color 0.6s ease, width 0.6s ease;
 }
-.stats .progress .progress-bar.hungry { background-color: #853436; }
-.stats .progress .progress-bar.full { background-color: #49854d; }
 
 #uiContainer #autoEat td { padding-top: 8px; }
 #uiContainer #autoEat table { width: 100%; margin-bottom: 0; }
@@ -215,6 +214,8 @@ h2 small { font-size: 14px; margin-left: 12px; }
 .text-warning small { color: #d89416; }
 .well { padding: 7px; background-color: #24272b; border-color: #1b1e21; }
 .progress { height: 12px; margin-bottom: 12px; margin-top: 4px; }
+.progress .progress-bar.low { background-color: #853436; }
+.progress .progress-bar.full { background-color: #49854d; }
 .navbar { margin-bottom: 4px; border-radius: 0; }
 .icon-flipped { transform: scaleX(-1); -moz-transform: scaleX(-1); 
     -webkit-transform: scaleX(-1); -ms-transform: scaleX(-1); }
