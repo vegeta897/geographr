@@ -1,0 +1,34 @@
+<h2>Selected Object</h2>
+<p>{{ selectedObject | itemDisplay }}&emsp;
+    <span class="text-muted">({{ selectedObject.grid | grid }})</span>
+    <em ng-show="selectedObject.visited">&emsp;Visited</em>
+</p>
+<h3 ng-show="selectedObject.economy.resources">Resource Demands</h3>
+<div class="row" ng-show="selectedObject.economy.resources">
+    <div class="col-xs-6" ng-repeat="column in [0,1]">
+        <table class="unstyled table-tiny">
+            <tr ng-repeat="resource in selectedObject.economy.resources | splitList: column">
+                <td class="has-label">
+                                    <span ng-style="{'background-color': '#'+resource.color}" class="label">
+                                    {{ resource.name | capitalize }}</span></td>
+                <td class="text-right" style="color: white;"
+                    ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div class="row col-xs-12" ng-show="selectedObject.visited">
+    <h3>Camp Services</h3>
+                    <span ng-show="selectedObject.economy.blacksmith" style="background-color: #222;"
+                          class="label bigger-label">Blacksmith</span>
+</div>
+<div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
+    <h3>Contents</h3>
+    <ul class="list-unstyled">
+        <li ng-repeat="item in selectedObject.contents">
+            <button type="button" ng-click="harvestItem($index,item)" class="btn btn-xs btn-default">
+                <span class="glyphicon glyphicon-arrow-left"></span>{{ item | itemDisplay }}
+            </button>
+        </li>
+    </ul>
+</div>

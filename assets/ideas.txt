@@ -31,6 +31,9 @@ random encounters possible for every moved grid (server-side?)
 find random objects/things/activities in the 9grid view
     - no click-fests!
     - puzzle type games!
+    
+player can build campfire, begins timer to gather kindling etc.
+    - use campfire to cook food
 
 carrier pigeon/bird flies between players at all times, delivering messages
     - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.

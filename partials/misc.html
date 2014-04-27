@@ -1,0 +1,61 @@
+<!--<h2>Event Log</h2>
+<em ng-hide="eventLog.length > 0" class="text-muted">Nothing&nbsp;&nbsp;yet</em>
+<ul id="log" class="list-unstyled">
+    <li ng-repeat="event in eventLog | limitTo:10">
+        <span class="text-muted">{{ event.time | date:'H:mm:ss' }}</span> 
+        {{ event.user }} {{ event.type }}<span ng-show="event.coords" class="text-muted"> at</span> 
+        {{ event.coords[0]}}<span ng-show="event.coords" class="text-muted">, </span>{{ event.coords[1] }}
+    </li>
+</ul>-->
+<h2>Scoreboard</h2>
+<div class="col-xs-10">
+    <table class="table unstyled scoreboard">
+        <tr ng-class="{ active: $even }" ng-repeat="user in scoreBoard | limitTo:5" ng-show="user.nick">
+            <td>{{ $index+1 }}.</td>
+            <td><span ng-class="{'text-success':user.online}">{{ user.nick }}</span></td>
+            <td class="text-right"><strong>{{ user.score }}</strong></td>
+        </tr>
+    </table>
+</div>
+<div class="row form-group">
+    <div class="input-group input-group-xs col-xs-8">
+        <input class="form-control input-xs" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
+            <span class="input-group-btn"><button class="btn btn-default btn-xs" ng-click="addLabel(labelText)">
+                Add Label</button></span>
+    </div>
+</div>
+<div ng-show="user.id < 3 || user.id == 20" class="row form-group">
+    <div class="col-xs-12"><div class="checkbox-inline">
+        <label><input ng-model="editTerrain" type="checkbox">&nbsp;Terrain Edit Mode</label>
+    </div></div>
+</div>
+<div ng-show="editTerrain" class="well">
+    <div class="row form-group">
+        <div class="col-xs-4"><input class="form-control input-sm text-center" type="text" ng-model="lockedElevation"
+            ng-disabled="!lockElevation" id="inputLockedElevation" placeholder="elevation"></div>
+        <div class="col-xs-6 hard-left"><div class="checkbox-inline"><label>
+            <input ng-disabled="brushSize > 0" ng-model="lockElevation" type="checkbox">&nbsp;Fixed Elevation
+        </label></div></div>
+    </div>
+    <div class="row form-group">
+        <div class="col-xs-12">Size: {{ brushSize * 2 + 1 }}&emsp;&emsp;<input type="text" class="brush-slider" value=""
+            data-slider-handle="square" data-slider-min="0" data-slider-max="3"
+            data-slider-selection="none" data-slider-value="0" data-slider-tooltip="hide">
+        </div>
+    </div>
+    <div class="row form-group">
+        <div class="col-xs-12">
+            <div class="checkbox-inline"><label>
+                <input ng-disabled="brushSize < 1" ng-model="smoothTerrain"
+                    type="checkbox">&nbsp;Smooth Area
+            </label></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <button class="btn btn-success" ng-click="saveTerrain()">Save Terrain</button>
+        </div>
+    </div>
+</div>
+<button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
+<button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>

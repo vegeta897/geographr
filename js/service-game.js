@@ -4,21 +4,21 @@ angular.module('Geographr.game', [])
 .service('gameUtility', function(actCanvasUtility,canvasUtility) {
         // TODO: Move all these data sets into a separate file
         var resourceList = {
-            lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, unit: 'pieces' },
+            lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, unit: {pre:'planks'} },
             fish: { color: '79888e', value: 6, weight: 2, abundance: 15 },
-            fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, unit: 'pieces' },
+            fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, unit: {pre:'pieces'} },
             vegetables: { color: '7a984d', value: 12, weight: 2, abundance: 20 },
-            meat: { color: '82341c', value: 48, weight: 6, abundance: 10, unit: 'cuts' },
-            salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, unit: 'pouches' },
-            coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, unit: 'chunks' },
-            iron: { color: '59534a', value: 36, weight: 15, abundance: 15, unit: 'ingots' },
-            copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, unit: 'ingots' },
-            silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, unit: 'ingots' },
-            gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, unit: 'ingots' },
-            wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, unit: 'sacks' },
+            meat: { color: '82341c', value: 48, weight: 6, abundance: 10, unit: {pre:'cuts'} },
+            salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, unit: {pre:'pouches'} },
+            coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, unit: {post:'chunks'} },
+            iron: { color: '59534a', value: 36, weight: 15, abundance: 15, unit: {post:'ingots'} },
+            copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, unit: {post:'ingots'} },
+            silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, unit: {post:'ingots'} },
+            gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, unit: {post:'ingots'} },
+            wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, unit: {pre:'sacks'} },
             tools: { color: '5f5f5f', value: 180, weight: 16, abundance: 8 },
             weapons: { color: '5f5656', value: 240, weight: 26, abundance: 5 },
-            spices: { color: '925825', value: 60, weight: 1, abundance: 3, unit: 'pouches' }
+            spices: { color: '925825', value: 60, weight: 1, abundance: 3, unit: {pre:'pouches'} }
         };
         var eventMessages = { // Event messages/instructions to show user
             success: {

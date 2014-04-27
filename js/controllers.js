@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.242; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
+        $scope.version = 0.243; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
         $scope.commits = []; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -96,10 +96,10 @@ angular.module('Geographr.controllers', [])
                 });
     
                 // Authentication
-                $scope.authenticate = function() {
+                $scope.authenticate = function(loginEmail,loginPassword) {
                     $scope.authStatus = 'logging';
-                    auth.login('password', {email: $scope.loginEmail,
-                        password: $scope.loginPassword, rememberMe: true});
+                    auth.login('password', {email: loginEmail,
+                        password: loginPassword, rememberMe: true});
                 };
                 $scope.logOut = function() { auth.logout(); };
                 
@@ -176,10 +176,7 @@ angular.module('Geographr.controllers', [])
                 cleaned.new = true; fireUser.set(cleaned);
             });
         };
-        
-        // Redraw zoom canvas
-        $scope.refresh = function() { drawZoomCanvas(); };
-
+        $scope.refresh = function() { drawZoomCanvas(); }; // Redraw zoom canvas
         $scope.changeZoom = function(val) {
             $scope.zoomLevel = parseInt(val);
             var oldZoom = zoomSize;
@@ -339,9 +336,19 @@ angular.module('Geographr.controllers', [])
                     if($scope.lookCount >= 6) { $scope.cantLook = true; }
                 });
             };
-            setTimeout(look,2000); // Look around for 2 seconds
+            setTimeout(look,1500); playWaitingBar(1.5); // Look around for 1.5 seconds
             changeHunger(userID,1); // Use 1 hunger
-            playWaitingBar(2);
+        };
+        $scope.buildCampfire = function() { // Build a campfire on this pixel
+            if($scope.onPixel.camp) { return; }
+            $timeout(function(){ $scope.looking = true; });
+            var campfireReady = function() {
+                
+                $timeout(function(){ $scope.looking = false; $scope.onPixel.campfire = true; });
+            };
+            var buildTime = Math.floor(Math.random()*5 + 4)/2; // 2 to 4 seconds
+            setTimeout(campfireReady,buildTime*1000); playWaitingBar(buildTime);
+            changeHunger(userID,2); // Use 2 hunger
         };
         $scope.changeBrush = function(val) {
             $timeout(function(){ 
@@ -349,7 +356,7 @@ angular.module('Geographr.controllers', [])
                 $scope.lockElevation = $scope.lockElevation || val > 0; // Lock elevation if brush size bigger than 1
             });
         };
-        $scope.addLabel = function() { addingLabel = true; };
+        $scope.addLabel = function(text) { $scope.labelText = text; addingLabel = true; };
         $scope.saveTerrain = function() { // Save terrain to firebase, notify clients to update terrain
             $timeout(function() {
                 $scope.eventLog.unshift({
@@ -1143,12 +1150,16 @@ angular.module('Geographr.controllers', [])
                             var campInfo = gameUtility.expandCamp(camp,localTerrain);
                             for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
                                 var demand = campInfo.economy.resources[resource].demand;
-                                // Understocked: 0.5hr + % demand of 4hr
-                                // Overstocked: 1hr - % demand of 30min
-                                var interval = camps[camp].deltas[resource].amount < 0 ? 1800000 + demand/100 * 14400000
-                                    : 3600000 - demand/100 * 1800000; 
+                                var abundance = gameUtility.resourceList[resource].abundance;
+                                // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
+                                // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
+                                var interval = camps[camp].deltas[resource].amount < 0 ? 
+                                    demand/100 * 14400000 + (50-abundance) * 120000
+                                    : 3600000 - demand/100 * 1800000 - abundance * 60000;
+                                var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
                                 if(theTime < camps[camp].deltas[resource].time + interval) { continue; }
-                                newCamps[camp].deltas[resource].amount += camps[camp].deltas[resource].amount < 0 ? 1 : -1;
+                                newCamps[camp].deltas[resource].amount += camps[camp].deltas[resource].amount < 0 ? 
+                                    multiplier : -1 * multiplier;
                                 newCamps[camp].deltas[resource].time = new Date().getTime();
                                 newCamps[camp].deltas[resource] = newCamps[camp].deltas[resource].amount == 0 ?
                                     null : newCamps[camp].deltas[resource];

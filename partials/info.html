@@ -1,0 +1,71 @@
+<div ng-show="showCommits" id="commits">
+    <table class="table"><tr ng-repeat="commit in commits"><td><span class="text-muted">
+        {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td>
+        <td>{{ commit.message }}</td></tr></table>
+</div>
+<div id="eventHUD">
+    <div ng-show="inEventTutorial" class="checkbox-inline text-muted"><label>
+        <input ng-change="updateSkips()" ng-model="skipTutorial" type="checkbox"> Don't show me this again
+    </label></div>
+    <div class="row" ng-show="event.result.energy">
+        <div class="col-xs-3">Energy</div>
+        <div class="progress col-xs-8 hard-left hard-right">
+            <div class="progress-bar" ng-style="{width: event.result.energy*10+'%'}"
+                 ng-class="{ low: event.result.energy <= 2 }"></div></div>
+    </div>
+    <p ng-show="event.message" ng-bind-html="event.message"></p>
+    <p ng-hide="event.message">&nbsp;</p>
+    <div class="well" ng-show="event.products.length > 0">
+        <p class="event-products"><button ng-click="takeFromEvent($index)" class="btn btn-xs btn-item"
+            ng-style="{'background-color': '#'+product.color}" ng-repeat="product in event.products">
+            {{ product.amount }}x {{ product.name }}
+        </button></p>
+        <button ng-click="takeFromEvent('all')" class="btn btn-sm btn-default">Take All</button>
+    </div>
+</div>
+<div class="well" ng-show="helpText">
+    <p ng-repeat="paragraph in helpText | nlToArray">{{ paragraph }}</p>
+    <button ng-show="user.new" class="btn btn-success" ng-click="createCamp()">Create Camp</button>
+</div>
+<div ng-show="user.camp">
+    <h2>Skills</h2>
+    <em class="text-muted" ng-hide="user.skills">
+        No skills yet. Do some foraging or hunting!</em>
+    <table class="unstyled skills">
+        <tr ng-repeat="(key,val) in user.skills">
+            <td><strong>{{ key | capitalize }}</strong></td>
+            <td class="text-right"><span class="text-muted">Level</span>&nbsp;&nbsp;<strong>
+                {{ val | skillLevel }}</strong>&emsp;</td>
+            <td><div class="progress">
+                <div class="progress-bar" ng-style="{width: (val % 10 *10)+'%'}"></div>
+            </div></td>
+        </tr>
+    </table>
+    <h2>Stats</h2>
+    <table class="unstyled stats">
+        <tr><td><a data-toggle-panel href="#">Hunger</a></td><td><div class="progress">
+            <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
+                 ng-class="{ low: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
+        </div></td></tr>
+        <tr id="autoEat" class="actions start-open" ng-show="user.camp"><td colspan="2">
+            <div class="well well-sm">
+                <table class="unstyled">
+                    <tr><th colspan="2"><h3>Automatic Eating</h3></th>
+                        <th class="text-right text-muted">Amount</th></tr>
+                    <tr ng-show="noEdibles || !inventory"><td colspan="3"><span class="text-danger">
+                        Nothing left to eat!</span></td></tr>
+                    <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
+                        <td><div class="checkbox-inline text-muted"><label>
+                            <input ng-init="autoEatThis = item.autoEat"
+                                ng-change="autoEat(item.name,autoEatThis)"
+                                ng-model="autoEatThis" type="checkbox">
+                        </label></div></td>
+                        <td>{{ item.name | capitalize }}</td>
+                        <td class="text-right"><strong data-model="item.amount" class="change-effect">
+                            {{ item.amount }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </td></tr>
+    </table>
+</div>

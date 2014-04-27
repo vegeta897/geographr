@@ -219,6 +219,13 @@ h2 small { font-size: 14px; margin-left: 12px; }
 .navbar { margin-bottom: 4px; border-radius: 0; }
 .icon-flipped { transform: scaleX(-1); -moz-transform: scaleX(-1); 
     -webkit-transform: scaleX(-1); -ms-transform: scaleX(-1); }
+.input-xs {
+    height: 22px;
+    padding: 5px 5px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
 
 /* --- Unresponsive Bootstrap --- */
 
