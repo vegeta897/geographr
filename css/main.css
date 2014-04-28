@@ -112,6 +112,8 @@ span.bigger-label { padding: 0.2em 0.5em 0.3em; border-radius: 5px; }
 
 .change-effect { text-shadow: 0 0 0 rgba(255,255,255,0); line-height: 1.1em; }
 .actions { display: none; }
+.show-if-last { display: none; }
+.show-if-last:last-child { display: table-row; }
 
 #eventHUD { margin-top: -28px; min-height: 26px; }
 #eventHUD .row { margin-top: 8px; }

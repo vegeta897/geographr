@@ -8,7 +8,9 @@
     <h3>Campfire</h3>
     <table class="unstyled">
         <tr><th>Cookable Item</th>
-            <th class="text-right"><button class="btn btn-primary btn-xs">Cook All</button></th></tr>
+            <th class="text-right"><button ng-click="cookAll()" class="btn btn-primary btn-xs">
+                Cook All</button></th></tr>
+        <tr class="show-if-last"><td colspan="3">Nothing to cook.</td></tr>
         <tr ng-repeat="cookable in inventory | typeFilter:['cookable']">
             <td><span ng-style="{background: '#'+cookable.color}" class="item-color"></span>
                 &nbsp;{{ cookable.name | capitalize }}</td>

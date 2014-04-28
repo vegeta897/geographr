@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.25; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
+        $scope.version = 0.251; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -428,6 +428,16 @@ angular.module('Geographr.controllers', [])
             } else { fireInventory.child(item.type+':'+item.name).remove();
                 delete $scope.inventory[item.type+':'+item.name]; }
         };
+        $scope.cookAll = function() {
+            for(var coKey in $scope.inventory) {
+                if(!$scope.inventory.hasOwnProperty(coKey)) { continue; }
+                if(!gameUtility.edibles.hasOwnProperty($scope.inventory[coKey].name) ||
+                    $scope.inventory[coKey].status == 'cooked') { continue; }
+                if(gameUtility.edibles[$scope.inventory[coKey].name].hasOwnProperty('cookedEnergy')) {
+                    $scope.cookFood($scope.inventory[coKey],$scope.inventory[coKey].amount);
+                }
+            }
+        };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
             var activities = gameUtility.getActivityChances(localTerrain,$scope.user.location,campList);
@@ -523,8 +533,9 @@ angular.module('Geographr.controllers', [])
             }
             item.color = parent.color; item.value = parent.value; item.weight = parent.weight;
             item.unit = parent.unit; item.materials = parent.materials; item.profession = parent.profession;
+            var eatKey = item.status ? item.name+':'+item.status : item.name;
             if($scope.user.hasOwnProperty('autoEat') &&
-                jQuery.inArray(item.name,$scope.user.autoEat) >= 0) { item.autoEat = true; }
+                jQuery.inArray(eatKey,$scope.user.autoEat) >= 0) { item.autoEat = true; }
             return item;
         };
         // Add item or array of items to inventory, stacking if possible, and send to firebase
