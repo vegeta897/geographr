@@ -56,11 +56,11 @@
                         Nothing left to eat!</span></td></tr>
                     <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
                         <td><div class="checkbox-inline text-muted"><label>
-                            <input ng-init="autoEatThis = item.autoEat"
-                                ng-change="autoEat(item.name,autoEatThis)"
+                            <input ng-init="autoEatThis = item.autoEat" ng-change="autoEat(item,autoEatThis)"
                                 ng-model="autoEatThis" type="checkbox">
                         </label></div></td>
-                        <td>{{ item.name | capitalize }}</td>
+                        <td><span ng-show="item.status == 'cooked'">Cooked {{ item.name }}</span>
+                            <span ng-hide="item.status == 'cooked'">{{ item.name | capitalize }}</span></td>
                         <td class="text-right"><strong data-model="item.amount" class="change-effect">
                             {{ item.amount }}</strong></td>
                     </tr>

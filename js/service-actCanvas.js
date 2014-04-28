@@ -30,16 +30,29 @@ angular.module('Geographr.actCanvas', [])
             eventHighContext.clearRect(0,0,300,300);
         };
         var drawNoiseLines = function(count,intensity) {
+            eventLowContext.lineCap = 'square';
             for(var i = 0; i < count; i++) {
                 eventLowContext.beginPath();
-                switch(Math.floor(Math.random()*2)) {
+                switch(Math.floor(Math.random()*6)) {
                     case 0: eventLowContext.moveTo(0,Math.floor(Math.random()*300));
                         eventLowContext.lineTo(300,Math.floor(Math.random()*300)); break;
                     case 1: eventLowContext.moveTo(Math.floor(Math.random()*300),0);
                         eventLowContext.lineTo(Math.floor(Math.random()*300),300); break;
+                    case 2: eventLowContext.moveTo(0,Math.floor(Math.random()*300));
+                        eventLowContext.lineTo(Math.floor(Math.random()*300),0); break;
+                    case 3: eventLowContext.moveTo(Math.floor(Math.random()*300),0);
+                        eventLowContext.lineTo(300,Math.floor(Math.random()*300)); break;
+                    case 4: eventLowContext.moveTo(300,Math.floor(Math.random()*300));
+                        eventLowContext.lineTo(Math.floor(Math.random()*300),300); break;
+                    case 5: eventLowContext.moveTo(Math.floor(Math.random()*300),300);
+                        eventLowContext.lineTo(0,Math.floor(Math.random()*300)); break;
                 }
-                var alpha = ',' + Math.floor(Math.random()*intensity)/100;
-                eventLowContext.strokeStyle = 'rgba(200,200,200' + alpha + ')'; eventLowContext.stroke();
+                eventLowContext.lineWidth = Math.random()*30 + 80;
+                var alpha = Math.floor(Math.random()*intensity/2+intensity/2)/100;
+                var color = colorUtility.generate('nature');
+                color = colorUtility.hexToRGB(color.hex);
+                eventLowContext.strokeStyle = 'rgba('+color.r+','+color.g+','+color.b+',' + alpha + ')';
+                eventLowContext.stroke();
             }
         };
         var drawCircle = function(which,location,size,color) {
@@ -81,13 +94,13 @@ angular.module('Geographr.actCanvas', [])
                 switch(type) {
                     case 'forage':
                         clear(); // Clear event canvases
-                        Math.seedrandom(event.seed); drawNoiseLines(9,35);
+                        Math.seedrandom(event.seed); drawNoiseLines(20,8);
                         for(p = 0; p < event.pool.length; p++) {
                             eventMainContext.beginPath();
                             eventMainContext.strokeStyle = '#' + event.pool[p].product.color;
-                            eventMainContext.lineWidth = 1 + // Line width based on product amount above average
+                            eventMainContext.lineWidth = 1 + // Based on product amount above average
                                 (event.pool[p].product.amount - event.pool[p].product.avgQty)/1.5;
-                            Math.seedrandom(event.seed+event.pool[p].targetX); // Consistent event redraws
+                            Math.seedrandom(event.seed+event.pool[p].targetX+event.pool[p].targetY);
                             for(i = 0; i < 3; i++) {
                                 switch(Math.floor(Math.random()*4)) {
                                     case 0: eventMainContext.moveTo(0,Math.floor(Math.random()*300)); break;
@@ -103,7 +116,7 @@ angular.module('Geographr.actCanvas', [])
                         break;
                     case 'hunt':
                         clear(); // Clear event canvases
-                        Math.seedrandom(event.seed); drawNoiseLines(16,50);
+                        Math.seedrandom(event.seed); drawNoiseLines(20,8);
                         if(event.step % 5 > 0) {
                             var animal = event.pool[Math.floor(event.step/5)];
                             if(event.step % 5 > 0) { // If not pausing between animals

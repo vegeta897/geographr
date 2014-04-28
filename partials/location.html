@@ -1,11 +1,31 @@
 <h2>Location <small>({{ user.location | grid }})</small></h2>
 <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
     <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
-<p ng-hide="onPixel.camp" class="text-muted">Nothing here.</p>
-<button ng-disabled="looking" ng-hide="onPixel.campfire || onPixel.camp" class="btn btn-default btn-sm"
-    ng-click="buildCampfire()">Build Campfire</button>
-<div class="well object-well" ng-show="onPixel.campfire">
-    Campfire
+<p ng-hide="onPixel.camp || onPixel.campfire" class="text-muted">Nothing here.</p>
+<button ng-disabled="looking || moving" ng-hide="onPixel.campfire || onPixel.camp" 
+    class="btn btn-default btn-sm" ng-click="buildCampfire()">Build Campfire</button>
+<div class="well object-well" ng-show="onPixel.campfire" id="campfire">
+    <h3>Campfire</h3>
+    <table class="unstyled">
+        <tr><th>Cookable Item</th>
+            <th class="text-right"><button class="btn btn-primary btn-xs">Cook All</button></th></tr>
+        <tr ng-repeat="cookable in inventory | typeFilter:['cookable']">
+            <td><span ng-style="{background: '#'+cookable.color}" class="item-color"></span>
+                &nbsp;{{ cookable.name | capitalize }}</td>
+            <td class="text-right col-xs-4">
+                <div class="input-group input-group-xs" ng-class="{ 'has-error': cookAmount > cookable.amount }">
+                    <input class="form-control input-xs text-center" type="text" ng-model="cookAmount"
+                        ng-change="cookAmount = cookAmount > cookable.amount ? cookable.amount : cookAmount"
+                        ng-init="cookAmount = cookable.amount || 1" id="inputCookAmount">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default btn-xs free" ng-click="cookAmount = 1">1</button>
+                        <button class="btn btn-default btn-xs free"
+                            ng-click="cookFood(cookable,cookAmount)">Cook</button>
+                    </span>
+                </div>
+            </td>
+        </tr>
+    </table>
 </div>
 <div class="well object-well" ng-show="onPixel.camp">
     <div class="row"><div class="col-xs-12">
@@ -48,6 +68,8 @@
                         <div class="input-group input-group-sm col-xs-7 hard-right"
                              ng-class="{ 'has-error': sellAmount > val.invItem.amount }">
                             <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
+                                ng-change="sellAmount = sellAmount > val.invItem.amount ? 
+                                    val.invItem.amount : sellAmount"
                                 ng-init="sellAmount = val.invItem.amount || 1" id="inputSellAmount">
                             <span class="input-group-btn">
                             <button ng-disabled="sellAmount > val.invItem.amount" class="btn btn-default btn-sm"
@@ -88,9 +110,10 @@
             <tr ng-repeat-end class="actions"><td colspan="3"><div class="well">
                 <div class="input-group input-group-sm col-xs-12 hard-left"
                      ng-class="{ 'has-error': blacksmithAmount > item.amount }">
-                    <input class="form-control input-sm text-center" type="text"
-                        ng-model="blacksmithAmount" ng-init="blacksmithAmount = item.amount"
-                        id="inputBlacksmithAmount">
+                    <input class="form-control input-sm text-center" type="text" ng-model="blacksmithAmount"
+                       ng-change="blacksmithAmount = blacksmithAmount > item.amount ? 
+                           item.amount : blacksmithAmount"
+                       ng-init="blacksmithAmount = item.amount" id="inputBlacksmithAmount">
                     <span class="input-group-btn">
                         <button ng-disabled="blacksmithAmount > item.amount" class="btn btn-default btn-sm free" 
                             ng-click="refineItem(item,blacksmithAmount,
@@ -120,5 +143,6 @@
     </div></div>
 </div>
 <div class="well object-well" ng-repeat="object in onPixel.objects"
-     ng-show="onPixel.objects && object.type != 'camp' && !object.activity">{{ object | itemDisplay }}
+    ng-show="onPixel.objects && object.type != 'camp' && object.type != 'campfire' && !object.activity">
+    {{ object | itemDisplay }}
 </div>

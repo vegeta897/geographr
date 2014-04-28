@@ -62,6 +62,8 @@ canvas { display: block; }
 #gridView td.hunt:hover { background-color: #332625; color: #fff; }
 #gridView td.mine { border: 2px solid #a8a493; background-color: #3d3c38; }
 #gridView td.mine:hover { background-color: #31302d; color: #fff; }
+#gridView td.campfire { border: 2px solid #8f7e71; background-color: #3f3731; }
+#gridView td.campfire:hover { background-color: #312b26; color: #fff; }
 
 .canvas-container canvas { position: absolute; }
 
@@ -133,6 +135,8 @@ span.bigger-label { padding: 0.2em 0.5em 0.3em; border-radius: 5px; }
 #uiContainer #autoEat table tr td { padding: 0; }
 #uiContainer #autoEat table tr td .checkbox-inline { padding-top: 0; height: 20px; }
 
+#campfire table.unstyled tr td { padding: 5px 0 0; }
+
 .object-well h3 { color: #778187; font-size: 1.3em; margin-top: 5px; }
 .object-well table { width: 100%; margin: 4px 0; }
 .object-well .label { font-size: 1em; }
@@ -151,11 +155,10 @@ span.bigger-label { padding: 0.2em 0.5em 0.3em; border-radius: 5px; }
 #inventory table.unstyled tr.last-of-type td { padding-bottom: 3px; }
 
 #inventory table.unstyled tr.actions .well { 
-    padding-left: 12px; padding-right: 12px;
-    margin-top: 4px; margin-bottom: 2px;
+    padding-left: 12px; padding-right: 12px; margin-top: 4px; margin-bottom: 2px;
 }
 
-#uiContainer #inventory td.quantity { width: 52px; padding-right: 18px; }
+#uiContainer #inventory td.quantity { width: 44px; padding-right: 10px; }
 
 #objectInfo p { margin-bottom: 6px; }
 
@@ -220,7 +223,7 @@ h2 small { font-size: 14px; margin-left: 12px; }
 .icon-flipped { transform: scaleX(-1); -moz-transform: scaleX(-1); 
     -webkit-transform: scaleX(-1); -ms-transform: scaleX(-1); }
 .input-xs {
-    height: 22px;
+    height: 20px;
     padding: 5px 5px;
     font-size: 12px;
     line-height: 1.5;

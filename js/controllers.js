@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.244; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
+        $scope.version = 0.25; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -121,12 +121,9 @@ angular.module('Geographr.controllers', [])
     
         // Attempt to get these variables from localstorage
         var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate','tutorialSkips'];
-        for(var i = 0; i < localStores.length; i++) {
-            if(localStorage.get(localStores[i])) {
-                $scope[localStores[i]] = localStorage.get(localStores[i]);
-            }
-        }
-        if(localStorage.get('visiblePixels')) { localStorage.remove('visiblePixels'); } // Delete me
+        for(var i = 0; i < localStores.length; i++) { if(localStorage.get(localStores[i])) {
+            $scope[localStores[i]] = localStorage.get(localStores[i]);
+        }}
     
         // Set up our canvases
         var fullTerrainCanvas = document.getElementById('fullTerrainCanvas'); // Mini-map
@@ -166,7 +163,7 @@ angular.module('Geographr.controllers', [])
 
         $scope.attachControls = function() { // Define controls when controls partial is loaded
             controlsDIV = jQuery('#controls');
-            progressBar = controlsDIV.children('.progress').children('.progress-bar'); console.log(progressBar);
+            progressBar = controlsDIV.children('.progress').children('.progress-bar');
             controlsDIV.mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
                 .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
         };
@@ -229,8 +226,7 @@ angular.module('Geographr.controllers', [])
         };
         // Adding an object to the canvas
         $scope.addObject = function(object) {
-            object.adding = true;
-            $scope.placingObject = object;
+            object.adding = true; $scope.placingObject = object;
             jQuery(zoomHighCanvas).unbind('mousedown').mousedown(placeObject);
         };
         $scope.cancelAddObject = function() {
@@ -252,7 +248,7 @@ angular.module('Geographr.controllers', [])
         };
         $scope.activateObject = function(objectIndex) {
             if(!$scope.onPixel.objects || objectIndex > $scope.onPixel.objects.length - 1 
-                || $scope.onPixel.objects[objectIndex].type == 'camp') { return; }
+                || !$scope.onPixel.objects[objectIndex].activity) { return; }
             $timeout(function() {
                 $scope.event = { type: $scope.onPixel.objects[objectIndex].type }; // Get event type
                 availableActivities.splice(jQuery.inArray($scope.event.type,availableActivities),1);
@@ -286,12 +282,13 @@ angular.module('Geographr.controllers', [])
             }
         };
         $scope.autoEat = function(food,eatThis) {
+            var key = food.status == 'cooked' ? food.name + ':cooked' : food.name;
             if(eatThis) {
                 if($scope.user.hasOwnProperty('autoEat')) {
-                    $scope.user.autoEat.push(food);
-                } else { $scope.user.autoEat = [food] }
+                    $scope.user.autoEat.push(key);
+                } else { $scope.user.autoEat = [key] }
                 changeHunger(userID,0);
-            } else { $scope.user.autoEat.splice(jQuery.inArray(food,$scope.user.autoEat),1); }
+            } else { $scope.user.autoEat.splice(jQuery.inArray(key,$scope.user.autoEat),1); }
             if($scope.user.autoEat.length == 0) { // Send to firebase
                 fireUser.child('autoEat').remove(); } else { fireUser.child('autoEat').set($scope.user.autoEat); }
         };
@@ -346,7 +343,7 @@ angular.module('Geographr.controllers', [])
             if($scope.onPixel.camp) { return; }
             $timeout(function(){ $scope.looking = true; });
             var campfireReady = function() {
-                
+                //fireUser.child('movement/campfires/'+$scope.user.location).set(new Date().getTime());
                 $timeout(function(){ $scope.looking = false; $scope.onPixel.campfire = true; });
             };
             var buildTime = Math.floor(Math.random()*5 + 4)/2; // 2 to 4 seconds
@@ -419,6 +416,17 @@ angular.module('Geographr.controllers', [])
                 delete $scope.inventory[item.type+':'+item.name]; }
             $scope.user.money = Math.round($scope.user.money - amount * cost * 2);
             fireUser.child('money').set($scope.user.money);
+        };
+        $scope.cookFood = function(item,amount) {
+            if(amount < 1 || amount > item.amount) { return; }
+            console.log('cooking',amount,item.name);
+            var invItem = { type: item.type, name: item.name, amount: parseInt(amount), status: 'cooked' };
+            addToInventory(invItem);
+            if(item.amount - amount > 0) {
+                fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
+                $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
+            } else { fireInventory.child(item.type+':'+item.name).remove();
+                delete $scope.inventory[item.type+':'+item.name]; }
         };
         var createActivity = function(chance) {
             Math.seedrandom(); // True random
@@ -525,21 +533,25 @@ angular.module('Geographr.controllers', [])
             if(Object.prototype.toString.call(invItems) !== '[object Array]') { invItems = [invItems] }
             for(var i = 0; i < invItems.length; i++) {
                 var invItem = invItems[i];
+                var status = invItem.status ? ':' + invItem.status : '';
                 if($scope.hasOwnProperty('inventory')) {
                     for(var key in $scope.inventory) { if(!$scope.inventory.hasOwnProperty(key)) { continue; }
-                        if($scope.inventory[key].name == invItem.name && $scope.inventory[key].type == invItem.type) {
+                        if($scope.inventory[key].name == invItem.name && 
+                            $scope.inventory[key].type == invItem.type && 
+                            $scope.inventory[key].status == invItem.status) {
                             $scope.inventory[key].amount += invItem.amount; invItem.amount = 0;
                         }
                     }
-                    if(invItem.amount > 0) { $scope.inventory[invItem.type+':'+invItem.name] = invItem; }
-                } else { $scope.inventory = {}; $scope.inventory[invItem.type+':'+invItem.name] = invItem; }
+                    if(invItem.amount > 0) { $scope.inventory[invItem.type+':'+invItem.name+status] = invItem; }
+                } else { $scope.inventory = {}; $scope.inventory[invItem.type+':'+invItem.name+status] = invItem; }
             }
             fireInventory.set(angular.copy(cleanInventory($scope.inventory)));
         };
         
         var updateInventory = function(snapshot) {
             var itemAdded = { 
-                type: snapshot.name().split(':')[0], name: snapshot.name().split(':')[1], amount: snapshot.val() };
+                type: snapshot.name().split(':')[0], name: snapshot.name().split(':')[1], amount: snapshot.val(),
+                status: snapshot.name().split(':')[2] };
             $timeout(function(){
                 itemAdded = dressItem(itemAdded);
                 if(!$scope.inventory) { $scope.inventory = {}; }
@@ -797,9 +809,8 @@ angular.module('Geographr.controllers', [])
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
                     if(visiblePixels.hasOwnProperty(grid)) { // If grid is visible or explored
                         $scope.overPixel.objects = localObjects[grid];
-                        if(campList.indexOf(grid) >= 0 && $scope.mapElements.objects) { // If there is a camp here
-                            Math.seedrandom(grid);
-                            var text = 'Camp ' + 
+                        if(jQuery(grid,campList) >= 0 && $scope.mapElements.objects) { // If there is a camp here
+                            Math.seedrandom(grid); var text = 'Camp ' + 
                                 gameUtility.capitalize(Chance($scope.overPixel.x*1000 + $scope.overPixel.y).word());
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],text,zoomPixSize);
@@ -935,13 +946,28 @@ angular.module('Geographr.controllers', [])
         
         // When player location changes, redraw fog, adjust view, redraw player
         var movePlayer = function(snap) {
-            if(!snap.val() || snap.val().location == $scope.user.location) { return; }
+            if(!snap.val()) { return; }
+            if(snap.val().location == $scope.user.location) { return; }
+            if(snap.val().hasOwnProperty('campfires')) { // TODO: Re-use this for something else
+                $scope.onPixel.campfire = snap.val().campfires.hasOwnProperty(snap.val().location);
+                var campfireExpired = false; var newCampfires = {};
+                var theTime = new Date().getTime();
+                for(var cfKey in snap.val().campfires) {
+                    if(!snap.val().campfires.hasOwnProperty(cfKey)) { continue; }
+                    var campfire = { type:'campfire', created:snap.val().campfires[cfKey] };
+                    localObjects[cfKey] ? localObjects[cfKey].push(campfire) : localObjects[cfKey] = [campfire];
+                    if(snap.val().campfires[cfKey] + 57600000 < theTime) { // If older than 16 hours
+                        campfireExpired = true;
+                    } else { newCampfires[cfKey] = snap.val().campfires[cfKey]; }
+                }
+                if(campfireExpired) { fireUser.child('movement/campfires').set(newCampfires); }
+            }
             console.log('moving player to',snap.val().location);
             if($scope.user.location) { 
                 fireRef.child('camps/' + $scope.user.location).off(); } // Stop listening to last grid
             $scope.user.location = snap.val().location;
             $scope.onPixel = { 
-                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', 
+                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', campfire: $scope.onPixel.campfire,
                 objects: localObjects[snap.val().location], elevation: (localTerrain[snap.val().location] || 0)
             };
             availableActivities = [];
@@ -974,7 +1000,7 @@ angular.module('Geographr.controllers', [])
                     }
                     $timeout(function(){ $scope.onPixel.camp = campData; });
                 });
-            } else { // If no camp, create some events/activities
+            } else { // If no camp
                 createActivity(0.7);
             }
             visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val().location);
@@ -988,10 +1014,7 @@ angular.module('Geographr.controllers', [])
             } // Get rid of rest of path from water
             if(firstWater) { $scope.movePath.splice($scope.movePath.indexOf(firstWater),999); } 
             if($scope.movePath.length == 0) { $scope.moving = false; }
-            else {
-                var moveTime = 5 * (1 + localTerrain[$scope.movePath[0]] / 60);
-                playWaitingBar(moveTime); 
-            }
+            else { var moveTime = 5 * (1 + localTerrain[$scope.movePath[0]] / 60); playWaitingBar(moveTime); }
             fireUser.child('visiblePixels').set(visiblePixels);
             $timeout(function(){
                 canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0,localTerrain);

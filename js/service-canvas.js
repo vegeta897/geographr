@@ -185,33 +185,39 @@ angular.module('Geographr.canvas', [])
                 context.shadowBlur = zoomPixSize/12;
                 for(var i = 0; i < object.length; i++) {
                     switch(object[i].type) {
-                        case 'userCamp': context.strokeStyle = 'rgba(73,68,39,1)';
+                        case 'userCamp': 
+                            context.strokeStyle = 'rgba(73,68,39,1)'; context.fillStyle = '#'+object[i].color;
                             if(canvasType == 'full') {
                                 context.shadowColor = 'rgba(0,0,0,0)';
                                 context.fillRect((x - offset[0]),(y - offset[1]),1,1); break;
                             }
                             context.fillStyle = '#' + object[i].color;
                             context.lineWidth = zoomPixSize / 6;
+                            x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
                             context.beginPath();
-                            context.moveTo((x - offset[0])*zoomPixSize+zoomPixSize/2,
-                                (y - offset[1])*zoomPixSize+context.lineWidth/1.3);
-                            context.lineTo((x - offset[0])*zoomPixSize+zoomPixSize-context.lineWidth/1.3,
-                                (y - offset[1])*zoomPixSize+zoomPixSize/2);
-                            context.lineTo((x - offset[0])*zoomPixSize+zoomPixSize/2,
-                                (y - offset[1])*zoomPixSize+zoomPixSize-context.lineWidth/1.3);
-                            context.lineTo((x - offset[0])*zoomPixSize+context.lineWidth/1.3,
-                                (y - offset[1])*zoomPixSize+zoomPixSize/2);
-                            context.closePath();
-                            context.fill();
-                            context.stroke();
+                            context.moveTo(x+zoomPixSize/2, y+context.lineWidth/1.3);
+                            context.lineTo(x+zoomPixSize-context.lineWidth/1.3, y+zoomPixSize/2);
+                            context.lineTo(x+zoomPixSize/2, y+zoomPixSize-context.lineWidth/1.3);
+                            context.lineTo(x+context.lineWidth/1.3, y+zoomPixSize/2);
+                            context.closePath(); context.fill(); context.stroke();
                             break;
                         case 'camp': context.fillStyle = 'rgb(140,140,140)';
-                            if(canvasType == 'full') { context.fillRect((x - offset[0])*canvasPixSize,
-                                    (y - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize); }
+                            if(canvasType == 'full') { 
+                                context.fillRect((x - offset[0]),(y - offset[1]), 1,1); break; }
                             var pix = zoomPixSize % 4 ? 1 : 0; // Keep sharp pixels
-                            context.fillRect(Math.floor((x - offset[0])*canvasPixSize+zoomPixSize/4),
-                                Math.floor((y - offset[1])*canvasPixSize+zoomPixSize/4), 
+                            x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
+                            context.fillRect(Math.floor(x+zoomPixSize/4), Math.floor(y+zoomPixSize/4), 
                                 canvasPixSize-zoomPixSize/2+pix,canvasPixSize-zoomPixSize/2+pix);
+                            break;
+                        case 'campfire': context.fillStyle = 'rgba(166,95,44,0.8)';
+                            if(canvasType == 'full') { break; }
+                            x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
+                            context.beginPath();
+                            context.moveTo(x+zoomPixSize/2, y+zoomPixSize/3);
+                            context.lineTo(x+zoomPixSize*2/3, y+zoomPixSize/2);
+                            context.lineTo(x+zoomPixSize/2, y+zoomPixSize*2/3);
+                            context.lineTo(x+zoomPixSize/3, y+zoomPixSize/2);
+                            context.closePath(); context.fill();
                             break;
                     }
                 }

@@ -64,25 +64,25 @@ angular.module('Geographr.game', [])
                 'copper': { color: '924c36', rarity: 0.3, profession: 'blacksmith' },
                 'silver': { color: 'b0b0b0', rarity: 0.8, profession: 'blacksmith' },
                 'gold': { color: 'cab349', rarity: 0.85, profession: 'blacksmith' },
-                'rough emerald': { color: '4f8e4f', rarity: 0.8, profession: 'jeweler' },
-                'rough ruby': { color: '8e4242', rarity: 0.85, profession: 'jeweler' },
-                'rough topaz': { color: 'a69748', rarity: 0.8, profession: 'jeweler' },
-                'rough sapphire': { color: '485ea6', rarity: 0.85, profession: 'jeweler' },
-                'rough diamond': { color: 'c8c3c5', rarity: 0.95, profession: 'jeweler' }
+                'emerald': { color: '4f8e4f', rarity: 0.8, profession: 'jeweler' },
+                'ruby': { color: '8e4242', rarity: 0.85, profession: 'jeweler' },
+                'topaz': { color: 'a69748', rarity: 0.8, profession: 'jeweler' },
+                'sapphire': { color: '485ea6', rarity: 0.85, profession: 'jeweler' },
+                'diamond': { color: 'c8c3c5', rarity: 0.95, profession: 'jeweler' }
             }
         };
         var edibles = {
-            'red berries': { calories: 2 },
-            'blue berries': { calories: 3 },
-            'green berries': { calories: 2, effects: ['poison','nasty'] },
-            'brown mushrooms': { calories: 4 },
-            'white mushrooms': { calories: 4 },
-            'spices': { calories: 1, effects: ['nasty'] },
-            'onions': { calories: 4, effects: ['nasty'] },
-            'fruit': { calories: 6 },
-            'vegetables': { calories: 5 },
-            'fish': { calories: 20, effects: ['nasty','foodPoisoning'] },
-            'meat': { calories: 60, effects: ['nasty','foodPoisoning'] }
+            'red berries': { energy: 2 },
+            'blue berries': { energy: 3 },
+            'green berries': { energy: 2, effects: ['poison','nasty'], cookedEnergy: 3 },
+            'brown mushrooms': { energy: 4, cookedEnergy: 5 },
+            'white mushrooms': { energy: 4, cookedEnergy: 5 },
+            'spices': { energy: 1, effects: ['nasty'] },
+            'onions': { energy: 4, effects: ['nasty'], cookedEnergy: 5 },
+            'fruit': { energy: 6 },
+            'vegetables': { energy: 5, cookedEnergy: 6 },
+            'fish': { energy: 20, effects: ['nasty','bacterial'], cookedEnergy: 25 },
+            'meat': { energy: 60, effects: ['nasty','bacterial'], cookedEnergy: 65 }
         };
         var event = {}; // Holds event details
         var randomIntRange = function(min,max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
@@ -483,13 +483,16 @@ angular.module('Geographr.game', [])
                     for(var invKey in user.inventory) {
                         if(user.inventory.hasOwnProperty(invKey) && neededHunger > 0) {
                             var invItem = { type: invKey.split(':')[0], name: invKey.split(':')[1],
-                                amount: user.inventory[invKey] };
-                            if(edibles.hasOwnProperty(invItem.name) && invItem.name == user.autoEat[a]
-                                && neededHunger > 0) {
+                                status: invKey.split(':')[2], amount: user.inventory[invKey] };
+                            var cooked = invItem.status == 'cooked' ? ':cooked' : '';
+                            if(edibles.hasOwnProperty(invItem.name) && 
+                                invItem.name+cooked == user.autoEat[a] && neededHunger > 0 && 
+                                (!edibles[invItem.name].effects || invItem.status == 'cooked')) {
                                 var foodItem = edibles[invItem.name];
-                                var eatAmount = Math.floor(neededHunger/foodItem.calories);
+                                var energy = cooked ? foodItem.cookedEnergy : foodItem.energy;
+                                var eatAmount = Math.floor(neededHunger/energy);
                                 eatAmount = Math.min(eatAmount,invItem.amount);
-                                neededHunger -= foodItem.calories * eatAmount;
+                                neededHunger -= energy * eatAmount;
                                 if(eatAmount > 0) { newQuantities[invKey] = invItem.amount - eatAmount; }
                             }
                         }

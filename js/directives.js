@@ -136,9 +136,20 @@ angular.module('Geographr.directives', [])
                 for(var edKey in input) {
                     if(!input.hasOwnProperty(edKey)) { continue; }
                     if(!gameUtility.edibles.hasOwnProperty(input[edKey].name)) { continue; }
-                    if(types[1] != 'auto' || (types[1] == 'auto' &&
+                    if(types[1] != 'auto' || (types[1] == 'auto' && input[edKey].status == 'cooked') 
+                        || (types[1] == 'auto' && 
                         !gameUtility.edibles[input[edKey].name].hasOwnProperty('effects'))) {
                         list.push(input[edKey]);
+                    }
+                }
+                break;
+            case 'cookable':
+                for(var coKey in input) {
+                    if(!input.hasOwnProperty(coKey)) { continue; }
+                    if(!gameUtility.edibles.hasOwnProperty(input[coKey].name) || 
+                        input[coKey].status == 'cooked') { continue; }
+                    if(gameUtility.edibles[input[coKey].name].hasOwnProperty('cookedEnergy')) {
+                        list.push(input[coKey]);
                     }
                 }
                 break;

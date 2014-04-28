@@ -4,13 +4,14 @@
 <table class="unstyled">
     <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant','mineral']"
         ng-class="{ 'last-of-type': item.lastOfType }">
-        <td style="width: 16px;"><a href="#" data-toggle-panel>
-            <span ng-style="{background: '#'+item.color}"
-                class="item-color"></span></a></td>
         <td class="text-right quantity"><a href="#" data-toggle-panel>
             <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
+        <td style="width: 16px;"><a href="#" data-toggle-panel>
+            <span ng-style="{background: '#'+item.color}" class="item-color"></span></a></td>
         <td><span ng-show="item.unit.pre">{{ item.unit.pre }} of</span>
-            <span ng-show="item.type == 'mineral'">unrefined</span>
+            <span ng-show="item.profession == 'blacksmith' || item.profession == 'saltFarm'">unrefined</span>
+            <span ng-show="item.profession == 'jeweler'">uncut</span>
+            <span ng-show="item.status == 'cooked'">cooked</span>
             <a href="#" data-toggle-panel>{{ item.name }}</a>
             <span ng-show="item.unit.post">{{ item.unit.post }}</span>
             <span ng-show="item.type == 'animal'"> carcass</span>

@@ -149,6 +149,12 @@ angular.module('Geographr.colors', [])
                                 sat: Math.round(Math.random()*60 + 40)/100,
                                 val: Math.round(Math.random()*50 + 50)/100
                             }; break;
+                        case 'nature':
+                            hsv = {
+                                hue: Math.floor(Math.random()*85 + 25),
+                                sat: Math.round(Math.random()*15 + 15)/100,
+                                val: Math.round(Math.random()*15 + 30)/100
+                            }; break;
                         case 'mine-rock':
                             hsv = {
                                 hue: Math.floor(Math.random()*30 + 5),
