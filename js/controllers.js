@@ -2,14 +2,14 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.243; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
-        $scope.commits = []; // Latest commits from github api
+        $scope.version = 0.244; $scope.versionName = 'Fatal Mercy'; $scope.needUpdate = false;
+        $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-'; $scope.onPixel = {};
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.placingObject = {};
-        $scope.showLabels = true; $scope.showObjects = true;
+        $scope.mapElements = { labels: true, objects: true };
         $scope.editTerrain = false; $scope.smoothTerrain = false;
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = [];
@@ -793,7 +793,7 @@ angular.module('Geographr.controllers', [])
                     var grid = $scope.overPixel.x+':'+$scope.overPixel.y;
                     if(visiblePixels.hasOwnProperty(grid)) { // If grid is visible or explored
                         $scope.overPixel.objects = localObjects[grid];
-                        if(campList.indexOf(grid) >= 0 && $scope.showObjects) { // If there is a camp here
+                        if(campList.indexOf(grid) >= 0 && $scope.mapElements.objects) { // If there is a camp here
                             Math.seedrandom(grid);
                             var text = 'Camp ' + 
                                 gameUtility.capitalize(Chance($scope.overPixel.x*1000 + $scope.overPixel.y).word());
@@ -802,7 +802,7 @@ angular.module('Geographr.controllers', [])
                         } else if($scope.user.location == grid) {
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],'You',zoomPixSize);
-                        } else if($scope.user.camp.grid == grid && $scope.showObjects) {
+                        } else if($scope.user.camp.grid == grid && $scope.mapElements.objects) {
                             canvasUtility.drawLabel(zoomHighContext,[$scope.overPixel.x-$scope.zoomPosition[0],
                                 $scope.overPixel.y-$scope.zoomPosition[1]],'Your Camp',zoomPixSize);
                         }
@@ -880,7 +880,7 @@ angular.module('Geographr.controllers', [])
         $scope.drawIso = function() { canvasUtility.drawIso(fullTerrainContext,localTerrain); };
         // Draw an object, whether adding, changing, or removing
         var drawObject = function(coords,value) {
-            if(!$scope.showObjects) { return; }
+            if(!$scope.mapElements.objects) { return; }
             if(!value) { 
                 delete localObjects[coords.join(':')];
                 if($scope.selectedGrid[0].grid == coords.join(':')) { 
@@ -893,7 +893,7 @@ angular.module('Geographr.controllers', [])
         };
         // Draw labels
         var drawLabel = function(coords,text) {
-            if(!$scope.showLabels) { return; }
+            if(!$scope.mapElements.labels) { return; }
             localLabels[coords.join(':')] = text;
             canvasUtility.drawLabel(zoomObjectContext,
                 [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]],text,zoomPixSize);
@@ -1101,7 +1101,8 @@ angular.module('Geographr.controllers', [])
                                 movement: {location: startGrid}, money: 200, stats: { hunger: 100 }
                             });
                             fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
-                            fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(localUsers[snap.val().user].nick);
+                            fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(
+                                localUsers[snap.val().user].nick);
                             break;
                         case 'move':
                             var movePath = snap.val().path, baseMoveSpeed = 5000; // 5 seconds
@@ -1157,10 +1158,15 @@ angular.module('Geographr.controllers', [])
                                     demand/100 * 14400000 + (50-abundance) * 120000
                                     : 3600000 - demand/100 * 1800000 - abundance * 60000;
                                 var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
+                                interval = Math.max(1,interval);
                                 if(theTime < camps[camp].deltas[resource].time + interval) { continue; }
-                                newCamps[camp].deltas[resource].amount += camps[camp].deltas[resource].amount < 0 ? 
-                                    multiplier : -1 * multiplier;
-                                newCamps[camp].deltas[resource].time = new Date().getTime();
+                                var difference = theTime - parseInt(camps[camp].deltas[resource].time) - interval;
+                                multiplier += multiplier * Math.floor(difference / interval);
+                                difference -= interval * Math.floor(difference / interval);
+                                newCamps[camp].deltas[resource].amount = camps[camp].deltas[resource].amount < 0 ? 
+                                    Math.min(camps[camp].deltas[resource].amount + multiplier,0) : 
+                                    Math.max(camps[camp].deltas[resource].amount - multiplier,0);
+                                newCamps[camp].deltas[resource].time = theTime - difference;
                                 newCamps[camp].deltas[resource] = newCamps[camp].deltas[resource].amount == 0 ?
                                     null : newCamps[camp].deltas[resource];
                             }
@@ -1226,10 +1232,10 @@ angular.module('Geographr.controllers', [])
             dataType: 'jsonp',
             success: function(results) {
                 for(var i = 0; i < results.data.length; i++) {
-                    $scope.commits.push({
+                    $scope.commits.list.push({
                         message:results.data[i].commit.message,date:Date.parse(results.data[i].commit.committer.date)
                     });
-                    if($scope.commits.length > 9) { break; }
+                    if($scope.commits.list.length > 9) { break; }
                 }
             }
         });

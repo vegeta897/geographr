@@ -80,11 +80,11 @@ angular.module('Geographr.directives', [])
 .directive('changeEffect', function() {
     return {
         restrict: 'C',
-        scope: { model: '=' },
+        scope: { model: '=', plain: '=' },
         link: function(scope, element) {
             scope.$watch('model', function(newVal,oldVal) {
-                var color = newVal > oldVal ? 'rgba(0,255,0,255)' : 
-                    newVal < oldVal ? 'rgba(255,0,0,255)' : 'rgba(255,255,255,255)';
+                var color = newVal > oldVal && !scope.plain ? 'rgba(0,255,0,255)' : 
+                    newVal < oldVal && !scope.plain ? 'rgba(255,0,0,255)' : 'rgba(255,255,255,255)';
                 element.css({textShadow: '0 0 6px ' + color, fontSize: '1.1em'});
                 setTimeout(function(){
                     element.css({'-webkit-transition': 'text-shadow 0.8s ease-out, font-size 0.4s ease-out',

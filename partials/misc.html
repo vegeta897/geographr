@@ -59,3 +59,5 @@
 </div>
 <button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
 <button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>
+<button class="btn btn-default btn-sm" ng-click="commits.show = !commits.show">
+    {{ commits.show | iif : 'Hide' : 'Show' }} Changelog</button>

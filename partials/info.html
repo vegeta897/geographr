@@ -1,5 +1,5 @@
-<div ng-show="showCommits" id="commits">
-    <table class="table"><tr ng-repeat="commit in commits"><td><span class="text-muted">
+<div ng-show="commits.show" id="commits">
+    <table class="table"><tr ng-repeat="commit in commits.list"><td><span class="text-muted">
         {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td>
         <td>{{ commit.message }}</td></tr></table>
 </div>

@@ -1,0 +1,44 @@
+<div ng-show="userInit && terrainReady && user.camp" id="controls">
+    <div ng-class="{ invisible: !moving && !looking }" class="progress">
+        <div class="progress-bar" ng-style="{width: waitProgress+'%'}"></div></div>
+    <button ng-disabled="moving || looking" ng-click="movePlayer(0)" class="btn btn-default" id="moveUp">
+        <i class="glyphicon glyphicon-arrow-up"></i></button>
+    <button ng-hide="movePath.length == 0 || moving" ng-click="movePlayer('undo')"
+            class="btn btn-default btn-sm" id="moveUndo">
+        <i class="glyphicon glyphicon-repeat icon-flipped"></i></button>
+    <button ng-disabled="moving || looking" ng-click="movePlayer(1)" class="btn btn-default" id="moveLeft">
+        <i class="glyphicon glyphicon-arrow-left"></i></button>
+    <button ng-show="movePath.length > 0" ng-click="movePlayer('startStop')"
+            class="btn btn-default" id="moveStartStop">{{ moving | iif : 'Stop' : 'Go' }}</button>
+    <button ng-show="movePath.length == 0" ng-disabled="looking || cantLook || onPixel.camp"
+            ng-click="lookAround()" class="btn btn-default" id="lookAround">Look</button>
+    <button ng-disabled="moving || looking" ng-click="movePlayer(2)" class="btn btn-default" id="moveRight">
+        <i class="glyphicon glyphicon-arrow-right"></i></button>
+    <button ng-disabled="moving || looking" ng-click="movePlayer(3)" class="btn btn-default" id="moveDown">
+        <i class="glyphicon glyphicon-arrow-down"></i></button>
+    <button ng-hide="movePath.length == 0 || moving" ng-click="movePlayer('clear')"
+            class="btn btn-default btn-sm" id="moveClear">Clear</button>
+</div>
+<div class="col-xs-1 text-right hard-right pull-right coords">
+    {{ overPixel.x }} , {{ overPixel.y }}
+</div>
+<div class="col-xs-3 text-right pull-right coords">
+    <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
+           data-slider-max="6" data-slider-selection="none" data-slider-value="4" data-slider-tooltip="hide">
+</div>
+<div class="col-xs-2 text-right pull-right coords">
+    <div class="checkbox-inline text-muted"><label>
+        <input ng-change="refresh()" ng-model="mapElements.labels" type="checkbox"> Show Labels
+    </label></div>
+</div>
+<div class="col-xs-2 text-right pull-right hard-right coords">
+    <div class="checkbox-inline text-muted"><label>
+        <input ng-change="refresh()" ng-model="mapElements.objects" type="checkbox"> Show Objects
+    </label></div>
+</div>
+<div class="col-xs-2 hard-left pull-left coords">
+    <span class="text-muted">Terrain:</span> {{ overPixel.type | capitalize }}
+</div>
+<div class="col-xs-2 hard-left pull-left coords">
+    <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
+</div>

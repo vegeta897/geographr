@@ -3,7 +3,7 @@
     <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
 <p ng-hide="onPixel.camp" class="text-muted">Nothing here.</p>
 <button ng-disabled="looking" ng-hide="onPixel.campfire || onPixel.camp" class="btn btn-default btn-sm"
-        ng-click="buildCampfire()">Build Campfire</button>
+    ng-click="buildCampfire()">Build Campfire</button>
 <div class="well object-well" ng-show="onPixel.campfire">
     Campfire
 </div>
@@ -15,10 +15,11 @@
             <tr><th>Resource</th><th class="text-right">Supply</th><th class="text-right">Demand</th></tr>
             <tr ng-repeat-start="(key,val) in onPixel.camp.economy.resources"
                 ng-show="showAllRes || (val.supply > 0 || val.invItem || 
-                            hasItem({profession:'blacksmith',name:key}))">
+                    hasItem({profession:'blacksmith',name:key}))">
                 <td><button data-toggle-panel class="btn btn-xs btn-item"
-                            ng-style="{'background-color': '#'+val.color}">{{ key | capitalize }}</button></td>
-                <td class="text-right" ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
+                    ng-style="{'background-color': '#'+val.color}">{{ key | capitalize }}</button></td>
+                <td class="text-right change-effect" data-model="val.supply" data-plain="true"
+                    ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
                 <td style="color: #fff;" class="text-right" ng-style="{opacity:(val.demand+15)/115}">
                     {{ val.invItem | iif : '*' : '' }}{{ val.demand }}</td>
             </tr>
@@ -28,15 +29,14 @@
                         <div class="input-group input-group-sm col-xs-7 hard-right"
                              ng-class="{ 'has-error': buyAmount > val.supply }">
                             <input class="form-control input-sm text-center" type="text"
-                                   ng-model="buyAmount" ng-init="buyAmount = 1" id="inputBuyAmount">
-                                        <span class="input-group-btn">
-                                            <button ng-disabled="buyAmount > val.supply" class="btn btn-default btn-sm"
-                                                    ng-click="buyResource(key,buyAmount)">Buy</button>
-                                            <button class="btn btn-default btn-sm free"
-                                                    ng-click="buyAmount = 1">1</button>
-                                            <button class="btn btn-default btn-sm free"
-                                                    ng-click="buyAmount = val.supply">All</button>
-                                        </span>
+                                ng-model="buyAmount" ng-init="buyAmount = 1" id="inputBuyAmount">
+                            <span class="input-group-btn">
+                                <button ng-disabled="buyAmount > val.supply" class="btn btn-default btn-sm"
+                                    ng-click="buyResource(key,buyAmount)">Buy</button>
+                                <button class="btn btn-default btn-sm free" ng-click="buyAmount = 1">1</button>
+                                <button class="btn btn-default btn-sm free" 
+                                    ng-click="buyAmount = val.supply">All</button>
+                            </span>
                         </div>
                         <div class="col-xs-4 text-right hard-right">
                             <span class="text-muted">Cost: </span>
@@ -47,18 +47,15 @@
                     <div class="row" ng-show="val.invItem">
                         <div class="input-group input-group-sm col-xs-7 hard-right"
                              ng-class="{ 'has-error': sellAmount > val.invItem.amount }">
-                            <input class="form-control input-sm text-center" type="text"
-                                   ng-model="sellAmount" ng-init="sellAmount = val.invItem.amount || 1"
-                                   id="inputSellAmount">
-                                        <span class="input-group-btn">
-                                            <button ng-disabled="sellAmount > val.invItem.amount"
-                                                    class="btn btn-default btn-sm"
-                                                    ng-click="sellResource(val.invItem,sellAmount,val.value)">Sell</button>
-                                            <button class="btn btn-default btn-sm free"
-                                                    ng-click="sellAmount = 1">1</button>
-                                            <button class="btn btn-default btn-sm free"
-                                                    ng-click="sellAmount = val.invItem.amount">All</button>
-                                        </span>
+                            <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
+                                ng-init="sellAmount = val.invItem.amount || 1" id="inputSellAmount">
+                            <span class="input-group-btn">
+                            <button ng-disabled="sellAmount > val.invItem.amount" class="btn btn-default btn-sm"
+                                ng-click="sellResource(val.invItem,sellAmount,val.value)">Sell</button>
+                            <button class="btn btn-default btn-sm free" ng-click="sellAmount = 1">1</button>
+                            <button class="btn btn-default btn-sm free"
+                                ng-click="sellAmount = val.invItem.amount">All</button>
+                            </span>
                         </div>
                         <div class="col-xs-4 text-right hard-right">
                             <span class="text-muted">Value: </span>
@@ -81,7 +78,7 @@
                 <th class="text-right">Refine</th></tr>
             <tr ng-repeat-start="item in inventory | typeFilter:['blacksmith']">
                 <td><button data-toggle-panel class="btn btn-xs btn-item"
-                            ng-style="{'background-color': '#'+item.color}" >{{ item.name | capitalize }}
+                    ng-style="{'background-color': '#'+item.color}" >{{ item.name | capitalize }}
                 </button></td>
                 <td class="text-right">
                     {{ onPixel.camp.economy.blacksmith[item.name].value * 0.8 | int }}</td>
@@ -92,27 +89,26 @@
                 <div class="input-group input-group-sm col-xs-12 hard-left"
                      ng-class="{ 'has-error': blacksmithAmount > item.amount }">
                     <input class="form-control input-sm text-center" type="text"
-                           ng-model="blacksmithAmount" ng-init="blacksmithAmount = item.amount"
-                           id="inputBlacksmithAmount">
-                                <span class="input-group-btn">
-                                    <button ng-disabled="blacksmithAmount > item.amount"
-                                            class="btn btn-default btn-sm free" ng-click="refineItem(item,blacksmithAmount,
-                                        onPixel.camp.economy.blacksmith[item.name].value)">Refine</button>
-                                    <button ng-disabled="blacksmithAmount > item.amount"
-                                            class="btn btn-default btn-sm" ng-click="sellResource(item,
-                                        blacksmithAmount,onPixel.camp.economy.blacksmith[item.name].value)">Sell</button>
-                                    <button class="btn btn-default btn-sm"
-                                            ng-click="blacksmithAmount = 1">1</button>
-                                    <button class="btn btn-default btn-sm"
-                                            ng-click="blacksmithAmount = item.amount">All</button>
-                                </span>
+                        ng-model="blacksmithAmount" ng-init="blacksmithAmount = item.amount"
+                        id="inputBlacksmithAmount">
+                    <span class="input-group-btn">
+                        <button ng-disabled="blacksmithAmount > item.amount" class="btn btn-default btn-sm free" 
+                            ng-click="refineItem(item,blacksmithAmount,
+                            onPixel.camp.economy.blacksmith[item.name].value)">Refine</button>
+                        <button ng-disabled="blacksmithAmount > item.amount"
+                            class="btn btn-default btn-sm" ng-click="sellResource(item,
+                            blacksmithAmount,onPixel.camp.economy.blacksmith[item.name].value)">Sell</button>
+                        <button class="btn btn-default btn-sm" ng-click="blacksmithAmount = 1">1</button>
+                        <button class="btn btn-default btn-sm" ng-click="blacksmithAmount = item.amount">All</button>
+                    </span>
                 </div>
-                <div class="row text-only"><div class="col-xs-6">
-                    <span class="text-muted">Refine Cost: </span>
-                    <strong ng-class="{ 'text-danger': blacksmithAmount > item.amount }">
-                        {{ blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 2
-                        | int }}</strong>
-                </div>
+                <div class="row text-only">
+                    <div class="col-xs-6">
+                        <span class="text-muted">Refine Cost: </span>
+                        <strong ng-class="{ 'text-danger': blacksmithAmount > item.amount }">
+                            {{ blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 2
+                            | int }}</strong>
+                    </div>
                     <div class="col-xs-6">
                         <span class="text-muted">Sell Value: </span>
                         <strong ng-class="{ 'text-danger': blacksmithAmount > item.amount }">
