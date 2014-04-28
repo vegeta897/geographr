@@ -20,7 +20,7 @@ angular.module('Geographr.controllers', [])
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
             localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
             tutorialStep = 0, visiblePixels = {}, moveTimers = {}, waitTimer, campList = [], 
-            availableActivities = [], localUsers = {};
+            availableActivities = [], localUsers = {}, controlsDIV, progressBar;
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1');
@@ -147,8 +147,8 @@ angular.module('Geographr.controllers', [])
         var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
         var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
-        canvasUtility.fillCanvas(fullFogContext,'2e3338');
-        canvasUtility.fillCanvas(zoomFogContext,'2e3338');
+        canvasUtility.fillCanvas(fullFogContext,'2a2f33');
+        canvasUtility.fillCanvas(zoomFogContext,'2a2f33');
 
         // Disable interpolation on zoom canvases
         zoomTerrainContext.mozImageSmoothingEnabled = zoomFogContext.mozImageSmoothingEnabled = false;
@@ -163,10 +163,13 @@ angular.module('Geographr.controllers', [])
     
         fullHighCanvas.onselectstart = function() { return false; }; // Disable text selection.
         zoomHighCanvas.onselectstart = function() { return false; };
-        
-        var controlsDIV = jQuery('#controls'); // Movement controls
-        var progressBar = controlsDIV.children('.progress').children('.progress-bar');
-    
+
+        $scope.attachControls = function() { // Define controls when controls partial is loaded
+            controlsDIV = jQuery('#controls');
+            progressBar = controlsDIV.children('.progress').children('.progress-bar'); console.log(progressBar);
+            controlsDIV.mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
+                .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
+        };
         // Reset player
         $scope.reset = function() {
             fireUser.once('value',function(snap) {
@@ -624,7 +627,8 @@ angular.module('Geographr.controllers', [])
             if(!$scope.user || userID == 2) { return; }
             canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawFog(zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize);
+            canvasUtility.drawFog(
+                zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize,localTerrain);
             zoomFogContext.drawImage(fullFogCanvas, $scope.zoomPosition[0]*mainPixSize,
                 $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
             canvasUtility.drawPlayer(zoomObjectContext,$scope.user.location.split(':'),
@@ -863,8 +867,6 @@ angular.module('Geographr.controllers', [])
 
         jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
             .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
-        controlsDIV.mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
-            .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
         jQuery(fullHighCanvas).mousewheel(zoomScroll).mousemove(panOnMouseMove)
             .mousedown(panOnMouseDown).mouseup(onMouseUp);
     
@@ -992,7 +994,7 @@ angular.module('Geographr.controllers', [])
             }
             fireUser.child('visiblePixels').set(visiblePixels);
             $timeout(function(){
-                canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0);
+                canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0,localTerrain);
                 var x = snap.val().location.split(':')[0], y = snap.val().location.split(':')[1];
                 var offX = x > 277 ? 277 - x : x < 22 ? 22 - x : 0; // Keep zoom view in-bounds
                 var offY = y > 284 ? 284 - y : y < 14 ? 14 - y : 0;

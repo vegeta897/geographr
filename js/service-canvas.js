@@ -48,7 +48,7 @@ angular.module('Geographr.canvas', [])
             } else {
                 if(landNear >= 90) { color = {r:98,g:140,b:118}; }
                 else if(landNear >= 65) { color = {r:71,g:121,b:110}; }
-                else if(landNear >= 40) { color = {r:57,g:94,b:97}; }
+                else if(landNear >= 40) { color = {r:62,g:102,b:99}; }
                 else if(landNear >= 15) { color = {r:51,g:79,b:87}; }
                 else if(landNear >= 10) { color = {r:46,g:69,b:79}; }
                 else { color = {r:44,g:61,b:75}; }
@@ -287,11 +287,11 @@ angular.module('Geographr.canvas', [])
                     }
                 }
             },
-            drawFog: function(context,terrainContext,pixels,zoomPosition,zoomPixSize) {
+            drawFog: function(context,terrainContext,pixels,zoomPosition,zoomPixSize,terrain) {
                 var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
                 var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
                 var offset = canvasType == 'full' ? [0,0] : zoomPosition;
-                context.fillStyle = 'rgb(46,51,56)';
+                context.fillStyle = 'rgb(42,47,51)';
                 if(canvasType == 'full') { context.fillRect(0,0,900,600); }
                 for(var key in pixels) {
                     if(!pixels.hasOwnProperty(key)) { continue; }
@@ -301,8 +301,10 @@ angular.module('Geographr.canvas', [])
                         (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
                     if(pixels[key] == 2 && canvasType == 'full') { // If explored pixel
                         var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
+                        var isWater = !terrain.hasOwnProperty(key);
                         var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114)-15;
                         var greyed = {r:grey+(p[0]-grey)*0.3,g:grey+(p[1]-grey)*0.3, b:grey+(p[2]-grey)*0.3};
+                        greyed.b += isWater ? 10 : 0; greyed.g += isWater ? 6 : 0;
                         var fogDiff = {r:(46-greyed.r)*0.2,g:(51-greyed.g)*0.2, b:(56-greyed.b)*0.2};
                         context.fillStyle = 'rgb('+parseInt(greyed.r+fogDiff.r)+','
                             +parseInt(greyed.g+fogDiff.g)+','+parseInt(greyed.b+fogDiff.b)+')';

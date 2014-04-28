@@ -32,7 +32,7 @@
             <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
         </div>
         <!-- Canvas/Movement Controls -->
-        <div ng-include="'partials/controls.html'"></div>
+        <div ng-include="'partials/controls.html'" onload="attachControls()"></div>
     </div>
 </div>
 <div id="uiContainer" ng-show="userInit && terrainReady" class="container">

@@ -90,7 +90,6 @@ angular.module('Geographr.directives', [])
                     element.css({'-webkit-transition': 'text-shadow 0.8s ease-out, font-size 0.4s ease-out',
                         transition: 'text-shadow 0.8s ease-out, font-size 0.4s ease-out'});
                     element.css({textShadow: '0 0 0 rgba(255,255,255,0)', fontSize: '1em'});
-                    element.css({textShadow: '0 0 0 rgba(255,255,255,0)', fontSize: '1em'});
                     setTimeout(function(){
                         element.css({'-webkit-transition': 'text-shadow 0s, font-size 0s',
                             transition: 'text-shadow 0s, font-size 0s'});
