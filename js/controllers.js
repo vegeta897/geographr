@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.251; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
+        $scope.version = 0.252; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -53,6 +53,7 @@ angular.module('Geographr.controllers', [])
                     fireInventory.on('child_added', updateInventory);
                     fireInventory.on('child_changed', updateInventory);
                     fireInventory.on('child_removed', removeInventory);
+                    fireUser.child('equipment').on('value', updateEquipment);
                     fireUser.child('camp').on('value', function(snap) {
                         if(!snap.val()) { return; }
                         var userCamp = { type: 'userCamp', owner: userID,
@@ -579,6 +580,15 @@ angular.module('Geographr.controllers', [])
                 if(items == 0) { $scope.inventory = null; }
                 checkEdibles();
             });
+        };
+        var updateEquipment = function(snap) {
+            if(!snap.val()) { return; }
+            $scope.user.equipment = snap.val();
+            for(var key in $scope.user.equipment) { if(!$scope.user.equipment.hasOwnProperty(key)) { continue; }
+                var condition = $scope.user.equipment[key];
+                $scope.user.equipment[key] = gameUtility.equipment[key];
+                $scope.user.equipment[key].condition = condition;
+            }
         };
         // Selecting an object on the map
         var selectGrid = function(e) {
@@ -1123,7 +1133,7 @@ angular.module('Geographr.controllers', [])
                        }
                    }
                    localUsers = snap.val();
-               };
+                };
                 fireRef.child('users').on('value', updateUsers);
                 fireServer.on('child_added', function(snap) { // When a client action is received
                     if(snap.val().user != 1 || snap.val().action != 'logIn') {
@@ -1134,7 +1144,8 @@ angular.module('Geographr.controllers', [])
                             var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
                             fireRef.child('users/'+snap.val().user).update({
                                 camp: { grid: startGrid, color: colorUtility.generate('camp').hex },
-                                movement: {location: startGrid}, money: 200, stats: { hunger: 100 }
+                                movement: {location: startGrid}, money: 200, stats: { hunger: 100 },
+                                equipment: { 'small dagger': 100 }
                             });
                             fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
                             fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(
@@ -1160,7 +1171,7 @@ angular.module('Geographr.controllers', [])
                             break;
                         case 'stop': 
                             clearTimeout(moveTimers[snap.val().user]); 
-                            fireRef.child('users/'+snap.val().user+'/movePath').remove();
+                            fireRef.child('users/'+snap.val().user+'/movement/movePath').remove();
                             break;
                         case 'logIn': fireRef.child('scoreBoard/'+snap.val().user+'/online').set(true); break;
                         default: break;

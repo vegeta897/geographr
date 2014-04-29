@@ -363,35 +363,50 @@ angular.module('Geographr.canvas', [])
             drawPath: function(context,start,path,zoomPosition,zoomPixSize,moving) {
                 var startCoords = [parseInt(start.split(':')[0]),parseInt(start.split(':')[1])];
                 var lastCoord, thisCoord;
-                context.strokeStyle = context.fillStyle = moving ? 'rgb(0,255,50)' : 'rgb(255,255,255)';
-                context.lineWidth = zoomPixSize % 2 ? 0.5 : 1;
-                context.beginPath();
-                context.moveTo((startCoords[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
-                    (startCoords[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
-                for(var i = 0; i < path.length; i++) {
-                    lastCoord = thisCoord ? thisCoord : startCoords;
-                    thisCoord = [parseInt(path[i].split(':')[0]),parseInt(path[i].split(':')[1])];
-                    context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
-                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
-                }
-                context.stroke();
-                context.beginPath(); // Arrowhead
-                if(thisCoord[0] != lastCoord[0]) { // Left/Right arrow
-                    var offX = thisCoord[0] < lastCoord[0] ? zoomPixSize/3 : 0;
-                    context.moveTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/3+offX,
-                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2-zoomPixSize/4);
-                    context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/3+offX,
-                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2+zoomPixSize/4);
-                } else { // Up/Down arrow
-                    var offY = thisCoord[1] < lastCoord[1] ? zoomPixSize/3 : 0;
-                    context.moveTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2-zoomPixSize/4,
-                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/3+offY);
-                    context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2+zoomPixSize/4,
-                        (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/3+offY);
-                }
-                context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
-                    (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
-                context.closePath(); context.fill();
+                context.shadowColor = 'rgba(0,0,0,0.6)';
+                context.shadowOffsetX = context.shadowOffsetY = zoomPixSize/16;
+                context.shadowBlur = zoomPixSize/12;
+                context.strokeStyle = context.fillStyle = moving ? 'rgb(0,220,45)':'rgb(200,200,200)';
+                context.lineWidth = zoomPixSize < 13 ? 1 : 2;
+                var pix = context.lineWidth == 2 ? zoomPixSize % 2 ? 1 : 0 : 0.5; // Keep sharp pixels
+                var lastNode = path[path.length-1].split(':');
+                var secondLastNode = path.length > 1 ? path[path.length-2].split(':') : startCoords;
+                var drawLine = function() {
+                    context.beginPath();
+                    context.moveTo((startCoords[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2+pix,
+                        (startCoords[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2+pix);
+                    for(var i = 0; i < path.length; i++) {
+                        lastCoord = thisCoord ? thisCoord : startCoords;
+                        thisCoord = [parseInt(path[i].split(':')[0]),parseInt(path[i].split(':')[1])];
+                        context.lineTo((thisCoord[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2+pix,
+                            (thisCoord[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2+pix);
+                    }
+                    context.stroke();
+                };
+                var drawArrowhead = function(shadow) {
+                    context.shadowColor = shadow ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)';
+                    context.beginPath(); // Arrowhead
+                    if(lastNode[0] != secondLastNode[0]) { // Left/Right arrow
+                        var offX = parseInt(lastNode[0]) < secondLastNode[0] ? zoomPixSize/3 : 0;
+                        context.moveTo((lastNode[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/3+offX,
+                            (lastNode[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2-zoomPixSize/4);
+                        context.lineTo((lastNode[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/3+offX,
+                            (lastNode[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2+zoomPixSize/4);
+                    } else { // Up/Down arrow
+                        var offY = parseInt(lastNode[1]) < secondLastNode[1] ? zoomPixSize/3 : 0;
+                        context.moveTo((lastNode[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2-zoomPixSize/4,
+                            (lastNode[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/3+offY);
+                        context.lineTo((lastNode[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2+zoomPixSize/4,
+                            (lastNode[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/3+offY);
+                    }
+                    context.lineTo((lastNode[0]-zoomPosition[0])*zoomPixSize+zoomPixSize/2,
+                        (lastNode[1]-zoomPosition[1])*zoomPixSize+zoomPixSize/2);
+                    context.closePath(); context.fill();
+                };
+                if(parseInt(lastNode[0]) > secondLastNode[0] || parseInt(lastNode[1]) > secondLastNode[1]) {
+                    drawLine(); drawArrowhead(true); 
+                } else { drawArrowhead(true); drawLine(); drawArrowhead(false); }
+                context.shadowColor = 'rgba(0,0,0,0)';
             },
             drawLabel: function(context,coords,text,zoomPixSize) {
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);

@@ -84,6 +84,9 @@ angular.module('Geographr.game', [])
             'fish': { energy: 20, effects: ['nasty','bacterial'], cookedEnergy: 25 },
             'meat': { energy: 60, effects: ['nasty','bacterial'], cookedEnergy: 65 }
         };
+        var equipment = {
+            'small dagger': { weight: 2, classes: ['blade'] }
+        };
         var event = {}; // Holds event details
         var randomIntRange = function(min,max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
         var randomRange = function(min,max) { return Math.random() * (max-min) + min; };
@@ -522,6 +525,6 @@ angular.module('Geographr.game', [])
                 return output;
             },
             resourceList: resourceList, event: event, eventMessages: eventMessages, 
-            eventProducts: eventProducts, edibles: edibles
+            eventProducts: eventProducts, edibles: edibles, equipment: equipment
         }
 });
