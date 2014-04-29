@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.253; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
+        $scope.version = 0.254; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -373,22 +373,25 @@ angular.module('Geographr.controllers', [])
         };
         
         $scope.buyResource = function(resource,amount) {
-            if(amount < 1 || amount > $scope.onPixel.camp.economy.resources[resource].supply) { return; }
+            if(amount < 1 || amount > $scope.onPixel.camp.economy.resources[resource].supply || !parseInt(amount)) { 
+                return; }
             if(Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value) < 0) {
                 return; }
+            amount = parseInt(amount);
             console.log('buying',amount,resource,'at',
                 $scope.onPixel.camp.economy.resources[resource].value,'gold per unit');
             var invItem = { type: 'resource', name: resource, amount: parseInt(amount) }; addToInventory(invItem);
             var newDelta = $scope.onPixel.camp.deltas[resource];
             newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
             newDelta.amount -= amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
-            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta); // Update delta
+            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta);
             $scope.user.money =
                 Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
             fireUser.child('money').set($scope.user.money);
         };
         $scope.sellResource = function(item,amount,value) {
-            if(amount < 1 || amount > item.amount) { return; }
+            if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
+            amount = parseInt(amount);
             console.log('selling',amount,'at',value * 0.8,'gold per unit');
             if(item.amount - amount > 0) { $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
                 fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
@@ -397,12 +400,12 @@ angular.module('Geographr.controllers', [])
             var newDelta = $scope.onPixel.camp.deltas[item.name];
             newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
             newDelta.amount += amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
-            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+item.name).set(newDelta); // Update delta
+            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+item.name).set(newDelta);
             $scope.user.money = Math.round($scope.user.money + amount * value * 0.8); 
             fireUser.child('money').set($scope.user.money);
         };
         $scope.refineItem = function(item,amount,cost) {
-            if(amount < 1 || amount > item.amount) { return; }
+            if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
             if(Math.round($scope.user.money - amount * cost * 2) < 0) { return; }
             console.log('refining',amount,item.name,'at',cost * 2,'gold per unit');
             Math.seedrandom();
