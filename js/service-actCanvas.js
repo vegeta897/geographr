@@ -34,18 +34,18 @@ angular.module('Geographr.actCanvas', [])
             for(var i = 0; i < count; i++) {
                 eventLowContext.beginPath();
                 switch(Math.floor(Math.random()*6)) {
-                    case 0: eventLowContext.moveTo(0,Math.floor(Math.random()*300));
-                        eventLowContext.lineTo(300,Math.floor(Math.random()*300)); break;
-                    case 1: eventLowContext.moveTo(Math.floor(Math.random()*300),0);
-                        eventLowContext.lineTo(Math.floor(Math.random()*300),300); break;
-                    case 2: eventLowContext.moveTo(0,Math.floor(Math.random()*300));
-                        eventLowContext.lineTo(Math.floor(Math.random()*300),0); break;
-                    case 3: eventLowContext.moveTo(Math.floor(Math.random()*300),0);
-                        eventLowContext.lineTo(300,Math.floor(Math.random()*300)); break;
-                    case 4: eventLowContext.moveTo(300,Math.floor(Math.random()*300));
-                        eventLowContext.lineTo(Math.floor(Math.random()*300),300); break;
-                    case 5: eventLowContext.moveTo(Math.floor(Math.random()*300),300);
-                        eventLowContext.lineTo(0,Math.floor(Math.random()*300)); break;
+                    case 0: eventLowContext.moveTo(-50,Math.floor(Math.random()*300));
+                        eventLowContext.lineTo(350,Math.floor(Math.random()*300)); break;
+                    case 1: eventLowContext.moveTo(Math.floor(Math.random()*300),-50);
+                        eventLowContext.lineTo(Math.floor(Math.random()*300),350); break;
+                    case 2: eventLowContext.moveTo(-50,Math.floor(Math.random()*300));
+                        eventLowContext.lineTo(Math.floor(Math.random()*300),-50); break;
+                    case 3: eventLowContext.moveTo(Math.floor(Math.random()*300),-50);
+                        eventLowContext.lineTo(350,Math.floor(Math.random()*300)); break;
+                    case 4: eventLowContext.moveTo(350,Math.floor(Math.random()*300));
+                        eventLowContext.lineTo(Math.floor(Math.random()*300),350); break;
+                    case 5: eventLowContext.moveTo(Math.floor(Math.random()*300),350);
+                        eventLowContext.lineTo(-50,Math.floor(Math.random()*300)); break;
                 }
                 eventLowContext.lineWidth = Math.random()*30 + 80;
                 var alpha = Math.floor(Math.random()*intensity/2+intensity/2)/100;

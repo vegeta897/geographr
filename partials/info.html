@@ -43,15 +43,18 @@
     </table>
     <h2>Stats</h2>
     <table class="unstyled stats">
-        <tr><td><a data-toggle-panel href="#">Hunger</a></td><td><div class="progress">
-            <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
-                 ng-class="{ low: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
-        </div></td></tr>
-        <tr id="autoEat" class="actions start-open" ng-show="user.camp"><td colspan="2">
+        <tr><td>Hunger</td>
+            <td><button data-toggle-panel class="btn btn-default btn-xs">Auto-Eating</button></td>
+            <td><div class="progress">
+                <div class="progress-bar" ng-style="{width: user.stats.hunger+'%'}"
+                     ng-class="{ low: user.stats.hunger < 15, full: user.stats.hunger > 85 }"></div>
+            </div></td>
+        </tr>
+        <tr id="autoEat" class="actions" ng-show="user.camp"><td colspan="3">
             <div class="well well-sm">
                 <table class="unstyled">
                     <tr><th colspan="2"><h3>Automatic Eating</h3></th>
-                        <th class="text-right text-muted">Amount</th></tr>
+                        <th class="text-right text-muted">You have</th></tr>
                     <tr ng-show="noEdibles || !inventory"><td colspan="3"><span class="text-danger">
                         Nothing left to eat!</span></td></tr>
                     <tr ng-repeat="item in inventory | typeFilter:['edible','auto']">
@@ -68,4 +71,13 @@
             </div>
         </td></tr>
     </table>
+    <h2>Equipment</h2>
+    <div ng-repeat="equip in user.equipment" ng-style="{'background-color': '#'+equip.color}" 
+        class="equipment label big-label">
+        {{ equip.name }}
+        <div class="progress">
+            <div class="progress-bar" ng-style="{width: equip.condition+'%'}"
+                 ng-class="{ low: equip.condition < 15, full: equip.condition > 85 }"></div>
+        </div>
+    </div>
 </div>

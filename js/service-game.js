@@ -85,7 +85,7 @@ angular.module('Geographr.game', [])
             'meat': { energy: 60, effects: ['nasty','bacterial'], cookedEnergy: 65 }
         };
         var equipment = {
-            'small dagger': { weight: 2, classes: ['blade'] }
+            'small dagger': { weight: 2, color: '757270', classes: ['blade'] }
         };
         var event = {}; // Holds event details
         var randomIntRange = function(min,max) { return Math.floor(Math.random() * (max - min + 1)) + min; };

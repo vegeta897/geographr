@@ -7,8 +7,7 @@
 <div class="row" ng-show="selectedObject.economy.resources"><div class="col-xs-6" ng-repeat="column in [0,1]">
     <table class="unstyled table-tiny">
         <tr ng-repeat="resource in selectedObject.economy.resources | splitList: column">
-            <td class="has-label">
-                <span ng-style="{'background-color': '#'+resource.color}" class="label">
+            <td class="has-label"><span ng-style="{'background-color': '#'+resource.color}" class="label">
                 {{ resource.name | capitalize }}</span></td>
             <td class="text-right" style="color: white;"
                 ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>

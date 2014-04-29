@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.252; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
+        $scope.version = 0.253; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -471,8 +471,10 @@ angular.module('Geographr.controllers', [])
                 } 
                 if($scope.event.result.ended) { // Event finished
                     changeHunger(userID,2); // Use 2 hunger
-                    
-                    $timeout(function() { $scope.inEvent = false; $scope.event.message = null; },2500);
+                    $scope.event.result.energy = null;
+                    $timeout(function() { 
+                        $scope.inEvent = false; $scope.event.message = null; $scope.event.result.energy = null;
+                    },2500);
                     actCanvasUtility.eventHighCanvas.unbind('mousedown');
                 }
                 $scope.event.message = $scope.event.result.message;
@@ -588,6 +590,7 @@ angular.module('Geographr.controllers', [])
                 var condition = $scope.user.equipment[key];
                 $scope.user.equipment[key] = gameUtility.equipment[key];
                 $scope.user.equipment[key].condition = condition;
+                $scope.user.equipment[key].name = key;
             }
         };
         // Selecting an object on the map
