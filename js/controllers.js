@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.26; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+        $scope.version = 0.261; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -603,16 +603,16 @@ angular.module('Geographr.controllers', [])
         };
 
         var removeInventory = function(snapshot) {
-            $timeout(function(){
-                if($scope.onPixel.camp && $scope.inventory[snapshot.name()].type == 'resource') {
-                    delete $scope.onPixel.camp.economy.resources[$scope.inventory[snapshot.name()].name].invItem;
-                }
-                delete $scope.inventory[snapshot.name()];
-                var items = 0; // Check how many items are in the inventory
-                for(var key in $scope.inventory) { if($scope.inventory.hasOwnProperty(key)) { items++; break; } }
-                if(items == 0) { $scope.inventory = null; }
-                checkEdibles();
-            });
+            if(!$scope.inventory.hasOwnProperty(snapshot.name())) { return; }
+            if($scope.onPixel.camp && $scope.inventory[snapshot.name()].type == 'resource') {
+                delete $scope.onPixel.camp.economy.resources[$scope.inventory[snapshot.name()].name].invItem;
+            }
+            delete $scope.inventory[snapshot.name()];
+            var items = 0; // Check how many items are in the inventory
+            for(var key in $scope.inventory) { if($scope.inventory.hasOwnProperty(key)) { items++; break; } }
+            if(items == 0) { $scope.inventory = null; }
+            checkEdibles();
+            $timeout(function(){});
         };
         var updateEquipment = function(snap) {
             if(!snap.val()) { return; }
@@ -1012,7 +1012,7 @@ angular.module('Geographr.controllers', [])
             } // Stop listening to last grid
             $scope.user.location = snap.val().location;
             $scope.onPixel = { 
-                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', campfire: $scope.onPixel.campfire,
+                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water',
                 objects: localObjects[snap.val().location], elevation: (localTerrain[snap.val().location] || 0)
             };
             availableActivities = [];
@@ -1215,7 +1215,7 @@ angular.module('Geographr.controllers', [])
                 
                 var passTime = function() {
                     fireRef.child('camps').once('value',function(snap) { if(!snap.val()) { return; }
-                        var theTime = new Date().getTime();
+                        var theTime = new Date().getTime(); var message = '';
                         var camps = snap.val(), newCamps = angular.copy(camps);
                         for(var camp in camps) { if(!camps.hasOwnProperty(camp)) { continue; }
                             var deltas = camps[camp].deltas; if(!deltas) { continue; }
@@ -1234,6 +1234,9 @@ angular.module('Geographr.controllers', [])
                                 var difference = theTime - (parseInt(camps[camp].deltas[resource].time) + interval);
                                 multiplier += multiplier * Math.floor(difference / interval);
                                 difference -= interval * Math.floor(difference / interval);
+                                message += camps[camp].deltas[resource].amount < 0 ?
+                                    camp + '-' + resource + ' replenished by ' + multiplier + ' | ' :
+                                    camp + '-' + resource + ' depleted by ' + multiplier + ' | ' ;
                                 newCamps[camp].deltas[resource].amount = camps[camp].deltas[resource].amount < 0 ? 
                                     Math.min(camps[camp].deltas[resource].amount + multiplier,0) : 
                                     Math.max(camps[camp].deltas[resource].amount - multiplier,0);
@@ -1242,10 +1245,11 @@ angular.module('Geographr.controllers', [])
                                     null : newCamps[camp].deltas[resource];
                             }
                         }
+                        if(message.length > 0) { console.log(new Date(),message); }
                         fireRef.child('camps').set(newCamps);
                     });
                     fireRef.child('abundances').once('value',function(snap) { if(!snap.val()) { return; }
-                        var theTime = new Date().getTime();
+                        var theTime = new Date().getTime(); var message = '';
                         var snapAbundances = snap.val(), newAbundances = angular.copy(snapAbundances);
                         for(var grid in snapAbundances) { if(!snapAbundances.hasOwnProperty(grid)) { continue; }
                             for(var actKey in snapAbundances[grid]) { 
@@ -1255,11 +1259,13 @@ angular.module('Geographr.controllers', [])
                                 var difference = theTime - (parseInt(snapAbundances[grid][actKey].time) + interval);
                                 var multiplier = 1 + Math.floor(difference / interval);
                                 difference -= interval * Math.floor(difference / interval);
+                                message += actKey + ' replenished by ' + multiplier + ' | ';
                                 newAbundances[grid][actKey].amount += multiplier;
                                 newAbundances[grid][actKey] = newAbundances[grid][actKey].amount >= 0 ?
                                     null : newAbundances[grid][actKey];
                             }
                         }
+                        if(message.length > 0) { console.log(new Date(),message); }
                         fireRef.child('abundances').set(newAbundances);
                     });
                 };

@@ -2,7 +2,7 @@
 <p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
     <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
 <p ng-hide="onPixel.camp || onPixel.campfire" class="text-muted">Nothing here.</p>
-<button ng-disabled="looking || moving" ng-hide="onPixel.campfire || onPixel.camp" 
+<button ng-disabled="looking || moving || inEvent" ng-hide="onPixel.campfire || onPixel.camp" 
     class="btn btn-default btn-sm" ng-click="buildCampfire()">Build Campfire</button>
 <div class="well object-well" ng-show="onPixel.campfire" id="campfire">
     <h3>Campfire</h3>
@@ -47,7 +47,7 @@
             <tr class="actions" ng-repeat-end><td colspan="3" ng-show="showAllRes || (val.supply > 0 || val.invItem || 
                 hasItem({profession:'blacksmith',name:key}))" class="hard-right">
                 <div class="well well-sm">
-                    <div ng-class="{'action-row':val.invItem}">
+                    <div ng-show="val.supply > 0" ng-class="{'action-row':val.invItem}">
                         <select class="form-control num-select" ng-model="buyAmount"
                             ng-init="buyAmount = val.supply || 1">
                             <option ng-repeat="count in countTo(val.supply)">{{ count }}</option>

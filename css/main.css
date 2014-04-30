@@ -207,6 +207,7 @@ strong { color: #ccc; }
     top: 3px;
     margin-right: 4px;
 }
+.item-color.cooked { border: 2px solid #490C0C; }
 
 .attach-top { position: relative; top: -6px; }
 
