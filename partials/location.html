@@ -12,20 +12,18 @@
                 Cook All</button></th></tr>
         <tr class="show-if-last"><td colspan="3">Nothing to cook.</td></tr>
         <tr ng-repeat="cookable in inventory | typeFilter:['cookable']">
-            <td><span ng-style="{background: '#'+cookable.color}" class="item-color"></span>
-                &nbsp;{{ cookable.name | capitalize }}</td>
-            <td class="text-right col-xs-4">
-                <div class="input-group input-group-xs" ng-class="{ 'has-error': cookAmount > cookable.amount }">
-                    <input class="form-control input-xs text-center" type="text" ng-model="cookAmount"
-                        ng-change="cookAmount = cookAmount > cookable.amount ? 
-                        cookable.amount : cookAmount < 1 ? 1 : cookAmount"
-                        ng-init="cookAmount = cookable.amount || 1" id="inputCookAmount">
-                    <span class="input-group-btn">
-                        <button class="btn btn-default btn-xs free" ng-click="cookAmount = 1">1</button>
-                        <button class="btn btn-default btn-xs free"
-                            ng-click="cookFood(cookable,cookAmount)">Cook</button>
-                    </span>
-                </div>
+            <td><span ng-style="{'background-color': '#'+cookable.color}" class="label">
+                {{ cookable.name | capitalize }}</span></td>
+            <td style="width: 130px;" class="text-right">
+                <select class="form-control num-select" ng-model="cookAmount" 
+                    ng-init="cookAmount = cookable.amount || 1">
+                    <option ng-repeat="count in countTo(cookable.amount)">{{ count }}</option>
+                </select>
+                <span class="btn-group btn-group-xs">
+                    <button class="btn btn-default" ng-click="cookAmount = 1">1</button>
+                    <button class="btn btn-default primary"
+                        ng-click="cookFood(cookable,cookAmount)">Cook</button>
+                </span>
             </td>
         </tr>
     </table>
@@ -47,49 +45,39 @@
                     {{ val.invItem | iif : '*' : '' }}{{ val.demand }}</td>
             </tr>
             <tr class="actions" ng-repeat-end><td colspan="3" ng-show="showAllRes || (val.supply > 0 || val.invItem || 
-                hasItem({profession:'blacksmith',name:key}))">
+                hasItem({profession:'blacksmith',name:key}))" class="hard-right">
                 <div class="well well-sm">
-                    <div class="row">
-                        <div class="input-group input-group-sm col-xs-7 hard-right"
-                             ng-class="{ 'has-error': buyAmount > val.supply }">
-                            <input class="form-control input-sm text-center" type="text"
-                                ng-change="buyAmount = buyAmount > val.supply ? val.supply : buyAmount < 1 ? 
-                                1 : buyAmount"
-                                ng-model="buyAmount" ng-init="buyAmount = 1" id="inputBuyAmount">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default btn-sm free" ng-click="buyAmount = 1">1</button>
-                                <button class="btn btn-default btn-sm free" 
-                                    ng-click="buyAmount = val.supply">All</button>
-                                <button ng-disabled="buyAmount > val.supply || buyAmount < 0"
-                                    class="btn btn-default btn-sm" ng-click="buyResource(key,buyAmount)">Buy</button>
-                            </span>
-                        </div>
-                        <div class="col-xs-4 text-right hard-right">
+                    <div ng-class="{'action-row':val.invItem}">
+                        <select class="form-control num-select" ng-model="buyAmount"
+                            ng-init="buyAmount = val.supply || 1">
+                            <option ng-repeat="count in countTo(val.supply)">{{ count }}</option>
+                        </select>
+                        <span class="btn-group btn-group-xs">
+                            <button class="btn btn-default" ng-click="buyAmount = 1">1</button>
+                            <button class="btn btn-default" 
+                                ng-click="buyAmount = val.supply">All</button>
+                            <button ng-disabled="buyAmount * val.value > user.money"
+                                class="btn btn-default primary" style="width: 40px;" 
+                                ng-click="buyResource(key,buyAmount)">Buy</button>
                             <span class="text-muted">Cost: </span>
                             <strong ng-class="{'text-danger': (buyAmount * val.value > user.money)}">
                                 {{ buyAmount * val.value | int }}</strong>
-                        </div>
+                        </span>
                     </div>
-                    <div class="row" ng-show="val.invItem">
-                        <div class="input-group input-group-sm col-xs-7 hard-right"
-                             ng-class="{ 'has-error': sellAmount > val.invItem.amount }">
-                            <input class="form-control input-sm text-center" type="text" ng-model="sellAmount"
-                                ng-change="sellAmount = sellAmount > val.invItem.amount ? 
-                                val.invItem.amount : sellAmount < 1 ? 1 : sellAmount"
-                                ng-init="sellAmount = val.invItem.amount || 1" id="inputSellAmount">
-                            <span class="input-group-btn">
-                            <button class="btn btn-default btn-sm free" ng-click="sellAmount = 1">1</button>
-                            <button class="btn btn-default btn-sm free"
+                    <div ng-show="val.invItem">
+                        <select class="form-control num-select" ng-model="sellAmount"
+                                ng-init="sellAmount = val.invItem.amount || 1">
+                            <option ng-repeat="count in countTo(val.invItem.amount)">{{ count }}</option>
+                        </select>
+                        <span class="btn-group btn-group-xs">
+                            <button class="btn btn-default" ng-click="sellAmount = 1">1</button>
+                            <button class="btn btn-default"
                                 ng-click="sellAmount = val.invItem.amount">All</button>
-                            <button ng-disabled="sellAmount > val.invItem.amount || sellAmount < 0"
-                                class="btn btn-default btn-sm"
+                            <button class="btn btn-default primary" style="width: 40px;"
                                 ng-click="sellResource(val.invItem,sellAmount,val.value)">Sell</button>
-                            </span>
-                        </div>
-                        <div class="col-xs-4 text-right hard-right">
                             <span class="text-muted">Value: </span>
                             <strong>{{ sellAmount * val.value * 0.8 | int }}</strong>
-                        </div>
+                        </span>
                     </div>
                 </div>
             </td></tr>
@@ -116,35 +104,34 @@
                     {{ onPixel.camp.economy.blacksmith[item.name].value * 2 | int }}</td>
             </tr>
             <tr ng-repeat-end class="actions"><td colspan="3"><div class="well">
-                <div class="input-group input-group-sm col-xs-12 hard-left"
-                     ng-class="{ 'has-error': blacksmithAmount > item.amount }">
-                    <input class="form-control input-sm text-center" type="text" ng-model="blacksmithAmount"
-                        ng-change="blacksmithAmount = blacksmithAmount > item.amount ? 
-                        item.amount : blacksmithAmount < 1 ? 1 : blacksmithAmount"
-                        ng-init="blacksmithAmount = item.amount" id="inputBlacksmithAmount">
-                    <span class="input-group-btn">
-                        <button class="btn btn-default btn-sm" ng-click="blacksmithAmount = 1">1</button>
-                        <button class="btn btn-default btn-sm" ng-click="blacksmithAmount = item.amount">All</button>
-                        <button ng-disabled="blacksmithAmount > item.amount" class="btn btn-default btn-sm free"
+                <div class="hard-left">
+                    <select class="form-control num-select" ng-model="blacksmithAmount"
+                        ng-init="blacksmithAmount = item.amount || 1">
+                        <option ng-repeat="count in countTo(item.amount)">{{ count }}</option>
+                    </select>
+                    <span class="btn-group btn-group-xs">
+                        <button class="btn btn-default" ng-click="blacksmithAmount = 1">1</button>
+                        <button class="btn btn-default" ng-click="blacksmithAmount = item.amount">All</button>
+                        <button ng-disabled="blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 2 
+                            > user.money" class="btn btn-default primary"
                             ng-click="refineItem(item,blacksmithAmount,
                             onPixel.camp.economy.blacksmith[item.name].value)">Refine</button>
-                        <button ng-disabled="blacksmithAmount > item.amount"
-                            class="btn btn-default btn-sm" ng-click="sellResource(item,
+                        <button class="btn btn-default primary" ng-click="sellResource(item,
                             blacksmithAmount,onPixel.camp.economy.blacksmith[item.name].value)">Sell</button>
                     </span>
                 </div>
                 <div class="row text-only">
                     <div class="col-xs-6">
                         <span class="text-muted">Refine Cost: </span>
-                        <strong ng-class="{ 'text-danger': blacksmithAmount > item.amount }">
-                            {{ blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 2
-                            | int }}</strong>
+                        <strong ng-class="{ 'text-danger': blacksmithAmount * 
+                            onPixel.camp.economy.blacksmith[item.name].value * 2 > user.money }">
+                            {{ blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 2 | int }}
+                        </strong>
                     </div>
                     <div class="col-xs-6">
                         <span class="text-muted">Sell Value: </span>
-                        <strong ng-class="{ 'text-danger': blacksmithAmount > item.amount }">
-                            {{ blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 0.8
-                            | int }}</strong>
+                        <strong>{{ blacksmithAmount * onPixel.camp.economy.blacksmith[item.name].value * 0.8 | int }}
+                            </strong>
                     </div>
                 </div>
             </div></td></tr>

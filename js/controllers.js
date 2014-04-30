@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.254; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
+        $scope.version = 0.255; $scope.versionName = 'Dual Whisper'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -177,6 +177,8 @@ angular.module('Geographr.controllers', [])
                 cleaned.new = true; fireUser.set(cleaned);
             });
         };
+        $scope.countTo = function(n) { 
+            var counted = []; for(var i = 0; i < n; i++) { counted.push(i+1); } return counted; };
         $scope.refresh = function() { drawZoomCanvas(); }; // Redraw zoom canvas
         $scope.changeZoom = function(val) {
             $scope.zoomLevel = parseInt(val);
@@ -443,6 +445,11 @@ angular.module('Geographr.controllers', [])
             }
         };
         var createActivity = function(chance) {
+            
+            // TODO: Don't create activities at random!! Create activities if products are to be found at location
+            //  - Abundance affects product count, goes down with each attempt (even if no products gained)
+            //  - Maybe display abundance as a meter in 9grid tile?
+            
             Math.seedrandom(); // True random
             var activities = gameUtility.getActivityChances(localTerrain,$scope.user.location,campList);
             for(var actKey in activities) {
@@ -476,7 +483,8 @@ angular.module('Geographr.controllers', [])
                     changeHunger(userID,2); // Use 2 hunger
                     $scope.event.result.energy = null;
                     $timeout(function() { 
-                        $scope.inEvent = false; $scope.event.message = null; $scope.event.result.energy = null;
+                        $scope.inEvent = false; $scope.event.message = null; 
+                        if($scope.event.hasOwnProperty('result')) { $scope.event.result.energy = null; }
                     },2500);
                     actCanvasUtility.eventHighCanvas.unbind('mousedown');
                 }
@@ -542,6 +550,9 @@ angular.module('Geographr.controllers', [])
             var eatKey = item.status ? item.name+':'+item.status : item.name;
             if($scope.user.hasOwnProperty('autoEat') &&
                 jQuery.inArray(eatKey,$scope.user.autoEat) >= 0) { item.autoEat = true; }
+            var actions = gameUtility.getItemActions(item);
+            item.hasActions = actions !== false;
+            if(item.hasActions) { item.actions = actions; }
             return item;
         };
         // Add item or array of items to inventory, stacking if possible, and send to firebase
@@ -569,16 +580,21 @@ angular.module('Geographr.controllers', [])
             var itemAdded = { 
                 type: snapshot.name().split(':')[0], name: snapshot.name().split(':')[1], amount: snapshot.val(),
                 status: snapshot.name().split(':')[2] };
-            $timeout(function(){
-                itemAdded = dressItem(itemAdded);
-                if(!$scope.inventory) { $scope.inventory = {}; }
-                $scope.inventory[snapshot.name()] = itemAdded;
-                checkEdibles();
-            });
+            itemAdded = dressItem(itemAdded);
+            if($scope.onPixel.camp && itemAdded.type == 'resource') {
+                $scope.onPixel.camp.economy.resources[itemAdded.name].invItem = itemAdded;
+            }
+            if(!$scope.inventory) { $scope.inventory = {}; }
+            $scope.inventory[snapshot.name()] = itemAdded;
+            checkEdibles();
+            $timeout(function(){});
         };
 
         var removeInventory = function(snapshot) {
             $timeout(function(){
+                if($scope.onPixel.camp && $scope.inventory[snapshot.name()].type == 'resource') {
+                    delete $scope.onPixel.camp.economy.resources[$scope.inventory[snapshot.name()].name].invItem;
+                }
                 delete $scope.inventory[snapshot.name()];
                 var items = 0; // Check how many items are in the inventory
                 for(var key in $scope.inventory) { if($scope.inventory.hasOwnProperty(key)) { items++; break; } }
@@ -1011,21 +1027,19 @@ angular.module('Geographr.controllers', [])
                     var resources = gameUtility.resourceList;
                     var campData = gameUtility.expandCamp(snap.val().location,localTerrain);
                     campData.deltas = {};
-                    for(var resKey in resources) {
-                        if(resources.hasOwnProperty(resKey)) {
-                            // TODO: Have deltas influence demands
-                            campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
-                            campData.economy.resources[resKey].invItem = $scope.inventory ? 
-                                $scope.inventory['resource:'+resKey] : undefined;
-                            if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
-                                && campSnap.val().deltas.hasOwnProperty(resKey)) {
-                                // Apply delta against supply
-                                campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey].amount;
-                                campData.deltas[resKey] = campSnap.val().deltas[resKey];
-                            }
+                    for(var resKey in resources) { if(!resources.hasOwnProperty(resKey)) { continue; }
+                        // TODO: Have deltas influence demands
+                        campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
+                        campData.economy.resources[resKey].invItem = $scope.inventory ? 
+                            $scope.inventory['resource:'+resKey] : undefined;
+                        if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
+                            && campSnap.val().deltas.hasOwnProperty(resKey)) {
+                            // Apply delta against supply
+                            campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey].amount;
+                            campData.deltas[resKey] = campSnap.val().deltas[resKey];
                         }
                     }
-                    $timeout(function(){ $scope.onPixel.camp = campData; });
+                    $scope.onPixel.camp = campData;
                 });
             } else { // If no camp
                 createActivity(0.7);
@@ -1208,7 +1222,7 @@ angular.module('Geographr.controllers', [])
                                 // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
                                 // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
                                 var interval = camps[camp].deltas[resource].amount < 0 ? 
-                                    demand/100 * 14400000 + (50-abundance) * 120000
+                                    demand/100 * 14400000 + (50-abundance) * 80000
                                     : 3600000 - demand/100 * 1800000 - abundance * 60000;
                                 var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
                                 interval = Math.max(1,interval);

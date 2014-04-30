@@ -133,7 +133,8 @@ div.label { display: inline-block; }
 }
 .equipment.label { box-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
 .equipment.label .progress { 
-    height: 6px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 1px black; margin: 6px 0 1px; }
+    height: 6px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 1px black; margin: 6px 0 1px; 
+    border-radius: 1px; } 
 
 #autoEat td { padding-top: 8px; }
 #autoEat table { width: 100%; margin-bottom: 0; }
@@ -142,16 +143,24 @@ div.label { display: inline-block; }
 #autoEat table tr td { padding: 0; }
 #autoEat table tr td .checkbox-inline { padding-top: 0; height: 20px; }
 
+.action-row { height: 24px; margin-bottom: 6px; }
+select.num-select { 
+    width: 58px; padding: 0 4px; height: 24px; margin-right: 8px; float: left; background-color: #dfe5eb; }
+select.num-select + .btn-group.btn-group-xs { margin-top: 1px; line-height: 22px; }
+select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10px; }
+
+#campfire table.unstyled tr th { padding-right: 0; }
 #campfire table.unstyled tr td { padding: 5px 0 0; }
+#campfire .label { font-size: 0.9em; position: relative; top: -2px; padding-top: 1px; }
+#campfire select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 0; }
+
+.btn.primary { font-weight: bold; padding: 1px 7px; }
 
 .object-well h3 { color: #778187; font-size: 1.3em; margin-top: 5px; }
 .object-well table { width: 100%; margin: 4px 0; }
 .object-well .label { font-size: 1em; }
-.object-well .well { margin: 4px -6px 4px 0; background-color: #202327; }
+.object-well .well { margin: 4px 0; background-color: #202327; }
 .object-well .well table, .object-well .well ul { margin: 0; }
-.object-well .well .input-group-sm > .form-control { height: 20px; padding: 0 3px; }
-.object-well .well .input-group-sm > .input-group-btn > .btn { height: 22px; width: 40px; padding: 0 1px; }
-.object-well .well .input-group-sm > .input-group-btn > .btn.free { width: auto; padding: 0 6px; }
 .object-well table tr td.text-muted { color: #555; }
 .object-well .well .row { height: 30px; padding-top: 4px; clear: both; }
 .object-well .well .row.text-only { line-height: 30px; }

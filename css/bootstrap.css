@@ -2190,7 +2190,7 @@ fieldset[disabled] .btn-default:active,
 .btn-default[disabled].active,
 fieldset[disabled] .btn-default.active {
   background-color: #3a3f44;
-  border-color: #3a3f44;
+  /*border-color: #3a3f44;*/
 }
 
 .btn-primary {
@@ -3581,7 +3581,7 @@ input[type="button"].btn-block {
   margin-left: 5px;
 }
 
-.btn-group > .btn:not(:first-child):not(:last-child):not(.dropdown-toggle) {
+.btn-group > .btn:not(:first-of-type):not(:last-of-type):not(.dropdown-toggle) {
   border-radius: 0;
 }
 

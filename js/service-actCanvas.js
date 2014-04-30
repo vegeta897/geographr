@@ -187,10 +187,11 @@ angular.module('Geographr.actCanvas', [])
                                                 sat: 0,
                                                 val: color.hsv.val
                                             };
-                                            var strength = Math.min(0.8,Math.random()*0.3*skillFactor+0.05);
+                                            var strength = Math.min(0.8,Math.random()*0.25*skillFactor+0.1);
                                             var newColor = colorUtility.hexToHSV(prod.color);
                                             newColor.sat = newColor.sat / 2;
-                                            newColor.val += (color.hsv.val - newColor.val) / 2;
+                                            newColor.val += newColor.val > color.hsv.val ? 
+                                                (color.hsv.val - newColor.val) / 2 : 0;
                                             color = colorUtility.generate({
                                                 strength: strength, oldColor: color.hsv, newColor: newColor
                                             });

@@ -19,7 +19,17 @@
     </tr>
     <tr ng-repeat-end class="actions">
         <td colspan="3"><div class="well well-sm">
-            Can't do anything with this item
+            <div ng-show="item.hasActions">
+                <select class="form-control num-select" ng-model="doAmount" ng-init="doAmount = item.amount || 1">
+                    <option ng-repeat="count in countTo(item.amount)">{{ count }}</option>
+                </select>
+                <span class="btn-group btn-group-xs">
+                    <button class="btn btn-default" ng-click="doAmount = 1">1</button>
+                    <button ng-repeat="(key,val) in item.actions" class="btn btn-default primary"
+                        ng-click="val(item,doAmount)">{{ key | capitalize }}</button>
+                </span>
+            </div>
+            <span ng-hide="item.hasActions">Can't do anything with this item</span>
         </div></td>
     </tr>
 </table>

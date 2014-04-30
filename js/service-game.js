@@ -48,14 +48,14 @@ angular.module('Geographr.game', [])
                 'onions': { color: 'aaa982', rarity: 0.7, avgQty: 1 }
             },
             hunt: {
-                'deer': { color: '6f4c32', rarity: 0.4, weight: 200, materials: ['meat','bone','pelt'] },
-                'boar': { color: '49413d', rarity: 0.7, weight: 150, materials: ['meat','bone','pelt'] },
-                'rabbit': { color: '6d5f58', rarity: 0, weight: 3, materials: ['meat','bone','pelt'] },
-                'fox': { color: '6d341e', rarity: 0.8, weight: 12, materials: ['meat','bone','pelt'] },
-                'wolf': { color: '4b4c4f', rarity: 0.9, weight: 70, materials: ['meat','bone','pelt'] },
-                'mole': { color: '433a32', rarity: 0.9, weight: 2, materials: ['meat','bone','pelt'] },
-                'pheasant': { color: '713926', rarity: 0.7, weight: 1, materials: ['meat','bone'] },
-                'duck': { color: '433a32', rarity: 0.8, weight: 3, materials: ['meat','bone'] }
+                'deer': { color: '6f4c32', rarity: 0.4, weight: 200, classes: ['pelt'] },
+                'boar': { color: '49413d', rarity: 0.7, weight: 150, classes: ['pelt'] },
+                'rabbit': { color: '6d5f58', rarity: 0, weight: 3, classes: ['pelt'] },
+                'fox': { color: '6d341e', rarity: 0.8, weight: 12, classes: ['pelt'] },
+                'wolf': { color: '4b4c4f', rarity: 0.9, weight: 70, classes: ['pelt'] },
+                'mole': { color: '433a32', rarity: 0.9, weight: 2, classes: ['pelt'] },
+                'pheasant': { color: '713926', rarity: 0.7, weight: 1, classes: [] },
+                'duck': { color: '433a32', rarity: 0.8, weight: 3, classes: [] }
             },
             mine: {
                 'salt': { color: 'a8a797', rarity: 0, profession: 'saltFarm' },
@@ -502,6 +502,22 @@ angular.module('Geographr.game', [])
                     }
                 }
                 return { newInv: newQuantities, newNeeded: neededHunger };
+            },
+            getItemActions: function(item) {
+                var actions = {};
+                switch(item.type) {
+                    case 'animal':
+                        if(jQuery.inArray('pelt',eventProducts.hunt[item.name].classes) >= 0) {
+                            actions.skin = function(item,amount) {
+                                console.log('skin',item,amount);
+                            }
+                        }
+                        actions.eviscerate = function(item,amount) {
+                            console.log('eviscerate',item,amount);
+                        };
+                        return actions; break;
+                }
+                return false;
             },
             tutorial: function(step) {
                 var text = '';

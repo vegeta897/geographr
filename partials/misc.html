@@ -18,13 +18,13 @@
     </table>
 </div>
 <div class="row form-group">
-    <div class="input-group input-group-xs col-xs-8">
+    <div class="input-group col-xs-8">
         <input class="form-control input-xs" type="text" ng-model="labelText" id="inputLabelText" placeholder="label name">
             <span class="input-group-btn"><button class="btn btn-default btn-xs" ng-click="addLabel(labelText)">
                 Add Label</button></span>
     </div>
 </div>
-<div ng-show="user.id < 3 || user.id == 20" class="row form-group">
+<div ng-show="user.id < 3" class="row form-group">
     <div class="col-xs-12"><div class="checkbox-inline">
         <label><input ng-model="editTerrain" type="checkbox">&nbsp;Terrain Edit Mode</label>
     </div></div>
@@ -53,11 +53,11 @@
     </div>
     <div class="row">
         <div class="col-xs-12">
-            <button class="btn btn-success" ng-click="saveTerrain()">Save Terrain</button>
+            <button class="btn btn-success btn-sm" ng-click="saveTerrain()">Save Terrain</button>
         </div>
     </div>
 </div>
-<button ng-show="user.id < 3" class="btn btn-danger" ng-click="reset()">Reset</button>
-<button ng-show="user.id < 3" class="btn btn-warning" ng-click="drawIso()">Iso</button>
+<button ng-show="user.id < 3" class="btn btn-danger btn-sm" ng-click="reset()">Reset</button>
+<button ng-show="user.id < 3" class="btn btn-warning btn-sm" ng-click="drawIso()">Iso</button>
 <button class="btn btn-default btn-sm" ng-click="commits.show = !commits.show">
     {{ commits.show | iif : 'Hide' : 'Show' }} Changelog</button>
