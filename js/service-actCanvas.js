@@ -99,8 +99,8 @@ angular.module('Geographr.actCanvas', [])
                             eventMainContext.beginPath();
                             eventMainContext.strokeStyle = '#' + event.pool[p].product.color;
                             eventMainContext.lineWidth = 1 + // Based on product amount above average
-                                (event.pool[p].product.amount - event.pool[p].product.avgQty)/1.5;
-                            Math.seedrandom(event.seed+event.pool[p].targetX+event.pool[p].targetY);
+                                Math.max(0,(event.pool[p].product.amount - event.pool[p].product.avgQty))/1.5;
+                            Math.seedrandom(event.seed+' '+event.pool[p].targetX+event.pool[p].targetY);
                             for(i = 0; i < 3; i++) {
                                 switch(Math.floor(Math.random()*4)) {
                                     case 0: eventMainContext.moveTo(0,Math.floor(Math.random()*300)); break;
@@ -120,7 +120,7 @@ angular.module('Geographr.actCanvas', [])
                         if(event.step % 5 > 0) {
                             var animal = event.pool[Math.floor(event.step/5)];
                             if(event.step % 5 > 0) { // If not pausing between animals
-                                Math.seedrandom(event.seed + animal.targetX);
+                                Math.seedrandom(event.seed + ' ' + animal.targetX);
                                 eventMainContext.shadowColor = 'black'; eventMainContext.shadowBlur = 7;
                                 eventMainContext.shadowOffsetX = eventMainContext.shadowOffsetY = 0;
                                 var distance = 1 - event.step % 5 / 4;
@@ -156,7 +156,7 @@ angular.module('Geographr.actCanvas', [])
                             var squares = gridCounts[depth];
                             for(var x1 = 0; x1 < squares; x1++) {
                                 for(var y1 = 0; y1 < squares; y1++) {
-                                    Math.seedrandom(event.seed+''+x1+y1+x+y);
+                                    Math.seedrandom(event.seed+' '+x1+y1+x+y);
                                     var color = colorUtility.generate('mine-rock');
                                     for(p = 0; p < event.pool.length; p++) {
                                         var prod = event.pool[p].product;
@@ -187,7 +187,7 @@ angular.module('Geographr.actCanvas', [])
                                                 sat: 0,
                                                 val: color.hsv.val
                                             };
-                                            var strength = Math.min(0.8,Math.random()*0.25*skillFactor+0.1);
+                                            var strength = Math.min(0.8,Math.random()*0.08*skillFactor+0.15);
                                             var newColor = colorUtility.hexToHSV(prod.color);
                                             newColor.sat = newColor.sat / 2;
                                             newColor.val += newColor.val > color.hsv.val ? 

@@ -230,30 +230,31 @@ angular.module('Geographr.game', [])
             return economy;
         };
         // Generate pool of resources for event
-        var createEventPool = function(eventType) {
+        var createEventPool = function(event) {
             var pool = [], number, i, product, item;
             var typesChosen = []; // Prevent 2 instances of same product, if necessary
             var coordsChosen = [];
-            switch(eventType) {
+            switch(event.type) {
                 case 'forage':
-                    number = randomIntRange(2,4);
+                    number = Math.max(Math.round(event.abundance * 3 + Math.random()*2*event.abundance),1);
                     for(i = 0; i < number; i++) {
-                        product = pickProduct(eventType);
+                        product = pickProduct(event.type);
                         while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
-                            product = pickProduct(eventType);
+                            product = pickProduct(event.type);
                         }
                         typesChosen.push(product.name);
                         product.type = 'plant';
                         item = { product: product,
                             targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
-                        item.product.amount = item.product.avgQty + randomIntRange(0,2);
+                        item.product.amount = Math.max(1,item.product.avgQty * event.abundance
+                            + randomIntRange(0,Math.round(2*event.abundance)));
                         pool.push(item);
                     }
                     break;
                 case 'hunt':
-                    number = randomIntRange(0,2) || 1; // 33% chance of there being 2 animals
+                    number = Math.max(Math.round(event.abundance * 2 + Math.random()*event.abundance),1);
                     for(i = 0; i < number; i++) {
-                        product = pickProduct(eventType);
+                        product = pickProduct(event.type);
                         product.type = 'animal';
                         item = { product: product,
                             targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
@@ -261,9 +262,9 @@ angular.module('Geographr.game', [])
                     }
                     break;
                 case 'mine':
-                    number = randomIntRange(4,14);
+                    number = Math.round(1 + event.abundance * 8 + Math.random()*8*event.abundance);
                     for(i = 0; i < number; i++) {
-                        product = pickProduct(eventType);
+                        product = pickProduct(event.type);
                         product.type = 'mineral';
                         item = { product: product,
                             targetX: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)], 
@@ -303,16 +304,16 @@ angular.module('Geographr.game', [])
         };
         
         return {
-            setupActivity: function(type,skill) {
+            setupActivity: function(eventInfo,skill) {
                 event = {}; event.skill = skill ? Math.floor(skill / 10) : 0;
                 Math.seedrandom();
-                event.pool = createEventPool(type); event.result = {};
+                event.pool = createEventPool(eventInfo); event.result = {};
                 event.seed = randomIntRange(0,10000); // For consistent redrawing
-                switch(type) {
-                    case 'hunt': createEventTimers(type,4,400,800); break;
+                switch(eventInfo.type) {
+                    case 'hunt': createEventTimers(eventInfo.type,4,400,800); break;
                     case 'mine': event.clicks = []; event.energy = 10; break;
                 }
-                actCanvasUtility.drawActivity(type,event);
+                actCanvasUtility.drawActivity(eventInfo.type,event);
                 return event.energy;
             },
             playActivity: function(type,click,skill) {
@@ -408,19 +409,21 @@ angular.module('Geographr.game', [])
                 }
                 return visible;
             },
-            getActivityChances: function(terrain,location,camps) {
-                var chances = {
-                    forage: 7/terrain[location], hunt: 10/terrain[location], mine: terrain[location] / 40 
+            getActivityAbundance: function(terrain,location,camps) {
+                Math.seedrandom(location); // Consistent grid results
+                var abundance = {
+                    forage: Math.min(1,7/terrain[location]) * (Math.random()/2+0.5), 
+                    hunt: Math.min(1,10/terrain[location]) * (Math.random()/4+0.75), 
+                    mine: Math.min(1,terrain[location] / 20)  * (Math.random()/2+0.5)
                 };
-                for(var act in chances) { if(!chances.hasOwnProperty(act)) { continue; } 
-                    chances[act] = Math.min(chances[act], 1); }
+//                for(var act in abundance) { if(!abundance.hasOwnProperty(act)) { continue; } }
                 // TODO: Abstract these camp and coast proximity factors
-                chances.forage = isCampNear(camps,location,1) ? chances.forage * 0.8 : chances.forage;
-                chances.hunt = isCampNear(camps,location,1) ? chances.hunt * 0.6 : chances.hunt * 0.8;
+                abundance.forage = isCampNear(camps,location,1) ? abundance.forage * 0.8 : abundance.forage;
+                abundance.hunt = isCampNear(camps,location,1) ? abundance.hunt * 0.6 : abundance.hunt;
                 var coastDist = getCoastDistance(terrain,location);
-                chances.forage = chances.forage * (1-0.8*(1-Math.min(coastDist,3)/3)); // Less forage near coast
-                chances.hunt = chances.hunt * (1-0.8*(1-Math.min(coastDist,9)/9)); // Less hunting near coast
-                return chances;
+                abundance.forage = abundance.forage * (1-0.8*(1-Math.min(coastDist,3)/3)); // Less near coast
+                abundance.hunt = abundance.hunt * (1-0.8*(1-Math.min(coastDist,9)/9)); // Less near coast
+                return abundance;
             },
             createUserCamp: function(terrain,camps) {
                 Math.seedrandom();

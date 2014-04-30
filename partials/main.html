@@ -20,8 +20,14 @@
             <img src="" id="tutorialImage" width="300" height="300" ng-src="img/{{ event.type || 'loading' }}.png" />
         </div>
         <table ng-hide="inEvent" id="gridView"><tr ng-repeat="row in ['536','201','748']">
-            <td ng-repeat="col in row.split('')" ng-class="onPixel.objects[col].type" ng-click="activateObject(col)">
-                {{ onPixel.objects[col] | itemDisplay }}</td>
+            <td ng-repeat="col in row.split('')" ng-click="activateObject(col)"
+                ng-class="[onPixel.objects[col].type, 
+                !onPixel.objects[col].activity || onPixel.objects[col].abundance >= 0.02 || 'dry']">
+                {{ onPixel.objects[col] | itemDisplay }}
+                <div class="progress" ng-show="onPixel.objects[col].activity">
+                    <div class="progress-bar full" ng-style="{width: onPixel.objects[col].abundance*100+'%'}"></div>
+                </div>
+            </td>
         </tr></table>
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
