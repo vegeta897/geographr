@@ -2,7 +2,7 @@
 
 angular.module('Geographr.controllers', [])
 .controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.262; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+        $scope.version = 0.263; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -15,6 +15,7 @@ angular.module('Geographr.controllers', [])
         $scope.eventLog = [];
         $scope.movePath = []; $scope.lookCount = 0;
         $scope.tutorialSkips = []; $scope.skipTutorial = false;
+        $scope.showItemTypes = {'animal':true,'mineral':true,'plant':true,'resource':true};
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
@@ -132,7 +133,7 @@ angular.module('Geographr.controllers', [])
         tutorial('init');
     
         // Attempt to get these variables from localstorage
-        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate','tutorialSkips'];
+        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate','tutorialSkips','showItemTypes'];
         for(var i = 0; i < localStores.length; i++) { if(localStorage.get(localStores[i])) {
             $scope[localStores[i]] = localStorage.get(localStores[i]);
         }}
@@ -235,6 +236,10 @@ angular.module('Geographr.controllers', [])
                 if(passed) { return $scope.inventory[invKey]; }
             }
             return false;
+        };
+        $scope.toggleItemType = function(type) {
+            $scope.showItemTypes[type] = !$scope.showItemTypes[type];
+            localStorage.set('showItemTypes',$scope.showItemTypes);
         };
         // Create player camp, newbie's first step
         $scope.createCamp = function() {
@@ -505,8 +510,10 @@ angular.module('Geographr.controllers', [])
                 if($scope.event.result.ended) { // Event finished
                     changeHunger(userID,3); // Use 3 hunger
                     $scope.event.result.energy = null;
-                    $timeout(function() { 
-                        $scope.inEvent = false; $scope.event.message = null; 
+                    $scope.event.ended = true;
+                    $timeout(function() {
+                        if(!$scope.event.ended) { return; }
+                        $scope.inEvent = false; $scope.event.message = null;
                         if($scope.event.hasOwnProperty('result')) { $scope.event.result.energy = null; }
                     },2500);
                     actCanvasUtility.eventHighCanvas.unbind('mousedown');
@@ -1250,7 +1257,7 @@ angular.module('Geographr.controllers', [])
                                 var difference = theTime - (parseInt(snapAbundances[grid][actKey].time) + interval);
                                 var multiplier = 1 + Math.floor(difference / interval);
                                 difference -= interval * Math.floor(difference / interval);
-                                message += actKey + ' replenished by ' + multiplier + ' | ';
+                                message += grid + '-' + actKey + ' replenished by ' + multiplier + ' | ';
                                 newAbundances[grid][actKey].time += interval + difference;
                                 newAbundances[grid][actKey].amount += multiplier;
                                 newAbundances[grid][actKey] = newAbundances[grid][actKey].amount >= 0 ?

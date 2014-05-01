@@ -168,9 +168,9 @@ angular.module('Geographr.directives', [])
                 break;
         }
         list = sortArrayByProperty(list,'key');
-        for(var i = 0; i < list.length; i++) {
-            list[i].lastOfType = (i < list.length - 1 && list[i].type != list[i+1].type);
-        }
+//        for(var i = 0; i < list.length; i++) {
+//            list[i].lastOfType = (i < list.length - 1 && list[i].type != list[i+1].type);
+//        }
         return list;
     }
 })

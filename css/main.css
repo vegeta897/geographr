@@ -90,11 +90,11 @@ canvas { display: block; }
 }
 #controls .progress { width: 100%; opacity: 0.7; margin: 2px 0 6px; }
 #controls .progress .progress-bar { -webkit-transition: width 0s; transition: width 0s; }
-#controls #moveUp, #controls #moveDown { margin: 0 20px 0 60px; padding-top: 11px; }
+#controls #moveUp, #controls #moveDown { margin: 0 20px 0 60px; padding-top: 11px; padding-right: 14px; }
 #controls #moveLeft { margin: 0 10px 0 0; padding-top: 11px; }
 #controls #moveStartStop, #controls #lookAround { 
     width: 40px; height: 40px; margin: 10px 10px 0 0; padding: 8px 0; font-size: 1em; }
-#controls #moveRight { padding-left: 16px; padding-top: 11px; }
+#controls #moveRight { padding-left: 13px; padding-top: 11px; }
 #controls #moveDown { padding-left: 16px; padding-top: 13px; }
 #controls #moveClear, #controls #moveUndo { padding-left: 6px; padding-top: 1px; width: 40px; 
     height: 20px; margin-top: 40px; font-size: 0.8em; }
@@ -169,14 +169,15 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .object-well .well .row.text-only { line-height: 30px; }
 .object-well .row:last-child table { margin-bottom: 0; }
 
-#inventory table.unstyled { width: 100%; }
-#inventory table.unstyled tr.last-of-type { border-bottom: 1px solid #50575c; }
-#inventory table.unstyled tr.last-of-type td { padding-bottom: 3px; }
-
-#inventory table.unstyled tr.actions .well { 
-    padding-left: 12px; padding-right: 12px; margin-top: 4px; margin-bottom: 2px;
+#inventory>div>table.unstyled { width: 100%; margin-bottom: 7px; }
+#inventory>div { border-bottom: 1px solid #50575c; margin: 5px 0; min-height: 22px; }
+#inventory>div h3 { float: left; margin-bottom: 0; margin-left: 6px; }
+#inventory>div:first-of-type { margin-top: 0; }
+#inventory>div:last-child { border-bottom: none; }
+#inventory>div>button { position: absolute; right: 16px; font-size: 0.7em; padding: 0 4px; margin-top: 1px; }
+#inventory>div>table.unstyled tr.actions .well { 
+    padding-left: 12px; padding-right: 12px; margin-top: 4px; margin-bottom: 4px;
 }
-
 #uiContainer #inventory td.quantity { width: 44px; padding-right: 10px; }
 
 #objectInfo p { margin-bottom: 6px; }
@@ -190,8 +191,6 @@ ul#log li { margin-bottom: 0; }
 
 .list-unstyled li { margin-bottom: 8px; }
 .list-unstyled li button { position: relative; top: -1px; padding: 1px 5px 3px; }
-
-button .glyphicon { margin-right: 3px; }
 
 .attach-top { position: relative; top: -6px; }
 

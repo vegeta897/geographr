@@ -363,7 +363,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         return pool;
     };
     var createEventTimers = function(eventType,stepsPerItem,stepLength,pauseLength) {
-        event.step = 'start';
+        event.step = 'start'; clearTimeout(event.timer);
         event.timer = setTimeout(function() {
             var nextStep = function() {
                 event.step = event.step >= event.pool.length * (stepsPerItem+1) ? 
@@ -446,7 +446,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         if(event.step > (poolCopy.length-1) * 5) { event.step = poolCopy.length*5; }
                         else { event.step += 5 - event.step % 5 - 1; }
                     }
-                    if(event.step == 'end') { event.result.ended = true; }
+                    if(event.step == 'end') { event.result.ended = true; clearTimeout(event.timer); }
                     break;
                 case 'mine':
                     event.clicks.push([click.x,click.y]); event.energy -= 1;
@@ -492,15 +492,18 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             Math.seedrandom(location); // Consistent grid results
             var abundance = {
                 forage: Math.min(1,7/terrain[location]) * (Math.random()/2+0.5), 
-                hunt: Math.min(1,10/terrain[location]) * (Math.random()/4+0.75), 
+                hunt: Math.min(1,10/terrain[location]) * (Math.random()*3/5+0.6), 
                 mine: Math.min(1,terrain[location] / 20)  * (Math.random()/2+0.5)
             };
             // TODO: Abstract these camp and coast proximity factors
-            abundance.forage = isCampNear(camps,location,1) ? abundance.forage * 0.8 : abundance.forage;
-            abundance.hunt = isCampNear(camps,location,1) ? abundance.hunt * 0.6 : abundance.hunt;
+            abundance.forage = isCampNear(camps,location.split(':'),1) ? 
+                abundance.forage * 0.8 : abundance.forage;
+            abundance.hunt = isCampNear(camps,location.split(':'),1) ? 
+                abundance.hunt * 0.6 : abundance.hunt;
             var coastDist = getCoastDistance(terrain,location);
             abundance.forage = abundance.forage * (1-0.8*(1-Math.min(coastDist,3)/3)); // Less near coast
             abundance.hunt = abundance.hunt * (1-0.8*(1-Math.min(coastDist,9)/9)); // Less near coast
+            
             return abundance;
         },
         createUserCamp: function(terrain,camps) {
