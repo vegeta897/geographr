@@ -52,7 +52,9 @@
         <div id="inventory" class="col-xs-3" ng-include="'partials/inventory.html'" ng-show="user.camp"></div>
         <div class="col-xs-3">
             <!-- Object Info -->
-            <div id="objectInfo" ng-show="selectedObject" ng-include="'partials/object-info.html'"></div>
+            <div id="objectInfo">
+                <div ng-show="selectedObject" onLoad="attachObjInfo()" ng-include="'partials/object-info.html'"></div>
+            </div>
             <!-- Misc Stuff -->
             <div ng-include="'partials/misc.html'"></div>
         </div>

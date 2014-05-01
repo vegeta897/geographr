@@ -109,8 +109,8 @@ button.btn-item, .label { margin: 0 4px 0 0; color: white; border-radius: 5px;
     1px 1px 1px #000, 0 0 1px #000;
 }
 button.btn-item:hover { background-color: #24272b !important; }
-div.label { display: inline-block; }
-.label { font-size: 1em; padding: 0 0.4em 0.2em; border-radius: 2px; font-weight: normal; }
+div.label { display: inline-block; cursor: default; }
+.label { cursor: default; font-size: 1em; padding: 0 0.4em 0.2em; border-radius: 2px; font-weight: normal; }
 .big-label { padding: 0.2em 0.4em 0.2em; border-radius: 3px; }
 .bigger-label { padding: 0.2em 0.5em 0.3em; border-radius: 5px; }
 
@@ -200,17 +200,21 @@ table.unstyled tr td { padding: 2px 6px 0 0; border: none; color: #999; }
 strong { color: #ccc; }
 
 .item-color {
-    border: 1px solid black;
-    width: 16px; height: 16px;
-    display: inline-block;
-    position: relative;
-    top: 3px;
-    margin-right: 4px;
+    border: 1px solid black; width: 17px; height: 17px; display: inline-block; position: relative; top: 2px;
+    margin-right: 4px; font-size: 0.9em; line-height: 14px; text-align: center; vertical-align: top;
+    padding-right: 2px;
+    text-shadow: 0 1px 1px #000, 1px 0 1px #000,
+        1px 1px 1px #000, 0 0 1px #000;
 }
-.item-color.cooked { border: 2px solid #490C0C; }
+.item-color.cooked { border-color: #490C0C; }
+.item-color.pelt { border-color: #271B08; }
 
 .attach-top { position: relative; top: -6px; }
 
+#objectInfo>div { 
+    position: absolute; background: #232527; opacity: 0.95; width: 240px; padding: 4px 12px; border: 1px solid black; 
+}
+#objectInfo>div h2+p { font-size: 0.9em; }
 #objectInfo .well { padding-bottom: 5px; display: inline-block; }
 h3 { font-size: 16px; margin: 0 0 10px; color: #737880; }
 #objectInfo ul { margin-bottom: 0; }

@@ -1,6 +1,5 @@
-<h2>Selected Object</h2>
-<p>{{ selectedObject | itemDisplay }}&emsp;
-    <span class="text-muted">({{ selectedObject.grid | grid }})</span>
+<h2>{{ selectedObject | itemDisplay }}</h2>
+<p><span class="text-muted">({{ selectedObject.grid | grid }})</span>
     <em ng-show="selectedObject.visited">&emsp;Visited</em>
 </p>
 <h3 ng-show="selectedObject.economy.resources">Resource Demands</h3>
@@ -14,11 +13,11 @@
         </tr>
     </table>
 </div></div>
-<div class="row col-xs-12" ng-show="selectedObject.visited">
-    <h3>Camp Services</h3>
-        <span ng-show="selectedObject.economy.blacksmith" style="background-color: #222;"
-            class="label bigger-label">Blacksmith</span>
-</div>
+<h3 ng-show="selectedObject.visited && selectedObject.economy.blacksmith">Camp Services</h3>
+<p ng-show="selectedObject.visited">
+    <span ng-show="selectedObject.economy.blacksmith" style="background-color: #3C3C3C;"
+        class="label bigger-label">Blacksmith</span>
+</p>
 <div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
     <h3>Contents</h3>
     <ul class="list-unstyled">

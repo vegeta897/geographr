@@ -1,13 +1,15 @@
 <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;
-    <strong data-model="user.money" class="change-effect">{{ user.money }}</strong></small></h2>
+    <strong data-model="user.money" class="change-effect">{{ user.money | number }}</strong></small></h2>
 <p ng-hide="inventory" class="text-muted">No items</p>
 <table class="unstyled">
-    <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant','mineral']"
+    <tr ng-repeat-start="item in inventory | typeFilter:['resource','animal','plant','mineral','pelt']"
         ng-class="{ 'last-of-type': item.lastOfType }">
         <td class="text-right quantity"><a href="#" data-toggle-panel>
             <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
         <td style="width: 16px;"><a href="#" data-toggle-panel>
             <span ng-style="{background: '#'+item.color}" ng-class="item.status" class="item-color">
+                <span ng-show="item.status == 'cooked'">C</span>
+                <span ng-show="item.status == 'pelt'">P</span>
             </span></a></td>
         <td><span ng-show="item.unit.pre">{{ item.unit.pre }} of</span>
             <span ng-show="item.profession == 'blacksmith' || item.profession == 'saltFarm'">unrefined</span>
@@ -15,7 +17,8 @@
             <span ng-show="item.status == 'cooked'">cooked</span>
             <a href="#" data-toggle-panel>{{ item.name }}</a>
             <span ng-show="item.unit.post">{{ item.unit.post }}</span>
-            <span ng-show="item.type == 'animal'"> carcass</span>
+            <span ng-show="item.type == 'animal' && item.status != 'pelt'"> carcass</span>
+            <span ng-show="item.status == 'pelt'"> pelt</span>
         </td>
     </tr>
     <tr ng-repeat-end class="actions">
