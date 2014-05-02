@@ -24,7 +24,7 @@
                 Add Label</button></span>
     </div>
 </div>
-<div ng-show="user.id < 3" class="row form-group">
+<div ng-show="user.id == 1" class="row form-group">
     <div class="col-xs-12"><div class="checkbox-inline">
         <label><input ng-model="editTerrain" type="checkbox">&nbsp;Terrain Edit Mode</label>
     </div></div>
@@ -57,7 +57,7 @@
         </div>
     </div>
 </div>
-<button ng-show="user.id < 3" class="btn btn-danger btn-sm" ng-click="reset()">Reset</button>
-<button ng-show="user.id < 3" class="btn btn-warning btn-sm" ng-click="drawIso()">Iso</button>
+<button ng-show="user.id == 1" class="btn btn-danger btn-sm" ng-click="reset()">Reset</button>
+<button ng-show="user.id == 1" class="btn btn-warning btn-sm" ng-click="drawIso()">Iso</button>
 <button class="btn btn-default btn-sm" ng-click="commits.show = !commits.show">
     {{ commits.show | iif : 'Hide' : 'Show' }} Changelog</button>

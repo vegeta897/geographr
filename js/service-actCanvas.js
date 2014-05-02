@@ -1,8 +1,9 @@
 /* Activity canvas drawing service */
 
 angular.module('Geographr.actCanvas', [])
-.service('actCanvasUtility', function(canvasUtility,colorUtility) {
+.service('actCanvasUtility', function(canvasUtility,colorUtility,$location) {
         var eventLowCanvas = document.getElementById('eventLowCanvas'); // Event view
+        if(!eventLowCanvas) { return false; } // Cancel this module if server
         var eventMainCanvas = document.getElementById('eventMainCanvas');
         var eventHighCanvas = document.getElementById('eventHighCanvas');
         var eventLowContext = eventLowCanvas.getContext ? eventLowCanvas.getContext('2d') : null;
@@ -142,7 +143,7 @@ angular.module('Geographr.actCanvas', [])
                                     var size =  3 + animal.product.weight / 70;
                                     drawCircle('main',
                                         [animal.targetX + delta[0]*distance,animal.targetY + delta[1]*distance],
-                                        event.skill+size,'#'+animal.product.color);
+                                        event.skill/2+size,'#'+animal.product.color);
                                 }
                                 eventMainContext.shadowColor = 'rgba(0,0,0,0)';
                             }

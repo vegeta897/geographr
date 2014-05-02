@@ -1,8 +1,6 @@
-/* Controllers */
-
-angular.module('Geographr.controllers', [])
-.controller('Main', ['$scope', '$timeout', '$filter', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, $filter, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.263; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+angular.module('Geographr.controllerMain', [])
+.controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
+        $scope.version = 0.264; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -21,13 +19,14 @@ angular.module('Geographr.controllers', [])
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
             localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
-            tutorialStep = 0, visiblePixels = {}, moveTimers = {}, waitTimer, campList = [], 
-            availableActivities = [], abundances = {}, localUsers = {}, controlsDIV, progressBar, objectInfoPanel;
+            tutorialStep = 0, visiblePixels = {}, waitTimer, campList = [], 
+            availableActivities = [], abundances = {}, controlsDIV, progressBar, objectInfoPanel;
     
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1'); gameUtility.attachFireRef(fireRef);
         var fireServer = fireRef.child('clients/actions');
         var auth; // Create a reference to the auth service for our data
+        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1) { $scope.firefox = true; return; }
         fireRef.parent().child('version').once('value', function(snap) { // Check version number
             if($scope.version >= snap.val()) {
                 fireRef.parent().child('version').on('value',function(snap) {
@@ -77,7 +76,6 @@ angular.module('Geographr.controllers', [])
                     });
                 });});};
                 auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
-                    if(userID == 2) { console.log('server re-authed!'); return; }
                     $timeout(function() {
                         if(error) {
                             console.log(error, $scope.loginEmail, $scope.loginPassword);
@@ -96,7 +94,7 @@ angular.module('Geographr.controllers', [])
                                                     function() { initUser(); });
                                             });
                                         }
-                                    })
+                                    });
                             } else if(error.code == 'INVALID_PASSWORD') { $scope.authStatus = 'badPass'; } else
                             if(error.code == 'INVALID_EMAIL') { $scope.authStatus = 'badEmail'; }
                         } else if(user) {
@@ -116,7 +114,7 @@ angular.module('Geographr.controllers', [])
                 };
                 $scope.logOut = function() { auth.logout(); };
                 
-            } else { $scope.$apply(function() { $scope.needUpdate = true; } ) }
+            } else { $timeout(function() { $scope.needUpdate = true; } ) }
         });
     
         var tutorial = function(action) {
@@ -682,7 +680,7 @@ angular.module('Geographr.controllers', [])
                 }
             }
             
-            if(!$scope.user || userID == 2) { return; }
+            if(!$scope.user) { return; }
             canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
             canvasUtility.drawFog(
@@ -771,7 +769,7 @@ angular.module('Geographr.controllers', [])
                 !(e.target.id == 'zoomHighCanvas' || e.target.id == 'controls' || e.target.id == 'objectInfo')) {
                 return false; }
             if(e.which == 2) {  startDragPanning(e); return false; } // If middle click pressed
-            if(userID == 2 || !userID) { return false; } // Ignore actions from server or non-user
+            if(!userID) { return false; } // Ignore actions from non-user
             var x = $scope.overPixel.x, y = $scope.overPixel.y;
             // Make stuff happen when user clicks on map
             if(addingLabel) {
@@ -1077,8 +1075,8 @@ angular.module('Geographr.controllers', [])
         };
         
         var changeHunger = function(hungryUserID,amount) {
-            var user = localUsers.hasOwnProperty(hungryUserID) ? localUsers[hungryUserID] : $scope.user;
-            user.inventory = hungryUserID == userID ? gameUtility.cleanInventory($scope.inventory) : user.inventory;
+            var user = $scope.user;
+            user.inventory = gameUtility.cleanInventory($scope.inventory);
             user.stats.hunger -= amount;
             var neededHunger = 100 - user.stats.hunger;
             if(user.hasOwnProperty('autoEat')) {
@@ -1139,156 +1137,23 @@ angular.module('Geographr.controllers', [])
                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
                    else { localObjects[campList[i]] = [camp]; }
                }
-           });
-            if(userID == 2) { // If server
-                canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
-                console.log('server ready!');
-                var updateUsers = function(snap) {
-                   for(var key in snap.val()) {
-                       if(!snap.val().hasOwnProperty(key)) { continue; }
-                       if(!localUsers.hasOwnProperty(key)) { continue; }
-                       if(localUsers[key].hasOwnProperty('connections') &&
-                           !snap.val()[key].hasOwnProperty('connections')) {
-                           if(key != 1) { console.log(localUsers[key].nick,'disconnected at',
-                               new Date(snap.val()[key].lastOnline)); }
-                           fireRef.child('scoreBoard/'+key+'/online').remove();
-                       }
-                   }
-                   localUsers = snap.val();
-                };
-                fireRef.child('users').on('value', updateUsers);
-                fireServer.on('child_added', function(snap) { // When a client action is received
-                    if(snap.val().user != 1 || snap.val().action != 'logIn') {
-                        console.log(localUsers[snap.val().user].nick,'did',snap.val().action,'at',new Date()); }
-                    var action = snap.val().action.split(',');
-                    switch(action[0]) {
-                        case 'createCamp':
-                            var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
-                            fireRef.child('users/'+snap.val().user).update({
-                                camp: { grid: startGrid, color: colorUtility.generate('camp').hex },
-                                movement: {location: startGrid}, money: 200, stats: { hunger: 100 },
-                                equipment: { 'small dagger': 100 }
-                            });
-                            fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
-                            fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(
-                                localUsers[snap.val().user].nick);
-                            break;
-                        case 'move':
-                            var movePath = snap.val().path, baseMoveSpeed = 5000; // 5 seconds
-                            fireRef.child('users/'+snap.val().user+'/movement/movePath').set(movePath);
-                            var move = function() {
-                                fireRef.child('users/'+snap.val().user+'/movement').update(
-                                    { location: movePath.splice(0,1)[0], movePath: movePath });
-                                if(movePath.length < 1 || !localTerrain.hasOwnProperty(movePath[0])) {
-                                    clearTimeout(moveTimers[snap.val().user]);
-                                    fireRef.child('users/'+snap.val().user+'/movePath').remove();
-                                } else {
-                                    moveTimers[snap.val().user] = setTimeout(move,
-                                        baseMoveSpeed * (1 + localTerrain[movePath[0]] / 60));
-                                }
-                                changeHunger(snap.val().user,5); // Use 5 hunger
-                            };
-                            moveTimers[snap.val().user] = setTimeout(move,
-                                baseMoveSpeed * (1 + localTerrain[movePath[0]] / 60));
-                            break;
-                        case 'stop': 
-                            clearTimeout(moveTimers[snap.val().user]); 
-                            fireRef.child('users/'+snap.val().user+'/movement/movePath').remove();
-                            break;
-                        case 'logIn': fireRef.child('scoreBoard/'+snap.val().user+'/online').set(true); break;
-                        default: break;
-                    }
-                    fireServer.child(snap.name()).remove(); // Delete the action
-                });
-                fireRef.child('status').set('online');
-                var loginEmail = localStorage.get('serverLoginEmail');
-                var loginPassword = localStorage.get('serverLoginPassword');
-                setInterval(function() {
-                    fireRef.child('status').set('online');
-                    fireRef.child('serverTest').set('test');
-                    fireRef.child('serverTest').remove();
-                    auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
-                }, 3600000); // Re-authenticate every hour
-                fireRef.child('status').onDisconnect().set('offline');
-                
-                var passTime = function() {
-                    fireRef.child('camps').once('value',function(snap) { if(!snap.val()) { return; }
-                        var theTime = new Date().getTime(); var message = '';
-                        var camps = snap.val(), newCamps = angular.copy(camps);
-                        for(var camp in camps) { if(!camps.hasOwnProperty(camp)) { continue; }
-                            var deltas = camps[camp].deltas; if(!deltas) { continue; }
-                            var campInfo = gameUtility.expandCamp(camp,localTerrain);
-                            for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
-                                var demand = campInfo.economy.resources[resource].demand;
-                                var abundance = gameUtility.resourceList[resource].abundance;
-                                // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
-                                // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
-                                var interval = camps[camp].deltas[resource].amount < 0 ? 
-                                    demand/100 * 14400000 + (50-abundance) * 80000
-                                    : 3600000 - demand/100 * 1800000 - abundance * 60000;
-                                var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
-                                interval = Math.max(1,interval);
-                                if(theTime < camps[camp].deltas[resource].time + interval) { continue; }
-                                var difference = theTime - (parseInt(camps[camp].deltas[resource].time) + interval);
-                                multiplier += multiplier * Math.floor(difference / interval);
-                                difference -= interval * Math.floor(difference / interval);
-                                message += camps[camp].deltas[resource].amount < 0 ?
-                                    camp + '-' + resource + ' replenished by ' + multiplier + ' | ' :
-                                    camp + '-' + resource + ' depleted by ' + multiplier + ' | ' ;
-                                newCamps[camp].deltas[resource].amount = camps[camp].deltas[resource].amount < 0 ? 
-                                    Math.min(camps[camp].deltas[resource].amount + multiplier,0) : 
-                                    Math.max(camps[camp].deltas[resource].amount - multiplier,0);
-                                newCamps[camp].deltas[resource].time = theTime - difference;
-                                newCamps[camp].deltas[resource] = newCamps[camp].deltas[resource].amount == 0 ?
-                                    null : newCamps[camp].deltas[resource];
-                            }
-                        }
-                        if(message.length > 0) { console.log(new Date(),message); }
-                        fireRef.child('camps').set(newCamps);
-                    });
-                    fireRef.child('abundances').once('value',function(snap) { if(!snap.val()) { return; }
-                        var theTime = new Date().getTime(); var message = '';
-                        var snapAbundances = snap.val(), newAbundances = angular.copy(snapAbundances);
-                        for(var grid in snapAbundances) { if(!snapAbundances.hasOwnProperty(grid)) { continue; }
-                            for(var actKey in snapAbundances[grid]) { 
-                                if(!snapAbundances[grid].hasOwnProperty(actKey)) { continue; }
-                                var interval = 3600000; // 1 hour
-                                if(theTime < parseInt(snapAbundances[grid][actKey].time) + interval) { continue; }
-                                var difference = theTime - (parseInt(snapAbundances[grid][actKey].time) + interval);
-                                var multiplier = 1 + Math.floor(difference / interval);
-                                difference -= interval * Math.floor(difference / interval);
-                                message += grid + '-' + actKey + ' replenished by ' + multiplier + ' | ';
-                                newAbundances[grid][actKey].time += interval + difference;
-                                newAbundances[grid][actKey].amount += multiplier;
-                                newAbundances[grid][actKey] = newAbundances[grid][actKey].amount >= 0 ?
-                                    null : newAbundances[grid][actKey];
-                            }
-                        }
-                        if(message.length > 0) { console.log(new Date(),message); }
-                        fireRef.child('abundances').set(newAbundances);
-                    });
-                };
-                setInterval(passTime,300000); passTime();
-                canvasUtility.fillCanvas(fullFogContext,'erase');
-                zoomFogCanvas.style.visibility="hidden";
-            } else { // If regular user
-                fireUser.child('movement').on('value', movePlayer);
-                fireUser.child('stats/hunger').on('value', function(snap) {
-                    $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
-                    $scope.user.stats.hunger = snap.val();
-                });
-                var myConnectionsRef = fireUser.child('connections');
-                var lastOnlineRef = fireUser.child('lastOnline');
-                var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
-                connectedRef.on('value', function(snap) {
-                    if (snap.val() === true) {
-                        var con = myConnectionsRef.push(true);
-                        fireServer.push({ user: userID, action: 'logIn' });
-                        con.onDisconnect().remove();
-                        lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
-                    }
-                });
-            }
+            });
+            fireUser.child('movement').on('value', movePlayer);
+            fireUser.child('stats/hunger').on('value', function(snap) {
+                $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
+                $scope.user.stats.hunger = snap.val();
+            });
+            var myConnectionsRef = fireUser.child('connections');
+            var lastOnlineRef = fireUser.child('lastOnline');
+            var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
+            connectedRef.on('value', function(snap) {
+                if (snap.val() === true) {
+                    var con = myConnectionsRef.push(true);
+                    fireServer.push({ user: userID, action: 'logIn' });
+                    con.onDisconnect().remove();
+                    lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
+                }
+            });
         };
         
         fireRef.child('labels').once('value',function(snap) {

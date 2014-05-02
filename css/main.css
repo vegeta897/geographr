@@ -40,19 +40,9 @@ canvas { display: block; }
 #minimap, #eventCanvases, #zoomCanvases, #eventTutorial { position: relative; }
 #minimap, #eventCanvases, #eventTutorial { height: 300px; } #zoomCanvases { height: 604px; }
 
-#gridView {
-    width: 295px; height: 295px;
-    margin-top: 4px;
-    border: 1px solid #7a8288;
-    text-align: center;
-    border-collapse: separate;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
+#gridView { width: 295px; height: 295px; margin-top: 4px; border: 1px solid #7a8288; text-align: center;
+    border-collapse: separate; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
+    -moz-user-select: none; -ms-user-select: none; user-select: none; }
 
 #gridView td { border: 1px solid #50575c; width: 98px; height: 98px; cursor: pointer; }
 #gridView td:hover { border: 2px solid #666f75; background-color: #383e45; }
@@ -235,6 +225,7 @@ h2 { color: #aaa; font-size: 18px; line-height: 22px; margin-top: 8px; margin-bo
 h2 small { font-size: 14px; margin-left: 12px; }
 .text-warning strong { color: #f8a416; }
 .text-warning small { color: #d89416; }
+.text-danger strong { color: #f15249; }
 .well { padding: 7px; background-color: #24272b; border-color: #1b1e21; }
 .progress { height: 12px; margin-bottom: 12px; margin-top: 4px; }
 .progress .progress-bar.low { background-color: #853436 !important; }

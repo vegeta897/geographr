@@ -433,7 +433,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     if(event.step % 5 == 4) { // Clicked on-time
                         var animal = poolCopy[Math.floor(event.step/5)];
                         dist = Math.pow(click.x - animal.targetX,2) + Math.pow(click.y - animal.targetY,2);
-                        if(dist <= Math.pow(event.skill + 3 + animal.product.weight / 70,2)) {
+                        if(dist <= Math.pow(event.skill/2 + 3 + animal.product.weight / 70,2)) {
                             event.result.success = true;
                             actCanvasUtility.drawCircle('main',[animal.targetX,animal.targetY],
                                 12,'#ff0000');

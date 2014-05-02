@@ -1,0 +1,38 @@
+<div class="navbar" ng-include="'partials/navbar.html'"></div>
+<!-- Canvases/9grid -->
+<div id="mainContainer" class="container">
+    <div class="canvas-container side">
+        <div id="minimap">
+            <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
+            <canvas id="fullFogCanvas" width="300" height="300"></canvas> <!-- Fog canvas -->
+            <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
+            <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
+            <canvas id="fullHighCanvas" width="300" height="300"> <!-- Highlight canvas -->
+                Your browser doesn't support canvases. <a href="http://www.google.com/chrome">Get a better one.</a>
+            </canvas>
+        </div>
+    </div>
+    <div class="canvas-container"> <!-- Right side canvases -->
+        <div id="zoomCanvases">
+            <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
+            <canvas id="zoomFogCanvas" width="900" height="600"></canvas> <!-- Fog canvas -->
+            <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
+            <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
+        </div>
+        <!-- Canvas/Movement Controls -->
+        <div ng-include="'partials/controls.html'" onload="attachControls()"></div>
+    </div>
+</div>
+<div id="uiContainer" ng-show="userInit && terrainReady" class="container">
+    <div class="row">
+        <div class="col-xs-9" ng-hide="user.camp">
+            I'm the server! I'm the wiz!
+        </div>
+        <div class="col-xs-3">
+            <!-- Object Info -->
+            <div id="objectInfo">
+                <div ng-show="selectedObject" onLoad="attachObjInfo()" ng-include="'partials/object-info.html'"></div>
+            </div>
+        </div>
+    </div>
+</div>
