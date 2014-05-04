@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.264; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+        $scope.version = 0.265; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
@@ -10,9 +10,8 @@ angular.module('Geographr.controllerMain', [])
         $scope.mapElements = { labels: true, objects: true };
         $scope.editTerrain = false; $scope.smoothTerrain = false;
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
-        $scope.eventLog = [];
+        $scope.eventLog = []; $scope.tutorialSkips = []; $scope.skipTutorial = false;
         $scope.movePath = []; $scope.lookCount = 0;
-        $scope.tutorialSkips = []; $scope.skipTutorial = false;
         $scope.showItemTypes = {'animal':true,'mineral':true,'plant':true,'resource':true};
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
@@ -470,7 +469,7 @@ angular.module('Geographr.controllerMain', [])
             }
         };
         var createActivities = function() {
-            var activities = gameUtility.getActivityAbundance(localTerrain,$scope.user.location,campList);
+            var activities = gameUtility.getActivityAbundance($scope.user.location,campList);
             for(var actKey in activities) { if(!activities.hasOwnProperty(actKey)) { return; }
                 var abundance = abundances.hasOwnProperty(actKey) ? abundances[actKey].amount : 0;
                 if(jQuery.inArray(actKey,availableActivities) < 0) { // Activity not already present
@@ -612,7 +611,7 @@ angular.module('Geographr.controllerMain', [])
                         var grid = $scope.selectedObject.grid;
                         if($scope.selectedObject.type == 'camp' && 
                             jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
-                            $scope.selectedObject = gameUtility.expandCamp(grid,localTerrain);
+                            $scope.selectedObject = gameUtility.expandCamp(grid);
                             $scope.selectedObject.visited = true;
                         }
                     }
@@ -768,7 +767,7 @@ angular.module('Geographr.controllerMain', [])
             if(panMouseDown || 
                 !(e.target.id == 'zoomHighCanvas' || e.target.id == 'controls' || e.target.id == 'objectInfo')) {
                 return false; }
-            if(e.which == 2) {  startDragPanning(e); return false; } // If middle click pressed
+            if(e.which == 2 || e.which == 3) { startDragPanning(e); return false; } // If middle/right click pressed
             if(!userID) { return false; } // Ignore actions from non-user
             var x = $scope.overPixel.x, y = $scope.overPixel.y;
             // Make stuff happen when user clicks on map
@@ -987,21 +986,21 @@ angular.module('Geographr.controllerMain', [])
         var movePlayer = function(snap) {
             if(!snap.val()) { return; }
             if(snap.val().location == $scope.user.location) { return; }
-            if(snap.val().hasOwnProperty('campfires')) { // TODO: Re-use this for something else
-                $scope.onPixel.campfire = snap.val().campfires.hasOwnProperty(snap.val().location);
-                var campfireExpired = false; var newCampfires = {};
-                var theTime = new Date().getTime();
-                for(var cfKey in snap.val().campfires) {
-                    if(!snap.val().campfires.hasOwnProperty(cfKey)) { continue; }
-                    var campfire = { type:'campfire', created:snap.val().campfires[cfKey] };
-                    localObjects[cfKey] ? localObjects[cfKey].push(campfire) : localObjects[cfKey] = [campfire];
-                    if(snap.val().campfires[cfKey] + 57600000 < theTime) { // If older than 16 hours
-                        campfireExpired = true;
-                    } else { newCampfires[cfKey] = snap.val().campfires[cfKey]; }
-                }
-                if(campfireExpired) { fireUser.child('movement/campfires').set(newCampfires); }
-            }
-            console.log('moving player to',snap.val().location);
+//            if(snap.val().hasOwnProperty('campfires')) { // TODO: Re-use this for something else
+//                $scope.onPixel.campfire = snap.val().campfires.hasOwnProperty(snap.val().location);
+//                var campfireExpired = false; var newCampfires = {};
+//                var theTime = new Date().getTime();
+//                for(var cfKey in snap.val().campfires) {
+//                    if(!snap.val().campfires.hasOwnProperty(cfKey)) { continue; }
+//                    var campfire = { type:'campfire', created:snap.val().campfires[cfKey] };
+//                    localObjects[cfKey] ? localObjects[cfKey].push(campfire) : localObjects[cfKey] = [campfire];
+//                    if(snap.val().campfires[cfKey] + 57600000 < theTime) { // If older than 16 hours
+//                        campfireExpired = true;
+//                    } else { newCampfires[cfKey] = snap.val().campfires[cfKey]; }
+//                }
+//                if(campfireExpired) { fireUser.child('movement/campfires').set(newCampfires); }
+//            }
+            console.log('moving to',snap.val().location);
             if($scope.user.location) { 
                 fireRef.child('camps/' + $scope.user.location).off();
                 fireRef.child('abundances/' + $scope.user.location).off();
@@ -1044,7 +1043,7 @@ angular.module('Geographr.controllerMain', [])
                     abundances = snap.val() || {}; createActivities();
                 });
             }
-            visiblePixels = gameUtility.getVisibility(localTerrain,visiblePixels,snap.val().location);
+            visiblePixels = gameUtility.getVisibility(visiblePixels,snap.val().location);
             canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
             var firstWater; $scope.movePath = snap.val().movePath || [];
             for(var i = 0; i < $scope.movePath.length; i++) {
@@ -1124,6 +1123,7 @@ angular.module('Geographr.controllerMain', [])
        };
         var prepareTerrain = function() {
             $scope.terrainReady = true;
+            gameUtility.attachTerrain(localTerrain);
             fireRef.child('campList').once('value',function(snap) {
                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
                    var nativeLocations = gameUtility.genNativeCamps(localTerrain);

@@ -1,6 +1,5 @@
 angular.module('Geographr.controllerServer', [])
 .controller('Server', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope,$timeout,localStorage,colorUtility,canvasUtility,gameUtility) {
-        $scope.version = 0.264; $scope.needUpdate = false;
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-'; $scope.onPixel = {};
@@ -15,50 +14,35 @@ angular.module('Geographr.controllerServer', [])
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1'); gameUtility.attachFireRef(fireRef);
         var fireServer = fireRef.child('clients/actions');
         var auth; // Create a reference to the auth service for our data
-        fireRef.parent().child('version').once('value', function(snap) { // Check version number
-            if($scope.version >= snap.val()) {
-                fireRef.parent().child('version').on('value',function(snap) {
-                    if($scope.version >= snap.val()) { return; }
-                    $timeout(function() {
-                        $scope.needUpdate = true; $scope.authStatus = ''; $scope.userInit = false;
-                        $scope.user = $scope.onPixel = null;
-                        jQuery(zoomHighCanvas)
-                            .unbind('mousemove').unbind('mousedown').unbind('mouseup').unbind('mousewheel');
-                        jQuery(fullHighCanvas).unbind('mousedown').unbind('mouseup').unbind('mousewheel');
-                    });
-                });
-                var initUser = function() {
-                    $scope.user = {email:'server@admin.com',id:'2',nick:'Server'}; 
-                    $scope.userInit = true; $scope.authStatus = 'logged';
-                    initTerrain();
-                };
-                auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
-                    if(userID == 2) { console.log('server re-authed!'); return; }
-                    $timeout(function() {
-                        if(error) {
-                            console.log(error, $scope.loginEmail, $scope.loginPassword);
-                            if(error.code == 'INVALID_USER') {
-                                console.log('Incorrect server credentials')
-                            } else if(error.code == 'INVALID_PASSWORD') { $scope.authStatus = 'badPass'; } else
-                            if(error.code == 'INVALID_EMAIL') { $scope.authStatus = 'badEmail'; }
-                        } else if(user) {
-                            console.log('Server authorized'); userID = user.id;
-                            fireUser = fireRef.child('users/'+userID);
-                            initUser();
-                        } else { console.log('logged out'); $scope.authStatus = 'notLogged'; }
-                    });
-                });
-    
-                // Authentication
-                $scope.authenticate = function(loginEmail,loginPassword) {
-                    $scope.authStatus = 'logging';
-                    auth.login('password', {email: loginEmail,
-                        password: loginPassword, rememberMe: true});
-                };
-                $scope.logOut = function() { auth.logout(); };
-                
-            } else { $timeout(function() { $scope.needUpdate = true; } ) }
+        var initUser = function() {
+            $scope.user = {email:'server@admin.com',id:'2',nick:'Server'}; 
+            $scope.userInit = true; $scope.authStatus = 'logged';
+            initTerrain();
+        };
+        auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
+            if(userID == 2) { console.log('server re-authed!'); return; }
+            $timeout(function() {
+                if(error) {
+                    console.log(error, $scope.loginEmail, $scope.loginPassword);
+                    if(error.code == 'INVALID_USER') {
+                        console.log('Incorrect server credentials')
+                    } else if(error.code == 'INVALID_PASSWORD') { $scope.authStatus = 'badPass'; } else
+                    if(error.code == 'INVALID_EMAIL') { $scope.authStatus = 'badEmail'; }
+                } else if(user) {
+                    console.log('Server authorized'); userID = user.id;
+                    fireUser = fireRef.child('users/'+userID);
+                    initUser();
+                } else { console.log('logged out'); $scope.authStatus = 'notLogged'; }
+            });
         });
+
+        // Authentication
+        $scope.authenticate = function(loginEmail,loginPassword) {
+            $scope.authStatus = 'logging';
+            auth.login('password', {email: loginEmail,
+                password: loginPassword, rememberMe: true});
+        };
+        $scope.logOut = function() { auth.logout(); };
     
         // Attempt to get these variables from localstorage
         var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate'];
@@ -137,8 +121,8 @@ angular.module('Geographr.controllerServer', [])
         };
         // Selecting an object on the map
         var selectGrid = function(e) {
-            if(e.which == 3) {  e.preventDefault(); return; } // If right click pressed
-            if(e.which == 2) {  startDragPanning(e); return; } // If middle click pressed
+            if(e.which == 3) { e.preventDefault(); return; } // If right click pressed
+            if(e.which == 2) { startDragPanning(e); return; } // If middle click pressed
             if($scope.authStatus != 'logged') { return; } // If not authed
             $timeout(function(){
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
@@ -148,7 +132,7 @@ angular.module('Geographr.controllerServer', [])
                         $scope.selectedObject = $scope.selectedGrid[0];
                         var grid = $scope.selectedObject.grid;
                         if($scope.selectedObject.type == 'camp') {
-                            $scope.selectedObject = gameUtility.expandCamp(grid,localTerrain);
+                            $scope.selectedObject = gameUtility.expandCamp(grid);
                             $scope.selectedObject.visited = true;
                         }
                     }
@@ -267,7 +251,7 @@ angular.module('Geographr.controllerServer', [])
             if(panMouseDown || 
                 !(e.target.id == 'zoomHighCanvas' || e.target.id == 'controls' || e.target.id == 'objectInfo')) {
                 return false; }
-            if(e.which == 2) {  startDragPanning(e); return false; } // If middle click pressed
+            if(e.which == 2 || e.which == 3) { startDragPanning(e); return false; } // Pan
             var x = $scope.overPixel.x, y = $scope.overPixel.y;
             // Make stuff happen when user clicks on map
             if(localObjects.hasOwnProperty(x+':'+y)) { selectGrid(e); return false; } // If selecting an object
@@ -429,34 +413,36 @@ angular.module('Geographr.controllerServer', [])
        };
         var prepareTerrain = function() {
             $scope.terrainReady = true;
+            gameUtility.attachTerrain(localTerrain);
             fireRef.child('campList').once('value',function(snap) {
-               if(!snap.val() && userID < 3) { // Generate camps if none on firebase
-                   var nativeLocations = gameUtility.genNativeCamps(localTerrain);
-                   fireRef.child('camps').set(nativeLocations); return;
-               } 
-               campList = snap.val();
-               for(var i = 0; i < campList.length; i++) { // Generate camp details from locations
-                   Math.seedrandom(campList[i]);
-                   var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
-                   var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
-                   if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
-                   else { localObjects[campList[i]] = [camp]; }
-               }
+                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
+                    var nativeLocations = gameUtility.genNativeCamps();
+                    fireRef.child('camps').set(nativeLocations); return;
+                } 
+                campList = snap.val();
+                for(var i = 0; i < campList.length; i++) { // Generate camp details from locations
+                    Math.seedrandom(campList[i]);
+                    var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
+                    var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
+                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
+                    else { localObjects[campList[i]] = [camp]; }
+                }
+                changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]);
             });
             canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
             console.log('Server ready!');
             var updateUsers = function(snap) {
-               for(var key in snap.val()) {
-                   if(!snap.val().hasOwnProperty(key)) { continue; }
-                   if(!localUsers.hasOwnProperty(key)) { continue; }
-                   if(localUsers[key].hasOwnProperty('connections') &&
-                       !snap.val()[key].hasOwnProperty('connections')) {
-                       if(key != 1) { console.log(localUsers[key].nick,'disconnected at',
-                           new Date(snap.val()[key].lastOnline)); }
-                       fireRef.child('scoreBoard/'+key+'/online').remove();
-                   }
-               }
-               localUsers = snap.val();
+                for(var key in snap.val()) {
+                    if(!snap.val().hasOwnProperty(key)) { continue; }
+                    if(!localUsers.hasOwnProperty(key)) { continue; }
+                    if(localUsers[key].hasOwnProperty('connections') &&
+                        !snap.val()[key].hasOwnProperty('connections')) {
+                        if(key != 1) { console.log(localUsers[key].nick,'disconnected at',
+                            new Date(snap.val()[key].lastOnline)); }
+                        fireRef.child('scoreBoard/'+key+'/online').remove();
+                    }
+                }
+                localUsers = snap.val();
             };
             fireRef.child('users').on('value', updateUsers);
             fireServer.on('child_added', function(snap) { // When a client action is received
@@ -465,7 +451,7 @@ angular.module('Geographr.controllerServer', [])
                 var action = snap.val().action.split(',');
                 switch(action[0]) {
                     case 'createCamp':
-                        var startGrid = gameUtility.createUserCamp(localTerrain,localObjects);
+                        var startGrid = gameUtility.createUserCamp(localObjects);
                         fireRef.child('users/'+snap.val().user).update({
                             camp: { grid: startGrid, color: colorUtility.generate('camp').hex },
                             movement: {location: startGrid}, money: 200, stats: { hunger: 100 },
@@ -519,7 +505,7 @@ angular.module('Geographr.controllerServer', [])
                     var camps = snap.val(), newCamps = angular.copy(camps);
                     for(var camp in camps) { if(!camps.hasOwnProperty(camp)) { continue; }
                         var deltas = camps[camp].deltas; if(!deltas) { continue; }
-                        var campInfo = gameUtility.expandCamp(camp,localTerrain);
+                        var campInfo = gameUtility.expandCamp(camp);
                         for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
                             var demand = campInfo.economy.resources[resource].demand;
                             var abundance = gameUtility.resourceList[resource].abundance;

@@ -3,21 +3,36 @@
 angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUtility,canvasUtility) {
     // TODO: Move all these data sets into a separate file
     var resourceList = {
-        lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, unit: {pre:'planks'} },
-        fish: { color: '79888e', value: 6, weight: 2, abundance: 15 },
-        fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, unit: {pre:'pieces'} },
-        vegetables: { color: '7a984d', value: 12, weight: 2, abundance: 20 },
-        meat: { color: '82341c', value: 48, weight: 6, abundance: 10, unit: {pre:'cuts'} },
-        salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, unit: {pre:'pouches'} },
-        coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, unit: {post:'chunks'} },
-        iron: { color: '59534a', value: 36, weight: 15, abundance: 15, unit: {post:'ingots'} },
-        copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, unit: {post:'ingots'} },
-        silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, unit: {post:'ingots'} },
-        gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, unit: {post:'ingots'} },
-        wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, unit: {pre:'sacks'} },
-        tools: { color: '5f5f5f', value: 180, weight: 16, abundance: 8 },
-        weapons: { color: '5f5656', value: 240, weight: 26, abundance: 5 },
-        spices: { color: '925825', value: 60, weight: 1, abundance: 3, unit: {pre:'pouches'} }
+        lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, 
+            unit: {pre:'planks'}, terrainFactors: ['nearForests:0:8'] },
+        fish: { color: '79888e', value: 6, weight: 2, abundance: 15,
+            terrainFactors: ['nearWater:0:5'] },
+        fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, 
+            unit: {pre:'pieces'}, terrainFactors: ['inPlains:1:3'] },
+        vegetables: { color: '7a984d', value: 12, weight: 2, abundance: 20,
+            terrainFactors: ['inPlains'] },
+        meat: { color: '82341c', value: 48, weight: 6, abundance: 10, 
+            unit: {pre:'cuts'}, terrainFactors: ['inPlains:1:2'] },
+        salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, 
+            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:1:5','nearWater:1:3'] },
+        coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, 
+            unit: {post:'chunks'}, terrainFactors: ['nearMountains:-1:5'] },
+        iron: { color: '59534a', value: 36, weight: 15, abundance: 15, 
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:5'] },
+        copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, 
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:5'] },
+        silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, 
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:4'] },
+        gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, 
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:3'] },
+        wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, 
+            unit: {pre:'sacks'}, terrainFactors: ['inPlains:0.2:2'] },
+        tools: { color: '5f5f5f', value: 180, weight: 16, abundance: 8, 
+            terrainFactors: ['withLumberAndIron:0:4'] },
+        weapons: { color: '5f5656', value: 240, weight: 26, abundance: 5,
+            terrainFactors: ['withLumberAndIron:0:5'] },
+        spices: { color: '925825', value: 60, weight: 1, abundance: 3, 
+            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:2:1'] }
     };
     var eventMessages = { // Event messages/instructions to show user
         success: {
@@ -86,7 +101,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     var equipment = {
         'small dagger': { weight: 2, color: '757270', classes: ['blade'] }
     };
-    var scope, userInventory, fireRef, fireUser, fireInventory; // References to controller stuff
+    var scope, terrain, userInventory, fireRef, fireUser, fireInventory; // References to controller stuff
     var event = {}; // Holds event details
     var randomIntRange = function(min,max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
     var randomRange = function(min,max) { return Math.random() * (max-min) + min; };
@@ -234,13 +249,21 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }}
         return false;
     };
-    var getNearWater = function(terrain,location,distance) {
-        location = {x: parseInt(location[0]), y: parseInt(location[1]) };
-        var inRange = getCircle([location.x,location.y],distance), nearWater = [];
+    var getNearWater = function(grid,distance) {
+        grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+        var inRange = getCircle([grid.x,grid.y],distance), nearWater = [];
         for(var i = 0; i < inRange.length; i++) {
             if(!terrain.hasOwnProperty(inRange[i])) { nearWater.push(inRange[i]); }
         }
         return nearWater;
+    };
+    var getNearAverageElevation = function(grid,distance) {
+        grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+        var inRange = getCircle([grid.x,grid.y],distance), count = 0, total = 0;
+        for(var i = 0; i < inRange.length; i++) {
+            if(terrain.hasOwnProperty(inRange[i])) { count++; total += terrain[inRange[i]]; }
+        }
+        return count > 0 ? total/count : 0;
     };
     var getNearest = function(ox,oy,near,exclude) {
         var nearest = {coords: '', dist: 999};
@@ -254,23 +277,32 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }
         return nearest.coords;
     };
-    var getCoastDistance = function(terrain,location) { // Returns squared distance of nearest water
-        location = {x: parseInt(location.split(':')[0]), y: parseInt(location.split(':')[1]) };
+    var getCoastDistance = function(grid) { // Returns squared distance of nearest water
+        grid = { ref: grid, x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         var searchDist = 0, nearWater;
         for(var i = 1; i < 50; i++) {
-            nearWater = getNearWater(terrain,[location.x,location.y],i*4);
+            nearWater = getNearWater(grid.ref,i*4);
             if(nearWater.length > 0) { searchDist = i*4; break; }
         }
         var closest = 50000;
         for(var w = 0; w < nearWater.length; w++) {
-            var distX = Math.abs(nearWater[w].split(':')[0] - location.x), 
-                distY = Math.abs(nearWater[w].split(':')[1] - location.y);
+            var distX = Math.abs(nearWater[w].split(':')[0] - grid.x), 
+                distY = Math.abs(nearWater[w].split(':')[1] - grid.y);
             closest = Math.min(closest,distX*distX + distY*distY);
             if(closest <= 1) { break; }
         }
         return closest;
     };
-    var genCampEconomy = function(grid,terrain) {
+    var terrainFactors = function(grid,factor) {
+        var result = 1;
+        var type = factor.split(':')[0], min = parseInt(factor.split(':')[1]), range = factor.split(':')[2]-min;
+        switch(type) {
+            case 'nearWater': result = 1/(getCoastDistance(grid)/3); break;
+            case 'nearMountains': result = getNearAverageElevation(grid,3)/14; break;
+        }
+        return Math.max(0,min + range * Math.max(0,Math.min(1,result)));
+    };
+    var genCampEconomy = function(grid) {
         Math.seedrandom(grid);
         var economy = {}; var resources = {};
         for(var resKey in resourceList) { // Resource demands
@@ -280,17 +312,25 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             // Create module functions with coefficient parameters to handle this
             var random = Math.random();
             resources[resKey] = { color: res.color };
+//            console.log(resKey,'-',parseInt(random*100),'---------------------------------');
+            resources[resKey].demand = (1 - random)*60+20;
+//            console.log('original demand:',resources[resKey].demand);
+            if(resourceList[resKey].hasOwnProperty('terrainFactors')) {
+                for(var i = 0; i < resourceList[resKey].terrainFactors.length; i++) {
+                    var factor = terrainFactors(grid,resourceList[resKey].terrainFactors[i]);
+                    console.log('factor:',factor);
+                    resources[resKey].demand /= Math.max(0.01,factor);
+                }
+            }
+            resources[resKey].demand = Math.max(0,Math.min(100, // +/- 4 deviance
+                    Math.round(Math.max(0,Math.min(100,resources[resKey].demand))+random*8-4)));
             resources[resKey].supply =
-                Math.round((random * 10 * res.abundance)/res.value);
-            resources[resKey].demand =
-                Math.round((1 - random)*100);
-            resources[resKey].value = res.value * (resources[resKey].demand / 50);
-            resources[resKey].value = resources[resKey].value == 0 ? 0.1 : resources[resKey].value;
-//                console.log(resKey,'-',parseInt(random*100),'---------------------------------');
-//                console.log('supply:',economy[resKey].supply);
-//                console.log('demand:',economy[resKey].demand);
-//                console.log('abundance:',res.abundance,'raw value:',res.value);
-//                console.log('camp value:',economy[resKey].value);
+                Math.round((random*10*(40/Math.max(40,resources[resKey].demand)) * res.abundance)/res.value);
+            resources[resKey].value = Math.max(0.1,res.value * (resources[resKey].demand / 50));
+//            console.log('weighted demand:',resources[resKey].demand);
+//            console.log('supply:',resources[resKey].supply);
+//            console.log('abundance:',res.abundance,'raw value:',res.value);
+//            console.log('camp value:',resources[resKey].value);
         }
         economy.resources = resources;
         var blacksmithFactor = resources['coal'].demand + resources['iron'].demand 
@@ -473,7 +513,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     : event.result.continue ? '' : eventMessages.failure[type];
             return event.result;
         },
-        getVisibility: function(terrain,visible,coords) {
+        getVisibility: function(visible,coords) {
             var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);
             var inRange = getCircle([x,y],4);
             for(var key in visible) { // Set all pixels to explored
@@ -488,7 +528,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             }
             return visible;
         },
-        getActivityAbundance: function(terrain,location,camps) {
+        getActivityAbundance: function(location,camps) {
             Math.seedrandom(location); // Consistent grid results
             var abundance = {
                 forage: Math.min(1,7/terrain[location]) * (Math.random()/2+0.5), 
@@ -500,13 +540,13 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 abundance.forage * 0.8 : abundance.forage;
             abundance.hunt = isCampNear(camps,location.split(':'),1) ? 
                 abundance.hunt * 0.6 : abundance.hunt;
-            var coastDist = getCoastDistance(terrain,location);
+            var coastDist = getCoastDistance(location);
             abundance.forage = abundance.forage * (1-0.8*(1-Math.min(coastDist,3)/3)); // Less near coast
             abundance.hunt = abundance.hunt * (1-0.8*(1-Math.min(coastDist,9)/9)); // Less near coast
             
             return abundance;
         },
-        createUserCamp: function(terrain,camps) {
+        createUserCamp: function(camps) {
             Math.seedrandom();
             for(var i = 0; i < 5000; i++) {
                 var x = randomIntRange(20,279), y = randomIntRange(20,279);
@@ -514,7 +554,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             }
             return false;
         },
-        genNativeCamps: function(terrain) {
+        genNativeCamps: function() {
             var camps = [];
             for(var tKey in terrain) {
                 if(terrain.hasOwnProperty(tKey)) {
@@ -545,13 +585,13 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             }
             return camps;
         },
-        expandCamp: function(grid,terrain) {
+        expandCamp: function(grid) {
             Math.seedrandom(grid); // Deterministic based on grid
             var x = parseInt(grid.split(':')[0]), y = parseInt(grid.split(':')[1]);
-            return { economy: genCampEconomy(grid,terrain), type: 'camp', name: Chance(x*1000 + y).word(),
+            return { economy: genCampEconomy(grid), type: 'camp', name: Chance(x*1000 + y).word(),
                 grid: grid }
         },
-        expandObjects: function(objects,grid,terrain) { // Generate traits and properties of objects
+        expandObjects: function(objects,grid) { // Generate traits and properties of objects
             if(!objects || objects.length < 1) { return undefined; }
             var expanded = [];
             for(var i = 0; i < objects.length; i++) {
@@ -609,6 +649,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             return output;
         },
         attachScope: function(theScope) { scope = theScope; },
+        attachTerrain: function(localTerrain) { terrain = localTerrain; },
         attachInventory: function(inv) { userInventory = inv; },
         attachFireRef: function(ref) { fireRef = ref; },
         attachFireUser: function(user) { fireUser = user; },

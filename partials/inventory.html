@@ -13,10 +13,10 @@
                 <strong data-model="item.amount" class="change-effect">{{ item.amount }}</strong></a></td>
             <td style="width: 16px;"><a href="#" data-toggle-panel>
                 <span ng-style="{background: '#'+item.color}" ng-class="item.status" class="item-color">
-                    <span ng-show="item.status == 'cooked'">C</span>
-                    <span ng-show="item.status == 'pelt'">P</span>
+                    <span ng-show="item.status == 'cooked'">C</span><span ng-show="item.status == 'pelt'">P</span>
                 </span></a></td>
-            <td><span ng-show="item.unit.pre">{{ item.unit.pre }} of</span>
+            <td>
+                <span ng-show="item.unit.pre">{{ item.unit.pre }} of</span>
                 <span ng-show="item.profession == 'blacksmith' || item.profession == 'saltFarm'">unrefined</span>
                 <span ng-show="item.profession == 'jeweler'">uncut</span>
                 <span ng-show="item.status == 'cooked'">cooked</span>
