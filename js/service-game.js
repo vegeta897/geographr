@@ -10,7 +10,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, 
             unit: {pre:'pieces'}, terrainFactors: ['inPlains:1:3'] },
         vegetables: { color: '7a984d', value: 12, weight: 2, abundance: 20,
-            terrainFactors: ['inPlains'] },
+            terrainFactors: ['inPlains:1:3'] },
         meat: { color: '82341c', value: 48, weight: 6, abundance: 10, 
             unit: {pre:'cuts'}, terrainFactors: ['inPlains:1:2'] },
         salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, 
@@ -299,6 +299,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         switch(type) {
             case 'nearWater': result = 1/(getCoastDistance(grid)/3); break;
             case 'nearMountains': result = getNearAverageElevation(grid,3)/14; break;
+            default: return 1; break;
         }
         return Math.max(0,min + range * Math.max(0,Math.min(1,result)));
     };
@@ -318,7 +319,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             if(resourceList[resKey].hasOwnProperty('terrainFactors')) {
                 for(var i = 0; i < resourceList[resKey].terrainFactors.length; i++) {
                     var factor = terrainFactors(grid,resourceList[resKey].terrainFactors[i]);
-                    console.log('factor:',factor);
+//                    console.log('factor:',factor);
                     resources[resKey].demand /= Math.max(0.01,factor);
                 }
             }
