@@ -1,13 +1,12 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.265; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+        $scope.version = 0.266; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
         $scope.overPixel.type = $scope.overPixel.elevation = '-'; $scope.onPixel = {};
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
-        $scope.placingObject = {};
-        $scope.mapElements = { labels: true, objects: true };
+        $scope.placingObject = {}; $scope.mapElements = { labels: true, objects: true };
         $scope.editTerrain = false; $scope.smoothTerrain = false;
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = []; $scope.tutorialSkips = []; $scope.skipTutorial = false;
@@ -616,7 +615,7 @@ angular.module('Geographr.controllerMain', [])
                         }
                     }
                 } else { $scope.selectedGrid = null; }
-                drawZoomCanvas();
+                objectInfoPanel.show(); objectInfoPanel.css('visibility', 'hidden'); drawZoomCanvas();
             });
         };
         // Placing an object on the map
@@ -664,20 +663,29 @@ angular.module('Geographr.controllerMain', [])
                     drawObject(coords,localObjects[objKey]);
                 }
             }
-            if($scope.selectedObject) { // Show/hide object info panel
-                var top = ($scope.selectedObject.grid.split(':')[1] - $scope.zoomPosition[1]) 
-                    * zoomPixSize + zoomPixSize/2;
-                var left = ($scope.selectedObject.grid.split(':')[0] - $scope.zoomPosition[0]) 
-                    * zoomPixSize + zoomPixSize*1.5;
-                objectInfoPanel.show();
-                if(top < 0 || left < 0 || left + objectInfoPanel.children('div').outerWidth() >= 900 || 
-                    top + objectInfoPanel.children('div').outerHeight() >= 600) { 
-                    objectInfoPanel.hide(); 
-                } else {
-                    objectInfoPanel.offset({top: top + jQuery(zoomHighCanvas).offset().top,
-                        left: left + jQuery(zoomHighCanvas).offset().left });
+            $timeout(function(){
+                objectInfoPanel.css('visibility', 'visible');
+                if($scope.selectedObject) { // Show/hide object info panel
+                    var top = ($scope.selectedObject.grid.split(':')[1] - $scope.zoomPosition[1])
+                        * zoomPixSize + zoomPixSize;
+                    var left = ($scope.selectedObject.grid.split(':')[0] - $scope.zoomPosition[0])
+                        * zoomPixSize + zoomPixSize;
+                    if(top < 0 || left < 0 || left >= 900 || top >= 600) { objectInfoPanel.hide(); } else {
+                        if(top + objectInfoPanel.children('div').outerHeight() >= 600) {
+                            objectInfoPanel.offset({ top: jQuery(zoomHighCanvas).offset().top + top
+                                - objectInfoPanel.children('div').outerHeight() - zoomPixSize });
+                        } else {
+                            objectInfoPanel.offset({ top: jQuery(zoomHighCanvas).offset().top + top });
+                        }
+                        if(left + objectInfoPanel.children('div').outerWidth() >= 900) {
+                            objectInfoPanel.offset({ left: jQuery(zoomHighCanvas).offset().left + left
+                                - objectInfoPanel.children('div').outerWidth() - zoomPixSize });
+                        } else {
+                            objectInfoPanel.offset({ left: jQuery(zoomHighCanvas).offset().left + left });
+                        }
+                    }
                 }
-            }
+            },1);
             
             if(!$scope.user) { return; }
             canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);

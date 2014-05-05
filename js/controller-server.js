@@ -137,7 +137,7 @@ angular.module('Geographr.controllerServer', [])
                         }
                     }
                 } else { $scope.selectedGrid = null; }
-                drawZoomCanvas();
+                objectInfoPanel.show(); objectInfoPanel.css('visibility', 'hidden'); drawZoomCanvas();
             });
         };
         var drawZoomCanvas = function() {
@@ -161,24 +161,29 @@ angular.module('Geographr.controllerServer', [])
                     drawObject(coords,localObjects[objKey]);
                 }
             }
-            if($scope.selectedObject) { // Show/hide object info panel
-                var top = ($scope.selectedObject.grid.split(':')[1] - $scope.zoomPosition[1]) 
-                    * zoomPixSize + zoomPixSize/2;
-                var left = ($scope.selectedObject.grid.split(':')[0] - $scope.zoomPosition[0]) 
-                    * zoomPixSize + zoomPixSize*1.5;
-                objectInfoPanel.show();
-                if(top < 0 || left < 0 || left + objectInfoPanel.children('div').outerWidth() >= 900 || 
-                    top + objectInfoPanel.children('div').outerHeight() >= 600) { 
-                    objectInfoPanel.hide(); 
-                } else {
-                    objectInfoPanel.offset({top: top + jQuery(zoomHighCanvas).offset().top,
-                        left: left + jQuery(zoomHighCanvas).offset().left });
+            $timeout(function(){
+                objectInfoPanel.css('visibility', 'visible');
+                if($scope.selectedObject) { // Show/hide object info panel
+                    var top = ($scope.selectedObject.grid.split(':')[1] - $scope.zoomPosition[1])
+                        * zoomPixSize + zoomPixSize;
+                    var left = ($scope.selectedObject.grid.split(':')[0] - $scope.zoomPosition[0])
+                        * zoomPixSize + zoomPixSize;
+                    if(top < 0 || left < 0 || left >= 900 || top >= 600) { objectInfoPanel.hide(); } else {
+                        if(top + objectInfoPanel.children('div').outerHeight() >= 600) {
+                            objectInfoPanel.offset({ top: jQuery(zoomHighCanvas).offset().top + top
+                                - objectInfoPanel.children('div').outerHeight() - zoomPixSize });
+                        } else {
+                            objectInfoPanel.offset({ top: jQuery(zoomHighCanvas).offset().top + top });
+                        }
+                        if(left + objectInfoPanel.children('div').outerWidth() >= 900) {
+                            objectInfoPanel.offset({ left: jQuery(zoomHighCanvas).offset().left + left
+                                - objectInfoPanel.children('div').outerWidth() - zoomPixSize });
+                        } else {
+                            objectInfoPanel.offset({ left: jQuery(zoomHighCanvas).offset().left + left });
+                        }
+                    }
                 }
-            }
-            
-            if(!$scope.user) { return; }
-            zoomFogContext.drawImage(fullFogCanvas, $scope.zoomPosition[0]*mainPixSize,
-                $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
+            },1);
         };
         
         var changeZoomPosition = function(x,y) {

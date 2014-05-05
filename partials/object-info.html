@@ -10,6 +10,8 @@
                 {{ resource.name | capitalize }}</span></td>
             <td class="text-right" style="color: white;"
                 ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
+            <td ng-show="user.id == 2" class="text-right">{{ resource.supply }}</td>
+            <td style="color: gold" ng-show="user.id == 2" class="text-right">{{ resource.value | int }}</td>
         </tr>
     </table>
 </div></div>

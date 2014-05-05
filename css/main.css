@@ -55,7 +55,8 @@ canvas { display: block; }
 #gridView td.campfire { border: 2px solid #8f7e71; background-color: #3f3731; }
 #gridView td.campfire:hover { background-color: #312b26; color: #fff; }
 #gridView td.dry, #gridView td.dry:hover { 
-    border: 2px solid #666f75; background-color: #393c3f; color: #666f75; cursor: default; }
+    border: 2px solid #666f75; background-color: #393c3f; 
+    color: #666f75; cursor: default; }
 #gridView td .progress { margin: 3px 8px !important; }
 
 .canvas-container canvas { position: absolute; }
@@ -203,6 +204,7 @@ strong { color: #ccc; }
 #objectInfo>div { 
     position: absolute; background: #232527; opacity: 0.95; width: 240px; padding: 4px 12px; border: 1px solid black; 
 }
+#objectInfo.wider>div { width: 380px; }
 #objectInfo>div h2+p { font-size: 0.9em; }
 #objectInfo .well { padding-bottom: 5px; display: inline-block; }
 h3 { font-size: 16px; margin: 0 0 10px; color: #737880; }

@@ -3,7 +3,7 @@
 angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUtility,canvasUtility) {
     // TODO: Move all these data sets into a separate file
     var resourceList = {
-        lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 40, 
+        lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 30, 
             unit: {pre:'planks'}, terrainFactors: ['nearForests:0:8'] },
         fish: { color: '79888e', value: 6, weight: 2, abundance: 15,
             terrainFactors: ['nearWater:0:5'] },
@@ -14,25 +14,25 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         meat: { color: '82341c', value: 48, weight: 6, abundance: 10, 
             unit: {pre:'cuts'}, terrainFactors: ['inPlains:1:2'] },
         salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, 
-            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:1:5','nearWater:1:3'] },
-        coal: { color: '191a1a', value: 6, weight: 10, abundance: 30, 
-            unit: {post:'chunks'}, terrainFactors: ['nearMountains:-1:5'] },
-        iron: { color: '59534a', value: 36, weight: 15, abundance: 15, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:5'] },
+            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:1:4','nearWater:1:3'] },
+        coal: { color: '191a1a', value: 6, weight: 10, abundance: 25, 
+            unit: {post:'chunks'}, terrainFactors: ['nearMountains:0:2'] },
+        iron: { color: '59534a', value: 36, weight: 15, abundance: 20, 
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:0:2'] },
         copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:5'] },
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:0:2'] },
         silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:4'] },
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:0:1.5'] },
         gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:-1:3'] },
+            unit: {post:'ingots'}, terrainFactors: ['nearMountains:0:1'] },
         wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, 
             unit: {pre:'sacks'}, terrainFactors: ['inPlains:0.2:2'] },
-        tools: { color: '5f5f5f', value: 180, weight: 16, abundance: 8, 
-            terrainFactors: ['withLumberAndIron:0:4'] },
-        weapons: { color: '5f5656', value: 240, weight: 26, abundance: 5,
-            terrainFactors: ['withLumberAndIron:0:5'] },
+        tools: { color: '5f5f5f', value: 150, weight: 16, abundance: 8, 
+            metaFactors: ['withLumberAndIron:-1:4'] },
+        weapons: { color: '5f5656', value: 180, weight: 26, abundance: 5,
+            metaFactors: ['withLumberAndIron:-1:5'] },
         spices: { color: '925825', value: 60, weight: 1, abundance: 3, 
-            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:2:1'] }
+            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:1:-1'] }
     };
     var eventMessages = { // Event messages/instructions to show user
         success: {
@@ -151,10 +151,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     var getCircle = function(loc,dist) { // Check circular area around x,y
         var neighbors = [];
         loc = [parseInt(loc[0]),parseInt(loc[1])];
-        for(var i = dist*-1; i <= dist; i++) {
-            for(var ii = dist*-1; ii <= dist; ii++) {
-                if(dist*dist > i*i + ii*ii) {
-                    neighbors.push((loc[0]+i)+':'+(loc[1]+ii));
+        for(var i = Math.ceil(dist)*-1; i <= Math.ceil(dist); i++) {
+            for(var ii = Math.ceil(dist)*-1; ii <= Math.ceil(dist); ii++) {
+                if(dist*dist >= i*i + ii*ii) {
+                    neighbors.push({ grid:(loc[0]+i)+':'+(loc[1]+ii), dist2: i*i + ii*ii });
                 }
             }
         }
@@ -253,7 +253,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         var inRange = getCircle([grid.x,grid.y],distance), nearWater = [];
         for(var i = 0; i < inRange.length; i++) {
-            if(!terrain.hasOwnProperty(inRange[i])) { nearWater.push(inRange[i]); }
+            if(!terrain.hasOwnProperty(inRange[i].grid)) { nearWater.push(inRange[i].grid); }
         }
         return nearWater;
     };
@@ -261,16 +261,25 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         var inRange = getCircle([grid.x,grid.y],distance), count = 0, total = 0;
         for(var i = 0; i < inRange.length; i++) {
-            if(terrain.hasOwnProperty(inRange[i])) { count++; total += terrain[inRange[i]]; }
+            if(terrain.hasOwnProperty(inRange[i].grid)) { count++; total += terrain[inRange[i].grid]; }
         }
         return count > 0 ? total/count : 0;
+    };
+    var getNearMountainFactor = function(grid,distance) {
+        grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+        var inRange = getCircle([grid.x,grid.y],distance), count = 0, total = 0;
+        for(var i = 0; i < inRange.length; i++) {
+            if(terrain.hasOwnProperty(inRange[i].grid)) { 
+                count++; total += Math.pow(Math.max(0,terrain[inRange[i].grid]-2)/4,2)/(inRange[i].dist2+1); }
+        }
+        return total;
     };
     var getNearest = function(ox,oy,near,exclude) {
         var nearest = {coords: '', dist: 999};
         for(var i = 0; i < near.length; i++) {
             var nx = near[i].split(':')[0], ny = near[i].split(':')[1];
-            if(jQuery.inArray(nx+':'+ny,exclude) >= 0) { console.log('excluded!'); continue; }
-            if(nx == ox && ny == oy) { console.log('self!'); continue; } // Not self
+            if(jQuery.inArray(nx+':'+ny,exclude) >= 0) { continue; }
+            if(nx == ox && ny == oy) { continue; } // Not self
             if((nx - ox) * (nx - ox) + (ny - oy) * (ny - oy) < nearest.dist) {
                 nearest.coords = near[i]; nearest.dist = (nx - ox) * (nx - ox) + (ny - oy) * (ny - oy);
             }
@@ -293,45 +302,67 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }
         return closest;
     };
-    var terrainFactors = function(grid,factor) {
+    var calculateFactor = function(grid,factor,resources) {
         var result = 1;
         var type = factor.split(':')[0], min = parseInt(factor.split(':')[1]), range = factor.split(':')[2]-min;
         switch(type) {
             case 'nearWater': result = 1/(getCoastDistance(grid)/3); break;
-            case 'nearMountains': result = getNearAverageElevation(grid,3)/14; break;
+            case 'nearMountains': result = getNearMountainFactor(grid,4)/12; break;
+            case 'withLumberAndIron': 
+                result = Math.min(40,resources.lumber.supply)/40 * Math.min(12,resources.iron.supply)/12; break;
             default: return 1; break;
         }
         return Math.max(0,min + range * Math.max(0,Math.min(1,result)));
     };
     var genCampEconomy = function(grid) {
-        Math.seedrandom(grid);
         var economy = {}; var resources = {};
-        for(var resKey in resourceList) { // Resource demands
-            if(!resourceList.hasOwnProperty(resKey)) { continue; }
-            var res = resourceList[resKey];
+        for(var resKey in resourceList) { if(!resourceList.hasOwnProperty(resKey)) { continue; }
             // TODO: Supply and demands influenced by location & terrain 
-            // Create module functions with coefficient parameters to handle this
-            var random = Math.random();
-            resources[resKey] = { color: res.color };
+            Math.seedrandom(grid+resKey); var random = Math.random();
+            resources[resKey] = { color: resourceList[resKey].color };
 //            console.log(resKey,'-',parseInt(random*100),'---------------------------------');
-            resources[resKey].demand = (1 - random)*60+20;
+            resources[resKey].demand = (1 - random)*20+40;
 //            console.log('original demand:',resources[resKey].demand);
             if(resourceList[resKey].hasOwnProperty('terrainFactors')) {
                 for(var i = 0; i < resourceList[resKey].terrainFactors.length; i++) {
-                    var factor = terrainFactors(grid,resourceList[resKey].terrainFactors[i]);
-//                    console.log('factor:',factor);
+//                    console.log(resKey,'---------------');
+//                    console.log(resources[resKey].demand);
+                    var factor = calculateFactor(grid,resourceList[resKey].terrainFactors[i],null);
+//                    console.log('terrain factor:',resourceList[resKey].terrainFactors[i],factor);
                     resources[resKey].demand /= Math.max(0.01,factor);
+//                    console.log(resources[resKey].demand,'factor:',Math.max(0.01,factor));
+//                    console.log('---------------');
                 }
             }
-            resources[resKey].demand = Math.max(0,Math.min(100, // +/- 4 deviance
-                    Math.round(Math.max(0,Math.min(100,resources[resKey].demand))+random*8-4)));
-            resources[resKey].supply =
-                Math.round((random*10*(40/Math.max(40,resources[resKey].demand)) * res.abundance)/res.value);
-            resources[resKey].value = Math.max(0.1,res.value * (resources[resKey].demand / 50));
-//            console.log('weighted demand:',resources[resKey].demand);
-//            console.log('supply:',resources[resKey].supply);
+            resources[resKey].demand = Math.max(0,Math.min(100,
+                Math.round(Math.max(0,Math.min(100,resources[resKey].demand))-Math.random()*8)));
+            resources[resKey].value = Math.max(0.1,
+                resourceList[resKey].value * ((resources[resKey].demand+10) / 60));
+            resources[resKey].supply = Math.round(
+                ((random*4+1) * resourceList[resKey].abundance)/(resources[resKey].value/2));
+        }
+        for(var resKey2 in resources) { if(!resources.hasOwnProperty(resKey2)) { continue; }
+            var res = resourceList[resKey2];
+//            console.log(resKey2,'---------------------------------------------------');
+            if(resourceList[resKey2].hasOwnProperty('metaFactors')) {
+                for(var j = 0; j < resourceList[resKey2].metaFactors.length; j++) {
+                    var metaFactor = calculateFactor(grid,resourceList[resKey2].metaFactors[j],resources);
+//                    console.log('meta factor:',resourceList[resKey2].metaFactors[j],metaFactor);
+                    resources[resKey2].demand /= Math.max(0.01,metaFactor);
+                }
+            }
+            resources[resKey2].demand = Math.max(0,Math.min(100,
+                Math.round(Math.max(0,Math.min(100,resources[resKey2].demand))-Math.random()*8)));
+            resources[resKey2].value = Math.max(0.1,
+                res.value * ((resources[resKey2].demand+10) / 60));
+            resources[resKey2].supply = Math.round(
+                ((random*4+1) * res.abundance)/(resources[resKey2].value/2));
+            resources[resKey2].value = Math.max(1,resources[resKey2].value);
+//            console.log('weighted demand:',resources[resKey2].demand);
+//            console.log('supply:',resources[resKey2].supply);
 //            console.log('abundance:',res.abundance,'raw value:',res.value);
-//            console.log('camp value:',resources[resKey].value);
+//            console.log('camp value:',resources[resKey2].value);
+            
         }
         economy.resources = resources;
         var blacksmithFactor = resources['coal'].demand + resources['iron'].demand 
@@ -516,12 +547,12 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         },
         getVisibility: function(visible,coords) {
             var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);
-            var inRange = getCircle([x,y],4);
+            var inRange = getCircle([x,y],3.5);
             for(var key in visible) { // Set all pixels to explored
                 if(visible.hasOwnProperty(key)) { visible[key] = 2; }
             }
             for(var i = 0; i < inRange.length; i++) { // Set in-range pixels to visible
-                visible[inRange[i]] = 1;
+                visible[inRange[i].grid] = 1;
             }
             var remove = [];
             for(var j = remove.length-1; j > -1; j--) { // Delete grids in remove array from inRange array
