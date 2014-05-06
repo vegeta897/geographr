@@ -1,6 +1,7 @@
 <h2>Location <small>({{ user.location | grid }})</small></h2>
-<p><span class="text-muted">Terrain:</span>&emsp;{{ onPixel.terrain }}&emsp;&emsp;&emsp;
-    <span class="text-muted">Elevation:</span>&emsp;{{ onPixel.elevation }}</p>
+<p><span class="text-muted">Terrain:</span> {{ onPixel.terrain }}&emsp;
+    <span class="text-muted">Elevation:</span> {{ onPixel.elevation }}&emsp;
+    <span class="text-muted">Slope:</span> {{ onPixel.slope }}</p>
 <p ng-hide="onPixel.camp || onPixel.campfire" class="text-muted">Nothing here.</p>
 <button ng-disabled="looking || moving || inEvent" ng-hide="onPixel.campfire || onPixel.camp" 
     class="btn btn-default btn-sm" ng-click="buildCampfire()">Build Campfire</button>

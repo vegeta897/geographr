@@ -1,10 +1,10 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.266; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+        $scope.version = 0.267; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
-        $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
-        $scope.overPixel.type = $scope.overPixel.elevation = '-'; $scope.onPixel = {};
+        $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
+        $scope.onPixel = {};
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.placingObject = {}; $scope.mapElements = { labels: true, objects: true };
         $scope.editTerrain = false; $scope.smoothTerrain = false;
@@ -880,6 +880,7 @@ angular.module('Geographr.controllerMain', [])
                     }
                     $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
                     $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
+                    $scope.overPixel.slope = localTerrain[grid] ? Math.round(gameUtility.getSlope(grid)/2) : '-';
                 } else { $scope.overPixel.type = $scope.overPixel.elevation = '-'; }
                 var coords = [$scope.overPixel.x-$scope.zoomPosition[0], $scope.overPixel.y-$scope.zoomPosition[1]];
                 var cursorType = $scope.editTerrain ? 'terrain' + $scope.brushSize : 'cursor';
@@ -918,7 +919,7 @@ angular.module('Geographr.controllerMain', [])
         var zoomOnMouseOut = function() {
             dimPixel();
             $timeout(function() { $scope.overPixel.x = $scope.overPixel.y = 
-                $scope.overPixel.type = $scope.overPixel.elevation = '-' });
+                $scope.overPixel.type = $scope.overPixel.elevation = $scope.overPixel.slope = '-' });
         };
         // Ping a pixel
         var ping = function() {
@@ -1015,8 +1016,9 @@ angular.module('Geographr.controllerMain', [])
             } // Stop listening to last grid
             $scope.user.location = snap.val().location;
             $scope.onPixel = { 
-                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water',
-                objects: localObjects[snap.val().location], elevation: (localTerrain[snap.val().location] || 0)
+                terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', 
+                slope: Math.round(gameUtility.getSlope(snap.val().location)/2), 
+                elevation: (localTerrain[snap.val().location] || 0), objects: localObjects[snap.val().location]
             };
             availableActivities = [];
             $scope.cantLook = false; $scope.lookCount = 0;

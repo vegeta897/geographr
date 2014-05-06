@@ -1,8 +1,7 @@
 angular.module('Geographr.controllerServer', [])
 .controller('Server', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope,$timeout,localStorage,colorUtility,canvasUtility,gameUtility) {
-        $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
-        $scope.overPixel = {}; $scope.overPixel.x = '-'; $scope.overPixel.y = '-'; // Tracking your coordinates
-        $scope.overPixel.type = $scope.overPixel.elevation = '-'; $scope.onPixel = {};
+        $scope.zoomLevel = 6; $scope.zoomPosition = [0,0]; // Tracking zoom window position
+        $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.mapElements = { labels: true, objects: true };
         gameUtility.attachScope($scope);
@@ -291,6 +290,7 @@ angular.module('Geographr.controllerServer', [])
                 }
                 $scope.overPixel.type = localTerrain[grid] ? 'land' : 'water';
                 $scope.overPixel.elevation = localTerrain[grid] ? localTerrain[grid] : 0;
+                $scope.overPixel.slope = localTerrain[grid] ? Math.round(gameUtility.getSlope(grid)/2) : '-';
                 var coords = [$scope.overPixel.x-$scope.zoomPosition[0], $scope.overPixel.y-$scope.zoomPosition[1]];
                 var cursorType = $scope.editTerrain ? 'terrain' + $scope.brushSize : 'cursor';
                 canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,cursorType);
@@ -324,7 +324,7 @@ angular.module('Geographr.controllerServer', [])
         var zoomOnMouseOut = function() {
             dimPixel();
             $timeout(function() { $scope.overPixel.x = $scope.overPixel.y = 
-                $scope.overPixel.type = $scope.overPixel.elevation = '-' });
+                $scope.overPixel.type = $scope.overPixel.elevation = $scope.overPixel.slope = '-' });
         };
 
         jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
@@ -344,6 +344,26 @@ angular.module('Geographr.controllerServer', [])
             canvasUtility.drawObject(zoomObjectContext,value,coords,
                 $scope.zoomPosition,zoomPixSize);
             canvasUtility.drawObject(fullObjectContext,value,coords,0,0);
+//            if(value[0].type == 'camp' && 
+//                coords[0] > $scope.zoomPosition[0] && coords[0] < $scope.zoomPosition[0]+900/zoomPixSize 
+//                && coords[1] > $scope.zoomPosition[1] && coords[1] < $scope.zoomPosition[1]+600/zoomPixSize) {
+//                value = gameUtility.expandCamp(coords.join(':'));
+//                for(var e = 0; e < value.economy.ecoZone.length; e++) {
+//                    var x = parseInt(value.economy.ecoZone[e].grid.split(':')[0]),
+//                        y = parseInt(value.economy.ecoZone[e].grid.split(':')[1]);
+//                    var size = value.economy.ecoZone[e].dist2 > 7 ? 0.4 : 0.8;
+//                    var color, slope = 0;
+//                    if(localTerrain[x+':'+y]) {
+//                        slope += Math.abs(localTerrain[(x-1)+':'+y]-localTerrain[x+':'+y]) || 0;
+//                        slope += Math.abs(localTerrain[(x+1)+':'+y]-localTerrain[x+':'+y]) || 0;
+//                        slope += Math.abs(localTerrain[x+':'+(y+1)]-localTerrain[x+':'+y]) || 0;
+//                        slope += Math.abs(localTerrain[x+':'+(y-1)]-localTerrain[x+':'+y]) || 0;
+//                        color = slope + localTerrain[x+':'+y]/8 > 6 && localTerrain[x+':'+y] > 6 ? 'b86700' : '09b800';
+//                    } else { color = '0089b8'; }
+//                    canvasUtility.drawDot(zoomObjectContext,[x - $scope.zoomPosition[0],
+//                        y - $scope.zoomPosition[1]],size,color,0.5,zoomPixSize);
+//                }
+//            }
         };
         // Draw labels
         var drawLabel = function(coords,text) {
@@ -420,10 +440,10 @@ angular.module('Geographr.controllerServer', [])
             $scope.terrainReady = true;
             gameUtility.attachTerrain(localTerrain);
             fireRef.child('campList').once('value',function(snap) {
-                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
-                    var nativeLocations = gameUtility.genNativeCamps();
-                    fireRef.child('camps').set(nativeLocations); return;
-                } 
+//                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
+//                    var nativeLocations = gameUtility.genNativeCamps();
+//                    fireRef.child('campList').set(nativeLocations); return;
+//                } 
                 campList = snap.val();
                 for(var i = 0; i < campList.length; i++) { // Generate camp details from locations
                     Math.seedrandom(campList[i]);

@@ -71,11 +71,11 @@ angular.module('Geographr.canvas', [])
             }
             if(terrain[near[4]] > 0) {
                 if(nearHeight > 0) { // Draw shading
-                    coef = nearHeight/50;
+                    coef = Math.min(30,nearHeight)/50;
                     diff = {r:color.r - 10,g:color.g - 10, b:color.b - 10};
                     color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
                 } else if(nearHeight < 0) { // Draw highlighting
-                    coef = nearHeight/-50;
+                    coef = Math.max(-30,nearHeight)/-50;
                     diff = {r:color.r - 247,g:color.g - 246, b:color.b - 220};
                     color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
                 }
@@ -419,6 +419,14 @@ angular.module('Geographr.canvas', [])
                 context.fillStyle = 'white';
                 context.fillText(text, x*zoomPixSize+zoomPixSize/2, y*zoomPixSize-4-zoomPixSize/20);
                 context.shadowColor = 'rgba(0,0,0,0)';
+            },
+            drawDot: function(context,coords,size,color,alpha,zoomPixSize) {
+                var x = parseInt(coords[0]), y = parseInt(coords[1]);
+                if(x > 900 || x < 0 || y > 600 || y < 0) { return; }
+                var rgb = colorUtility.hexToRGB(color);
+                context.fillStyle = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+','+alpha+')';
+                context.fillRect(x*zoomPixSize+zoomPixSize/2-size*zoomPixSize/2,
+                    y*zoomPixSize+zoomPixSize/2-size*zoomPixSize/2,zoomPixSize*size,zoomPixSize*size);
             },
             drawPing: function(context,coords) {
                 var pingGradient = context.createRadialGradient(
