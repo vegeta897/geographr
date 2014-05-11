@@ -41,7 +41,7 @@
         <div ng-include="'partials/controls.html'" onload="attachControls()"></div>
     </div>
 </div>
-<div id="uiContainer" ng-show="userInit && terrainReady && user.location" class="container">
+<div id="uiContainer" ng-show="userInit && terrainReady && (user.location && !user.new) || user.new" class="container">
     <div class="row">
         <div ng-show="commits.show" id="commits">
             <table class="table"><tr ng-repeat="commit in commits.list"><td><span class="text-muted">

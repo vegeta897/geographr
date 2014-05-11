@@ -1,10 +1,10 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.27; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.271; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
-        $scope.onPixel = {};
+        $scope.onPixel = {}; $scope.login = { email: '', password: '' };
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.placingObject = {}; $scope.mapElements = { labels: true, objects: true };
         $scope.editTerrain = false; $scope.smoothTerrain = false;
@@ -77,9 +77,9 @@ angular.module('Geographr.controllerMain', [])
                 auth = new FirebaseSimpleLogin(fireRef, function(error, user) {
                     $timeout(function() {
                         if(error) {
-                            console.log(error, $scope.loginEmail, $scope.loginPassword);
+                            console.log(error, $scope.login.email, $scope.login.password);
                             if(error.code == 'INVALID_USER') {
-                                auth.createUser($scope.loginEmail, $scope.loginPassword,
+                                auth.createUser($scope.login.email, $scope.login.password,
                                     function(createdError, createdUser) {
                                         if(createdError) { console.log(createdError); } else {
                                             console.log('user created:',createdUser.id,createdUser.email);
@@ -408,7 +408,8 @@ angular.module('Geographr.controllerMain', [])
                     var keptSide = $scope.onPixel.camp.economy.market.selectedStall.rightSide;
                     delete $scope.onPixel.camp.economy.market.selectedStall.rightSide;
                     var offset = $scope.onPixel.camp.economy.market.selectedStall.id > stallID ? '22px' : '-22px';
-                    $scope.onPixel.camp.economy.market.selectedStall = $scope.onPixel.camp.economy.market.stalls[stallID];
+                    $scope.onPixel.camp.economy.market.selectedStall = 
+                        $scope.onPixel.camp.economy.market.stalls[stallID];
                     $scope.onPixel.camp.economy.market.selectedStall.id = stallID;
                     if(keptSide) { $scope.onPixel.camp.economy.market.selectedStall.rightSide = keptSide; }
                     stall.children('.canvas').animate({'background-position-x':offset},300,
@@ -439,7 +440,8 @@ angular.module('Geographr.controllerMain', [])
                     $scope.onPixel.camp.economy.market.selectedStall.selectedGood = 
                         $scope.onPixel.camp.economy.market.selectedStall.goods[goodID];
                     $scope.onPixel.camp.economy.market.selectedStall.selectedGood.id = goodID;
-                    if(keptSide) { $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = keptSide; }
+                    if(keptSide) { 
+                        $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = keptSide; }
                 }
             } else {
                 $scope.onPixel.camp.economy.market.selectedStall.selectedGood = 
@@ -1189,13 +1191,13 @@ angular.module('Geographr.controllerMain', [])
                     }
                 });
             } else { downloadTerrain(); }
-       };
+        };
         var prepareTerrain = function() {
             $scope.terrainReady = true;
             gameUtility.attachTerrain(localTerrain);
             fireRef.child('campList').once('value',function(snap) {
                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
-                   var nativeLocations = gameUtility.genNativeCamps(localTerrain);
+                   var nativeLocations = gameUtility.genNativeCamps();
                    fireRef.child('campList').set(nativeLocations); return;
                } 
                campList = snap.val();

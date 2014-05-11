@@ -2,7 +2,8 @@ angular.module('Geographr.controllerServer', [])
 .controller('Server', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'gameUtility', function($scope,$timeout,localStorage,colorUtility,canvasUtility,gameUtility) {
         $scope.zoomLevel = 6; $scope.zoomPosition = [0,0]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
-        $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
+        $scope.authStatus = ''; $scope.helpText = ''; $scope.login = { email: '', password: '' };
+        $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.mapElements = { labels: true, objects: true };
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], 
@@ -22,7 +23,7 @@ angular.module('Geographr.controllerServer', [])
             if(userID == 2) { console.log('server re-authed!'); return; }
             $timeout(function() {
                 if(error) {
-                    console.log(error, $scope.loginEmail, $scope.loginPassword);
+                    console.log(error, $scope.login.email, $scope.login.password);
                     if(error.code == 'INVALID_USER') {
                         console.log('Incorrect server credentials')
                     } else if(error.code == 'INVALID_PASSWORD') { $scope.authStatus = 'badPass'; } else

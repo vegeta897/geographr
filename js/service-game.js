@@ -136,7 +136,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     var marketStallTypes = {
         fish: { goods: ['fish'], capacity: 50 }, 
         animal: { goods: ['animal'], capacity: 700 },
-        'small animal': { goods: ['animal:rabbit','animal:mole','animal:pheasant','animal:duck'], capacity: 50 },
+        'small animal': { 
+            goods: ['animal:rabbit','animal:mole','animal:pheasant','animal:duck'], capacity: 50 },
         'large animal': { goods: ['animal:deer','animal:boar','animal:fox','animal:wolf'], capacity: 1000 },
         food: { goods: ['fish','fruit','vegetable'], capacity: 60 },
         fruit: { goods: ['fruit'], capacity: 40 }, 
@@ -308,7 +309,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     }
                 }
             }
-            stall.categoryCount = countProperties(stall.categories); // Store number of categories in this stall
+            stall.categoryCount = countProperties(stall.categories); // Store number of categories
             delete productPool.stallTypes[msTypeKey]; // Don't try this stall type again
         }
         // Remove empty stall types
@@ -554,7 +555,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         if(!terrain.hasOwnProperty(grid)) { return false; }
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         for(var i = -1; i <= 1; i++) { for(var ii = -1; ii <= 1; ii++) {
-            if(grid.x+i < 0 || grid.x+i > 299 || grid.y+ii < 0 || grid.y+ii > 299) { continue; } // Out of bounds
+            if(grid.x+i<0 || grid.x+i>299 || grid.y+ii<0 || grid.y+ii>299) { continue; } // Out of bounds
             if(!terrain.hasOwnProperty((grid.x+i)+':'+(grid.y+ii))) { return true; }
         }}
         return false;

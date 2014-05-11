@@ -7,12 +7,12 @@
         <p ng-show="needUpdate" class="navbar-right text-warning">Your version is <strong>out of date!</strong> Please press <strong>shift+F5</strong>. <small>If that doesn't work, Vegeta probably locked the app.</small></p>
         <p ng-show="firefox" class="navbar-right text-danger">Sorry, but Geographr is <strong>not compatible with Firefox.</strong> <small>Please use <strong>Chrome</strong> instead, thank you.</small></p>
         <p class="navbar-right" ng-show="userInit">Welcome back, <strong class="text-info">{{ user.nick }}</strong> &mdash; <a href="#" ng-click="logOut()">Log out</a></p>
-        <form ng-show="!user && authStatus" class="navbar-form navbar-right" data-login-form="{{ authStatus }}" id="loginForm" ng-disabled="authStatus=='logging'" ng-submit="authenticate(loginEmail,loginPassword)">
+        <form ng-show="!user && authStatus" class="navbar-form navbar-right" data-login-form="{{ authStatus }}" id="loginForm" ng-disabled="authStatus=='logging'" ng-submit="authenticate(login.email,login.password)">
             <div class="form-group">
-                <input ng-model="loginEmail" ng-disabled="authStatus=='logging'" id="inputLoginUser" type="email" placeholder="user@example.com" class="form-control">
+                <input ng-model="login.email" ng-disabled="authStatus=='logging'" id="inputLoginUser" type="email" placeholder="user@example.com" class="form-control">
             </div>
             <div class="form-group">
-                <input ng-model="loginPassword" ng-disabled="authStatus=='logging'" id="inputLoginPass" type="password" placeholder="password" class="form-control">
+                <input ng-model="login.password" ng-disabled="authStatus=='logging'" id="inputLoginPass" type="password" placeholder="password" class="form-control">
             </div>
             <button ng-disabled="authStatus=='logging'" id="loginSubmit" type="submit" class="btn btn-success">Log In / Register</button>
         </form>
