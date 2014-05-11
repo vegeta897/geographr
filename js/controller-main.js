@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.267; $scope.versionName = 'Ancient Mission'; $scope.needUpdate = false;
+        $scope.version = 0.27; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -11,7 +11,8 @@ angular.module('Geographr.controllerMain', [])
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = []; $scope.tutorialSkips = []; $scope.skipTutorial = false;
         $scope.movePath = []; $scope.lookCount = 0;
-        $scope.showItemTypes = {'animal':true,'mineral':true,'plant':true,'resource':true};
+        $scope.showItemTypes = {'animal':true,'fish':true,'fruit':true,'gem':true,'metal':true,'plant':true,
+            'tool':true,'weapon':true,'vegetable':true,'other':true};
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
@@ -192,6 +193,7 @@ angular.module('Geographr.controllerMain', [])
         };
         $scope.countTo = function(n) { 
             var counted = []; for(var i = 0; i < n; i++) { counted.push(i+1); } return counted; };
+        $scope.isNumber = function(input) { return parseInt(input) === input; };
         $scope.refresh = function() { drawZoomCanvas(); }; // Redraw zoom canvas
         $scope.changeZoom = function(val) {
             $scope.zoomLevel = parseInt(val);
@@ -222,11 +224,9 @@ angular.module('Geographr.controllerMain', [])
         };
         // Grab a specific item from user's inventory (find by property(s), like name or type)
         $scope.hasItem = function(checkObject) {
-            for(var invKey in $scope.inventory) {
-                if(!$scope.inventory.hasOwnProperty(invKey)) { continue; }
+            for(var invKey in $scope.inventory) { if(!$scope.inventory.hasOwnProperty(invKey)) { continue; }
                 var passed = true;
-                for(var checkKey in checkObject) {
-                    if(!checkObject.hasOwnProperty(checkKey)) { continue; }
+                for(var checkKey in checkObject) { if(!checkObject.hasOwnProperty(checkKey)) { continue; }
                     if($scope.inventory[invKey][checkKey] != checkObject[checkKey]) { passed = false; }
                 }
                 if(passed) { return $scope.inventory[invKey]; }
@@ -270,7 +270,7 @@ angular.module('Geographr.controllerMain', [])
             // TODO: Move event stuff into gameUtility so events can end without clicks
             if(!$scope.onPixel.objects || objectIndex > $scope.onPixel.objects.length - 1 
                 || !$scope.onPixel.objects[objectIndex].activity
-                || $scope.onPixel.objects[objectIndex].abundance < 0.02) { return; }
+                || $scope.onPixel.objects[objectIndex].abundance < 0.006) { return; }
             $timeout(function() {
                 var object = $scope.onPixel.objects[objectIndex];
                 $scope.event = { type: object.type, abundance: object.abundance }; // Get event type and abundance
@@ -394,37 +394,90 @@ angular.module('Geographr.controllerMain', [])
                 fireRef.child('lastTerrainUpdate').set({user: userID, time:$scope.lastTerrainUpdate});
             });
         };
-        
-        $scope.buyResource = function(resource,amount) {
-            if(amount < 1 || amount > $scope.onPixel.camp.economy.resources[resource].supply || !parseInt(amount)) { 
-                return; }
-            if(Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value) < 0) {
-                return; }
+        $scope.changeStall = function(stallID,index) {
+            var stall = jQuery(document.getElementById('selectedStall')).finish();
+            if($scope.onPixel.camp.economy.market.hasOwnProperty('selectedStall')) {
+                if($scope.onPixel.camp.economy.market.selectedStall.id == stallID) {
+                    stall.animate({'opacity':0},200)
+                        .children('.stall-content').animate({'height':'1px'},200,function() {
+                            delete $scope.onPixel.camp.economy.market.selectedStall.rightSide;
+                            delete $scope.onPixel.camp.economy.market.selectedStall;
+                            $timeout(function(){});
+                        });
+                } else {
+                    var keptSide = $scope.onPixel.camp.economy.market.selectedStall.rightSide;
+                    delete $scope.onPixel.camp.economy.market.selectedStall.rightSide;
+                    var offset = $scope.onPixel.camp.economy.market.selectedStall.id > stallID ? '22px' : '-22px';
+                    $scope.onPixel.camp.economy.market.selectedStall = $scope.onPixel.camp.economy.market.stalls[stallID];
+                    $scope.onPixel.camp.economy.market.selectedStall.id = stallID;
+                    if(keptSide) { $scope.onPixel.camp.economy.market.selectedStall.rightSide = keptSide; }
+                    stall.children('.canvas').animate({'background-position-x':offset},300,
+                        function(){ jQuery(this).css({'background-position-x':0}); })
+                }
+            } else {
+                $scope.onPixel.camp.economy.market.selectedStall = $scope.onPixel.camp.economy.market.stalls[stallID];
+                $scope.onPixel.camp.economy.market.selectedStall.id = stallID;
+                if(jQuery.inArray(index,[2,3,6,7]) >= 0) {
+                    $scope.onPixel.camp.economy.market.selectedStall.rightSide = true;
+                }
+                stall.animate({'opacity':1},200).children('.stall-content').animate({'height':'194px'},300);
+            }
+            
+        };
+        $scope.changeGood = function(goodID,index) {
+            var good = jQuery(document.getElementById('selectedGood')).finish();
+            if($scope.onPixel.camp.economy.market.selectedStall.hasOwnProperty('selectedGood')) {
+                if($scope.onPixel.camp.economy.market.selectedStall.selectedGood.id == goodID) {
+                    good.animate({'opacity':0,'height':'1px'},100,function() {
+                        delete $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide;
+                        delete $scope.onPixel.camp.economy.market.selectedStall.selectedGood;
+                        $timeout(function(){});
+                    });
+                } else {
+                    var keptSide = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide;
+                    delete $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide;
+                    $scope.onPixel.camp.economy.market.selectedStall.selectedGood = 
+                        $scope.onPixel.camp.economy.market.selectedStall.goods[goodID];
+                    $scope.onPixel.camp.economy.market.selectedStall.selectedGood.id = goodID;
+                    if(keptSide) { $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = keptSide; }
+                }
+            } else {
+                $scope.onPixel.camp.economy.market.selectedStall.selectedGood = 
+                    $scope.onPixel.camp.economy.market.selectedStall.goods[goodID];
+                $scope.onPixel.camp.economy.market.selectedStall.selectedGood.id = goodID;
+                if(jQuery.inArray(index,[2,3,6,7]) >= 0) {
+                    $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = true;
+                }
+                good.animate({'opacity':1,'height':'174px'},150);
+            }
+        };
+        $scope.buyGood = function(good,amount) {
+            if(amount < 1 || amount > good.amount || !parseInt(amount)) { return; }
+            if(Math.round($scope.user.money - amount * good.value) < 0) { return; }
             amount = parseInt(amount);
-            console.log('buying',amount,resource,'at',
-                $scope.onPixel.camp.economy.resources[resource].value,'gold per unit');
-            var invItem = { type: 'resource', name: resource, amount: parseInt(amount) }; 
+            console.log('buying',amount,good.name,'at',good.value,'gold per unit');
+            var invItem = { type: good.type, name: good.name, amount: parseInt(amount) }; 
             gameUtility.addToInventory(invItem);
-            var newDelta = $scope.onPixel.camp.deltas[resource];
-            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
-            newDelta.amount -= amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
-            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+resource).set(newDelta);
+//            var newDelta = $scope.onPixel.camp.deltas[good.name];
+//            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
+//            newDelta.amount -= amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
+//            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+good.name).set(newDelta);
             $scope.user.money =
-                Math.round($scope.user.money - amount * $scope.onPixel.camp.economy.resources[resource].value);
+                Math.round($scope.user.money - amount * good.value);
             fireUser.child('money').set($scope.user.money);
         };
-        $scope.sellResource = function(item,amount,value) {
-            if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
+        $scope.sellGood = function(good,amount,value) {
+            if(amount < 1 || amount > good.amount || !parseInt(amount)) { return; }
             amount = parseInt(amount);
             console.log('selling',amount,'at',value * 0.8,'gold per unit');
-            if(item.amount - amount > 0) { $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
-                fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
-            } else { fireInventory.child(item.type+':'+item.name).remove(); 
-                delete $scope.inventory[item.type+':'+item.name]; }
-            var newDelta = $scope.onPixel.camp.deltas[item.name];
+            if(good.amount - amount > 0) { $scope.inventory[good.type+':'+good.name].amount = good.amount - amount;
+                fireInventory.child(good.type+':'+good.name).set(good.amount - amount);
+            } else { fireInventory.child(good.type+':'+good.name).remove(); 
+                delete $scope.inventory[good.type+':'+good.name]; }
+            var newDelta = $scope.onPixel.camp.deltas[good.name];
             newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
             newDelta.amount += amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
-            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+item.name).set(newDelta);
+            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+good.name).set(newDelta);
             $scope.user.money = Math.round($scope.user.money + amount * value * 0.8); 
             fireUser.child('money').set($scope.user.money);
         };
@@ -456,6 +509,7 @@ angular.module('Geographr.controllerMain', [])
                 $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
             } else { fireInventory.child(item.type+':'+item.name).remove();
                 delete $scope.inventory[item.type+':'+item.name]; }
+            changeHunger(userID,0);
         };
         $scope.cookAll = function() {
             for(var coKey in $scope.inventory) {
@@ -775,6 +829,8 @@ angular.module('Geographr.controllerMain', [])
             if(panMouseDown || 
                 !(e.target.id == 'zoomHighCanvas' || e.target.id == 'controls' || e.target.id == 'objectInfo')) {
                 return false; }
+            if(e.which == 3 && userID == 1) { // Vegeta can warp on click!
+                fireUser.child('movement/location').set($scope.overPixel.x+':'+$scope.overPixel.y); }
             if(e.which == 2 || e.which == 3) { startDragPanning(e); return false; } // If middle/right click pressed
             if(!userID) { return false; } // Ignore actions from non-user
             var x = $scope.overPixel.x, y = $scope.overPixel.y;
@@ -1023,6 +1079,7 @@ angular.module('Geographr.controllerMain', [])
             availableActivities = [];
             $scope.cantLook = false; $scope.lookCount = 0;
             if(jQuery.inArray(snap.val().location,campList) >= 0) { // If there is a camp here
+                $scope.onPixel.camp = true;
                 if(!$scope.user.hasOwnProperty('visitedCamps')) {
                     $scope.user.visitedCamps = [snap.val().location];
                     fireUser.child('visitedCamps').set($scope.user.visitedCamps);
@@ -1031,22 +1088,24 @@ angular.module('Geographr.controllerMain', [])
                     fireUser.child('visitedCamps').update($scope.user.visitedCamps);
                 }
                 fireRef.child('camps/' + snap.val().location).on('value',function(campSnap) {
-                    var resources = gameUtility.resourceList;
-                    var campData = gameUtility.expandCamp(snap.val().location,localTerrain);
+                    var campData = gameUtility.expandCamp(snap.val().location);
                     campData.deltas = {};
-                    for(var resKey in resources) { if(!resources.hasOwnProperty(resKey)) { continue; }
-                        // TODO: Have deltas influence demands
-                        campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
-                        campData.economy.resources[resKey].invItem = $scope.inventory ? 
-                            $scope.inventory['resource:'+resKey] : undefined;
-                        if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
-                            && campSnap.val().deltas.hasOwnProperty(resKey)) {
-                            // Apply delta against supply
-                            campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey].amount;
-                            campData.deltas[resKey] = campSnap.val().deltas[resKey];
-                        }
-                    }
-                    $scope.onPixel.camp = campData;
+//                    for(var resKey in resources) { if(!resources.hasOwnProperty(resKey)) { continue; }
+//                        // TODO: Have deltas influence demands
+//                        campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
+//                        campData.economy.resources[resKey].invItem = $scope.inventory ? 
+//                            $scope.inventory['resource:'+resKey] : undefined;
+//                        if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
+//                            && campSnap.val().deltas.hasOwnProperty(resKey)) {
+//                            // Apply delta against supply
+//                            campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey].amount;
+//                            campData.deltas[resKey] = campSnap.val().deltas[resKey];
+//                        }
+//                    }
+                    
+                    // TODO: Apply camp deltas and add any player stalls
+                    
+                    $timeout(function(){ $scope.onPixel.camp = campData; });
                 });
             } else { // If no camp
                 fireRef.child('abundances/'+$scope.user.location).on('value',function(snap) {
@@ -1137,7 +1196,7 @@ angular.module('Geographr.controllerMain', [])
             fireRef.child('campList').once('value',function(snap) {
                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
                    var nativeLocations = gameUtility.genNativeCamps(localTerrain);
-                   fireRef.child('camps').set(nativeLocations); return;
+                   fireRef.child('campList').set(nativeLocations); return;
                } 
                campList = snap.val();
                for(var i = 0; i < campList.length; i++) { // Generate camp details from locations

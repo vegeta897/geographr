@@ -1,39 +1,7 @@
 /* Game logic service */
 
-angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUtility,canvasUtility) {
+angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUtility,canvasUtility,colorUtility) {
     // TODO: Move all these data sets into a separate file
-    var resourceList = {
-        lumber: { color: '8e7a54', value: 4, weight: 20, abundance: 30, 
-            unit: {pre:'planks'}, terrainFactors: ['nearForests:0:8'] },
-        fish: { color: '79888e', value: 6, weight: 2, abundance: 15,
-            terrainFactors: ['nearWater:4'] },
-        fruit: { color: '8e2323', value: 18, weight: 1, abundance: 15, 
-            unit: {pre:'pieces'}, terrainFactors: ['inPlains:1:3'] },
-        vegetables: { color: '7a984d', value: 12, weight: 2, abundance: 20,
-            terrainFactors: ['inPlains:1:3'] },
-        meat: { color: '82341c', value: 48, weight: 6, abundance: 10, 
-            unit: {pre:'cuts'}, terrainFactors: ['inPlains:1:2'] },
-        salt: { color: 'a8a797', value: 6, weight: 4, abundance: 20, 
-            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:4','nearWater:0.2'] },
-        coal: { color: '191a1a', value: 6, weight: 10, abundance: 25, 
-            unit: {post:'chunks'}, terrainFactors: ['nearMountains:3.5'] },
-        iron: { color: '59534a', value: 36, weight: 15, abundance: 20, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:2'] },
-        copper: { color: '944b2e', value: 28, weight: 12, abundance: 20, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:2.5'] },
-        silver: { color: 'b0b0b0', value: 200, weight: 25, abundance: 1, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:1'] },
-        gold: { color: 'cab349', value: 500, weight: 20, abundance: 0.02, 
-            unit: {post:'ingots'}, terrainFactors: ['nearMountains:0.5'] },
-        wool: { color: '9e9b81', value: 48, weight: 2, abundance: 20, 
-            unit: {pre:'sacks'}, terrainFactors: ['inPlains:0.2:2'] },
-        tools: { color: '5f5f5f', value: 150, weight: 16, abundance: 8, 
-            metaFactors: ['withLumberAndIron:1'] },
-        weapons: { color: '5f5656', value: 180, weight: 26, abundance: 5,
-            metaFactors: ['withLumberAndIron:0.8'] },
-        spices: { color: '925825', value: 60, weight: 1, abundance: 3, 
-            unit: {pre:'pouches'}, terrainFactors: ['nearMountains:-4'] }
-    };
     var eventMessages = { // Event messages/instructions to show user
         success: {
             forage: 'You found <strong>some plants</strong> while foraging.',
@@ -51,55 +19,162 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             mine: 'You\'re <strong>too tired</strong> to continue mining.'
         }
     };
-    var eventProducts = {
-        forage: {
-            'red berries': { color: '9e3333', rarity: 0.3, avgQty: 3 },
-            'blue berries': { color: '334c9e', rarity: 0.5, avgQty: 2 },
-            'green berries': { color: '689e48', rarity: 0.2, avgQty: 3 },
-            'brown mushrooms': { color: '6f6053', rarity: 0, avgQty: 3 },
-            'white mushrooms': { color: 'b0a9a4', rarity: 0.3, avgQty: 2 },
-            'herbs': { color: '728448', rarity: 0.6, avgQty: 2 },
-            'onions': { color: 'aaa982', rarity: 0.7, avgQty: 1 }
+    var itemsMaster = {
+        animal: {
+            'deer': { color: '6f4c32', weight: 180, value: 30, classes: ['pelt'] },
+            'boar': { color: '49413d', weight: 150, value: 25, classes: ['pelt'] },
+            'rabbit': { color: '6d5f58', weight: 3, value: 6, classes: ['pelt'] },
+            'fox': { color: '6d341e', weight: 35, value: 50, classes: ['pelt'] },
+            'wolf': { color: '4b4c4f', weight: 60, value: 80, classes: ['pelt'] },
+            'mole': { color: '433a32', weight: 2, value: 20, classes: ['pelt'] },
+            'pheasant': { color: '713926', weight: 1, value: 5, classes: [] },
+            'duck': { color: '433a32', weight: 3, value: 8, classes: [] }
         },
-        hunt: {
-            'deer': { color: '6f4c32', rarity: 0.4, weight: 200, classes: ['pelt'] },
-            'boar': { color: '49413d', rarity: 0.7, weight: 150, classes: ['pelt'] },
-            'rabbit': { color: '6d5f58', rarity: 0, weight: 3, classes: ['pelt'] },
-            'fox': { color: '6d341e', rarity: 0.8, weight: 12, classes: ['pelt'] },
-            'wolf': { color: '4b4c4f', rarity: 0.9, weight: 70, classes: ['pelt'] },
-            'mole': { color: '433a32', rarity: 0.9, weight: 2, classes: ['pelt'] },
-            'pheasant': { color: '713926', rarity: 0.7, weight: 1, classes: [] },
-            'duck': { color: '433a32', rarity: 0.8, weight: 3, classes: [] }
+        fish: {
+            'bass': { color: 'a8b490', weight: 1.6, value: 5 }, 
+            'herring': { color: '838d96', weight: 0.2, value: 1 }, 
+            'salmon': { color: 'c69c9e', weight: 0.5, value: 7 }, 
+            'trout': { color: 'd0ae91', weight: 1.2, value: 3 }, 
+            'tuna': { color: '8ea293', weight: 2, value: 10 }, 
+            'sardine': { color: '67778e', weight: 0.1, value: 0.5 },
+            'mackerel': { color: '71978e', weight: 0.4, value: 1 }, 
+            'cod': { color: 'aba383', weight: 2, value: 3 }, 
+            'swordfish': { color: '8189af', weight: 2.1, value: 20 }
         },
-        mine: {
-            'salt': { color: 'a8a797', rarity: 0, profession: 'saltFarm' },
-            'coal': { color: '191a1a', rarity: 0.2, profession: 'blacksmith' },
-            'iron': { color: '593125', rarity: 0.4, profession: 'blacksmith' },
-            'copper': { color: '924c36', rarity: 0.3, profession: 'blacksmith' },
-            'silver': { color: 'b0b0b0', rarity: 0.8, profession: 'blacksmith' },
-            'gold': { color: 'cab349', rarity: 0.85, profession: 'blacksmith' },
-            'emerald': { color: '4f8e4f', rarity: 0.8, profession: 'jeweler' },
-            'ruby': { color: '8e4242', rarity: 0.85, profession: 'jeweler' },
-            'topaz': { color: 'a69748', rarity: 0.8, profession: 'jeweler' },
-            'sapphire': { color: '485ea6', rarity: 0.85, profession: 'jeweler' },
-            'diamond': { color: 'c8c3c5', rarity: 0.95, profession: 'jeweler' }
+        fruit: {
+            'apple': { color: '9c2c36', weight: 1, value: 5, abundance: 10 },
+            'blueberries': { color: '334c9e', weight: 0.8, value: 1, abundance: 8 },
+            'pear': { color: '9cc245', weight: 1.2, value: 8, abundance: 8 }, 
+            'banana': { color: 'e3d843', weight: 1.3, value: 7, abundance: 4 },
+            'orange': { color: 'd98f40', weight: 1.2, value: 6, abundance: 8 }, 
+            'peach': { color: 'e9a16c', weight: 1.1, value: 9, abundance: 6 }
+        },
+        gem: {
+            'emerald': { color: '4f8e4f', value: 200, weight: 0.5, profession: 'jeweler' },
+            'ruby': { color: '8e4242', value: 300, weight: 0.5, profession: 'jeweler' },
+            'topaz': { color: 'a69748', value: 150, weight: 0.5, profession: 'jeweler' },
+            'sapphire': { color: '485ea6', value: 320, weight: 0.5, profession: 'jeweler' },
+            'diamond': { color: 'c8c3c5', value: 2000, weight: 0.6, profession: 'jeweler' }
+        },
+        metal: {
+            'iron': { color: '593125', value: 36, weight: 10, abundance: 20, unit: {post:'ingots'},
+                profession: 'blacksmith' },
+            'copper': { color: '924c36', value: 28, weight: 8, abundance: 20, unit: {post:'ingots'},
+                profession: 'blacksmith' },
+            'silver': { color: 'b0b0b0', value: 200, weight: 3, abundance: 0.5, unit: {post:'ingots'},
+                profession: 'blacksmith' },
+            'gold': { color: 'cab349', value: 500, weight: 2, abundance: 0.1, unit: {post:'ingots'},
+                profession: 'blacksmith' }
+        },
+        plant: {
+            'brown mushroom': { color: '6f6053' }, 'white mushroom': { color: 'b0a9a4' },
+            'herbs': { color: '728448' },
+            'red berries': { color: '9e3333', weight: 0.1, abundance: 20 },
+            'green berries': { color: '689e48', weight: 0.1, abundance: 23 }
+        },
+        tool: {
+            'pitchfork': { color: '88837f', weight: 15 }
+        },
+        weapon: {
+            'small dagger': { color: '757270', weight: 4, classes: ['blade'] }
+        },
+        vegetable: {
+            'potato': { color: '675342', weight: 1.2, value: 3, abundance: 18 }, 
+            'onion': { color: 'aaa982', weight: 1.1, value: 4, abundance: 13 },
+            'carrot': { color: 'e1934f', weight: 0.7, value: 2.5, abundance: 18 },
+            'lettuce': { color: 'b4d474', weight: 2, value: 4, abundance: 10 },
+            'tomato': { color: 'd3352e', weight: 1.2, value: 5, abundance: 15 },
+            'broccoli': { color: '62803c', weight: 1, value: 2, abundance: 14 },
+            'cabbage': { color: 'aac37a', weight: 2.4, value: 3, abundance: 8 },
+            'corn': { color: 'e9cb63', weight: 0.9, value: 4, abundance: 20 }
+        },
+        other: {
+            'salt': { color: 'a8a797', value: 4, weight: 3, abundance: 20, unit: {pre:'pouches'}, 
+                profession: 'saltFarm' },
+            'coal': { color: '191a1a', value: 6, weight: 6, abundance: 25, unit: {post:'chunks'}, 
+                profession: 'blacksmith' },
+            'lumber': { color: '8e7a54', value: 4, weight: 20, abundance: 15, unit: {pre:'planks'} },
+            'spices': { color: '925825', value: 60, weight: 1, abundance: 3, unit: {pre:'pouches'} },
+            'wool': { color: '9e9b81', value: 48, weight: 4, abundance: 10, unit: {pre:'sacks'} }
         }
     };
+    var eventProducts = {
+        fish: {
+            'fish:bass': { rarity: 0.2 }, 'fish:herring': { rarity: 0.1 }, 'fish:salmon': { rarity: 0.3 },
+            'fish:trout': { rarity: 0.3 }, 'fish:tuna': { rarity: 0.5 }, 'fish:sardine': { rarity: 0 },
+            'fish:mackerel': { rarity: 0.7 }, 'fish:cod': { rarity: 0.1 }, 'fish:swordfish': { rarity: 0.9 }
+        },
+        forage: {
+            'plant:red berries': { rarity: 0.3, avgQty: 3 }, 'fruit:blueberries': { rarity: 0.5, avgQty: 2 },
+            'plant:green berries': { rarity: 0.2, avgQty: 3 },
+            'plant:brown mushroom': { rarity: 0, avgQty: 3 },
+            'plant:white mushroom': { rarity: 0.3, avgQty: 2 },
+            'plant:herbs': { rarity: 0.6, avgQty: 2 }, 'vegetable:onion': { rarity: 0.7, avgQty: 1 }
+        },
+        hunt: {
+            'animal:deer': { rarity: 0.4 }, 'animal:boar': { rarity: 0.7 },
+            'animal:rabbit': { rarity: 0 }, 'animal:fox': { rarity: 0.8 },
+            'animal:wolf': { rarity: 0.9 }, 'animal:mole': { rarity: 0.9 },
+            'animal:pheasant': { rarity: 0.7 }, 'animal:duck': { rarity: 0.8 }
+        },
+        mine: {
+            'other:salt': { rarity: 0 }, 'other:coal': { rarity: 0.2 },
+            'metal:iron': { rarity: 0.4 }, 'metal:copper': { rarity: 0.3 },
+            'metal:silver': { rarity: 0.8 }, 'metal:gold': { rarity: 0.85 },
+            'gem:emerald': { rarity: 0.8 }, 'gem:ruby': { rarity: 0.85 }, 'gem:topaz': { rarity: 0.75 }, 
+            'gem:sapphire': { rarity: 0.85 }, 'gem:diamond': { rarity: 0.95 }
+        }
+    };
+    var economyNodes = {
+        'hunting post': { output: ['event:hunt:2'], occurrence: 'forest:1' }, // TODO: Sell meat and pelts
+        'fishing dock': { output: ['event:fish:15'], occurrence: 'coast:0.6' },
+        'mining camp': { output: ['event:mine:16'], occurrence: 'mountains:1.8' }, 
+        'farm': { output: ['vegetable:10'], occurrence: 'plains:0.5' },
+        'orchard': { output: ['fruit:8'], occurrence: 'plains:0.3' }, 
+        'lumber camp': { output: ['other:lumber:8'], occurrence: 'forest:1.2' }
+    };
+    var marketStallTypes = {
+        fish: { goods: ['fish'], capacity: 50 }, 
+        animal: { goods: ['animal'], capacity: 700 },
+        'small animal': { goods: ['animal:rabbit','animal:mole','animal:pheasant','animal:duck'], capacity: 50 },
+        'large animal': { goods: ['animal:deer','animal:boar','animal:fox','animal:wolf'], capacity: 1000 },
+        food: { goods: ['fish','fruit','vegetable'], capacity: 60 },
+        fruit: { goods: ['fruit'], capacity: 40 }, 
+        vegetable: { goods: ['vegetable'], capacity: 45 }, 
+        'fruit+veg': { goods: ['fruit','vegetable'], capacity: 50 },
+        metal: { goods: ['metal'], capacity: 300 }, 
+        'industrial metal': { goods: ['metal:copper','metal:iron'], capacity: 300 },
+        jewelry: { goods: ['gem','metal:silver','metal:gold'], capacity: 20 }, 
+        mineral: { goods: ['other:salt','other:coal','gem'], capacity: 100 },
+        construction: { goods: ['lumber','metal:copper','metal:iron'], capacity: 500 }, 
+        lumber: { goods: ['lumber'], capacity: 800 }
+    };
+    var similarMarketStalls = {
+        fish: ['fish','animal','food','vegetable','fruit+veg'], animal: ['fish','small animal','large animal'],
+        'small animal': ['fish','large animal','animal'], 'large animal': ['fish','small animal','animal'],
+        food: ['fish','fruit','vegetable','fruit+veg'], fruit: ['food','vegetable','fish','fruit+veg'],
+        vegetable: ['food','fruit','fish','fruit+veg'], 'fruit+veg': ['food','fruit','vegetable','fish'], 
+        metal: ['construction','industrial metal','jewelry','lumber','mineral'],
+        'industrial metal': ['metal','lumber','construction'],
+        jewelry: ['mineral','metal'], mineral: ['jewelry','metal','industrial metal'],
+        construction: ['lumber','metal','industrial metal'],
+        lumber: ['construction','metal','industrial metal']
+    };
     var edibles = {
-        'red berries': { energy: 2 },
-        'blue berries': { energy: 3 },
+        'red berries': { energy: 2 }, 'blueberries': { energy: 3 },
         'green berries': { energy: 2, effects: ['poison','nasty'], cookedEnergy: 3 },
-        'brown mushrooms': { energy: 4, cookedEnergy: 5 },
-        'white mushrooms': { energy: 4, cookedEnergy: 5 },
+        'brown mushroom': { energy: 4, cookedEnergy: 5 },
+        'white mushroom': { energy: 4, cookedEnergy: 5 },
         'spices': { energy: 1, effects: ['nasty'] },
-        'onions': { energy: 4, effects: ['nasty'], cookedEnergy: 5 },
-        'fruit': { energy: 6 },
-        'vegetables': { energy: 5, cookedEnergy: 6 },
+        'onion': { energy: 4, effects: ['nasty'], cookedEnergy: 5 },
+        'apple': { energy: 6 }, 'pear': { energy: 8 }, 'banana': { energy: 8 },
+        'orange': { energy: 9 }, 'peach': { energy: 7 },
+        'potato': { energy: 5, effects: ['nasty'], cookedEnergy: 10 },
         'fish': { energy: 20, effects: ['nasty','bacterial'], cookedEnergy: 25 },
         'meat': { energy: 60, effects: ['nasty','bacterial'], cookedEnergy: 65 }
     };
     var equipment = {
-        'small dagger': { weight: 2, color: '757270', classes: ['blade'] }
+        'small dagger': { weight: 4, color: '757270', classes: ['blade'] }
     };
     // References to controller stuff
     var scope, terrain, userInventory, fireRef, fireUser, fireInventory;
@@ -109,21 +184,252 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     var toRadians = function(angle) { return angle * 0.0174533; };
     var toDegrees = function(angle) { return (angle * 57.2957795 + 360) % 360; };
     var getDigit = function(num, digit) { return Math.floor(num / (Math.pow(10, digit-1)) % 10) };
+    var pickProperty = function(object) { // Return a random property key from input object
+        var array = []; for(var key in object) { if(object.hasOwnProperty(key)) { array.push(key); } }
+        return pickInArray(array);
+    };
+
+    var genCampEconomy = function(grid) {
+        // First create economic nodes
+        var campNodes = {}, productPool = { list: [], categories: {}, stallTypes: {} };
+        for(var nodeKey in economyNodes) { if(!economyNodes.hasOwnProperty(nodeKey)) { continue; }
+            var node = economyNodes[nodeKey], amount = node.occurrence.split(':')[1], occurred = 0;
+            campNodes[nodeKey] = { amount: 0 };
+            var campNode = campNodes[nodeKey];
+            Math.seedrandom(nodeKey+grid);
+            switch(node.occurrence.split(':')[0]) {
+                case 'coast': 
+                    occurred = getNearCoast(grid,3.5).length;
+                    break;
+                case 'mountains':
+                    occurred = getNearMiningAbundance(grid,3.5);
+                    break;
+                case 'plains':
+                    occurred = Math.max(0,8 - getNearMiningAbundance(grid,3.5));
+                    break;
+                case 'forest':
+                    occurred = Math.max(0,4 - getNearMiningAbundance(grid,3.5));
+                    break;
+            }
+            campNode.amount = Math.round(occurred * amount +
+                occurred * (Math.random() * amount - (amount/2)) * 0.8);
+            if(campNode.amount <= 0) { delete campNodes[nodeKey]; continue; }
+            var outputAmount = node.output[0].split(':')[node.output[0].split(':').length-1];
+            var today = new Date();
+            Math.seedrandom(today.getMonth()+'/'+today.getDay()+nodeKey+grid); // Daily variance in output
+            campNode.output = Math.ceil(outputAmount * campNode.amount +
+                outputAmount * (Math.random() * campNode.amount - (campNode.amount/2)) * 0.8);
+            // TODO: If high variance, have market people comment on it
+            campNode.variance = campNode.output / (outputAmount * campNode.amount);
+            for(var i = 0; i < campNode.output; i++) {
+                var pushProduct = {};
+                if(node.output[0].split(':').length == 3 && node.output[0].split(':')[0] != 'event') {
+                    pushProduct = 
+                        angular.copy(itemsMaster[node.output[0].split(':')[0]][node.output[0].split(':')[1]]);
+                    pushProduct.type = node.output[0].split(':')[0]; 
+                    pushProduct.name = node.output[0].split(':')[1];
+                } else { pushProduct = pickProduct(node.output[0]); }
+                pushProduct.value = Math.max(0.1,pushProduct.value * (campNode.variance - 2) * -1);
+                pushProduct.type = pushProduct.type == 'other' ? pushProduct.name : pushProduct.type;
+                productPool.list.push(pushProduct);
+                for(var msTypeKey in marketStallTypes) { 
+                    if(!marketStallTypes.hasOwnProperty(msTypeKey)) { continue; }
+                    var goods = marketStallTypes[msTypeKey].goods;
+                    if(jQuery.inArray(pushProduct.type,goods) +
+                        jQuery.inArray(pushProduct.type+':'+pushProduct.name,goods) +
+                        jQuery.inArray('other:'+pushProduct.name,goods) > -3) {
+                        if(productPool.stallTypes.hasOwnProperty(msTypeKey)) {
+                            productPool.stallTypes[msTypeKey].weight += pushProduct.weight;
+                            productPool.stallTypes[msTypeKey].count++;
+                        } else {
+                            productPool.stallTypes[msTypeKey] = 
+                            { weight: pushProduct.weight, count: 1 }; 
+                        }
+                    }
+                }
+                if(productPool.categories.hasOwnProperty(pushProduct.type)) {
+                    productPool.categories[pushProduct.type]++;
+                } else { productPool.categories[pushProduct.type] = 1; }
+            }
+        }
+//        console.log('camp nodes:',campNodes,'pool categories:',productPool.categories);
+        Math.seedrandom('stalls'+grid);
+        
+        // Set up stall types
+        var chosenStallTypes = {};
+        while(productPool.list.length > 0 && countProperties(productPool.stallTypes) > 0) {
+            msTypeKey = pickProperty(productPool.stallTypes);
+            chosenStallTypes[msTypeKey] = chosenStallTypes.hasOwnProperty(msTypeKey) ? 
+                chosenStallTypes[msTypeKey] : { goods: {}, weight: 0, totalGoods: 0 };
+            var stall = chosenStallTypes[msTypeKey]; stall.stallType = msTypeKey;
+            Math.seedrandom('stalls'+grid+msTypeKey);
+            stall.markup = Math.random()*0.3 + 1.2;
+            for(var p = 0; p < productPool.list.length; p++) { // Find matching products
+                if(jQuery.inArray(productPool.list[p].type,marketStallTypes[msTypeKey].goods) +
+                    jQuery.inArray(productPool.list[p].type+':'+productPool.list[p].name,
+                        marketStallTypes[msTypeKey].goods) +
+                    jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods) > -3) {
+                    var product = productPool.list.splice(p,1)[0];
+                    p--; // Since we spliced, don't skip next product
+                    if(stall.hasOwnProperty('categories')) { // If stall has categories
+                        if(stall.categories.hasOwnProperty(product.type)) { // If category match
+                            if(stall.goods.hasOwnProperty(product.name)) { // If good already here
+                                stall.categories[product.type][0]++; // Increment category item count
+                                stall.goods[product.name].amount++; // Increment good amount
+                            } else { // If good not already here
+                                stall.categories[product.type][0]++; // Increment category item count
+                                stall.goods[product.name] = // Add good
+                                { color: product.color, type: product.type,
+                                    value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                                    amount: 1, key: product.type+':'+product.name };
+                                stall.categories[product.type].push(product.name); // Add name
+                            }
+                        } else { // No matching category, add as new
+                            stall.categories[product.type] = [1,product.name]; // Initialize new category
+                            stall.goods[product.name] = // Add good
+                            { color: product.color, type: product.type,
+                                value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                                amount: 1, key: product.type+':'+product.name };
+                        }
+                    } else { // Stall has no categories
+                        stall.categories = {}; stall.canvas = colorUtility.generate('stallCanvas').hex;
+                        stall.categories[product.type] = [1,product.name]; // Initialize new category
+                        stall.goods[product.name] = // Add good
+                        { color: product.color, type: product.type,
+                            value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                            amount: 1, key: product.type+':'+product.name };
+                    }
+                    stall.weight += product.weight; // Add product weight to total stall weight
+                    stall.totalGoods++; // Increment total stall good count
+                    if(stall.totalGoods >= productPool.stallTypes[msTypeKey].count ||
+                        stall.weight >= marketStallTypes[msTypeKey].capacity ||
+                        countProperties(stall.goods) > 7) {
+                        break; // All applicable products added, or stall over weight capacity/good variety
+                    }
+                }
+            }
+            stall.categoryCount = countProperties(stall.categories); // Store number of categories in this stall
+            delete productPool.stallTypes[msTypeKey]; // Don't try this stall type again
+        }
+        // Remove empty stall types
+        for(var stKey in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(stKey)) { continue; }
+            if(chosenStallTypes[stKey].totalGoods < 1) { delete chosenStallTypes[stKey]; } }
+
+        // Combine similar under-capacity stalls
+        for(var cs1Key in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(cs1Key)) { continue; }
+            var stall1 = chosenStallTypes[cs1Key];
+            for(var cs2Key in chosenStallTypes) { 
+                if(!chosenStallTypes.hasOwnProperty(cs2Key) || cs1Key == cs2Key) { continue; }
+                var stall2 = chosenStallTypes[cs2Key];
+                if(stall2.weight > marketStallTypes[cs2Key].capacity / 1.5) { continue; }
+                if(stall2.weight > marketStallTypes[cs1Key].capacity - stall1.weight ) { continue; }
+                // Candidate stall is less than 3/4 capacity and not too heavy
+                var combinedCats = angular.copy(stall1.categories);
+                for(var s2CatKey in stall2.categories) { // Combine stall categories
+                    if(!stall2.categories.hasOwnProperty(s2CatKey)) { continue; }
+                    combinedCats[s2CatKey] = stall2.categories[s2CatKey];
+                }
+                if(countProperties(combinedCats) > 4) { continue; } // If within 4-category limit
+                var combinedGoods = angular.copy(stall1.goods);
+                for(var s2GoodKey in stall2.goods) { // Combine stall goods
+                    if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
+                    combinedGoods[s2GoodKey] = stall2.goods[s2GoodKey];
+                }
+                if(countProperties(combinedGoods) > 8) { continue; } // If within max good variety
+                if(jQuery.inArray(cs2Key,similarMarketStalls[cs1Key]) < 0) { continue; } // If similar
+//                console.log('combining',cs1Key,'and',cs2Key);
+                // All good, commence the combining!
+                for(s2GoodKey in stall2.goods) {
+                    if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
+                    var s2Good = stall2.goods[s2GoodKey];
+                    if(stall1.categories.hasOwnProperty(s2Good.type)) { // Category exists
+                        if(stall1.goods.hasOwnProperty(s2GoodKey)) { // Good exists
+                            stall1.goods[s2GoodKey].amount += s2Good.amount; // Combine amounts
+//                            console.log('    combining',s2GoodKey,'with existing');
+                        } else { // Good doesn't exist
+//                            console.log('    adding',s2GoodKey,'to existing cat');
+                            stall1.goods[s2GoodKey] = s2Good;
+                            stall1.categories[s2Good.type].push(s2GoodKey); // Add good to cat goods
+                        }
+                        stall1.categories[s2Good.type][0] += s2Good.amount; // Add to good count
+                    } else { // Category doesn't exist
+//                        console.log('    adding',s2GoodKey,'with new cat',s2Good.type);
+                        stall1.categories[s2Good.type] = stall2.categories[s2Good.type];
+                        stall1.categories[s2Good.type][0] = s2Good.amount; // Reset cat amount
+                        stall1.goods[s2GoodKey] = s2Good;
+                        stall1.categoryCount++; // Increment category count
+                    }
+                    stall1.weight += s2Good.weight * s2Good.amount; // Add weight to stall
+                    stall1.combined = true; // Mark stall as a combined stall
+                    delete chosenStallTypes[cs2Key]; // Delete combined stall
+                }
+            }
+        }
+        
+//        console.log('remaining stall types:',chosenStallTypes,'remaining products:',productPool.list);
+
+        var stalls = { sa: { goods: {} }, sb: { goods: {} }, sc: { goods: {} }, sd: { goods: {} },
+            se: { goods: {} }, sf: { goods: {} }, sg: { goods: {} }, sh: { goods: {} }, si: { goods: {} }, 
+            sj: { goods: {} }, sk: { goods: {} }, sl: { goods: {} }, sm: { goods: {} }, sn: { goods: {} } };
+        var stallIDs = ['sa','sb','sc','sd','se','sf','sg','sh'];
+        // Assign final stall types to stall slots
+        for(var stallKey in stalls) { if(!stalls.hasOwnProperty(stallKey)) { continue; }
+            var chosenStallKey = pickProperty(chosenStallTypes);
+            stalls[stallKey] = chosenStallTypes[chosenStallKey];
+//            console.log(stallKey,'is a',chosenStallKey,'stall');
+            delete chosenStallTypes[chosenStallKey];
+            if(countProperties(chosenStallTypes) < 1) { break; }
+        }
+
+        // Delete empty stalls
+        for(var stallDelKey in stalls) { if(!stalls.hasOwnProperty(stallDelKey)) { continue; }
+            if(!stalls[stallDelKey].hasOwnProperty('canvas')) { delete stalls[stallDelKey]; } }
+        
+        // Redistribute goods between like-stalls?
+        
+        // TODO: Add blacksmith back in, if at least one mining camp (refined ore being sold in market)
+        
+//        console.log('final stalls',stalls);
+        return { economyNodes: campNodes, market: { stalls: stalls, stallCount: countProperties(stalls) } };
+    };
+
+    var pickProduct = function(type) { // Pick an event product based on rarity property
+        var poolObject = type.split(':')[0] == 'event' ? angular.copy(eventProducts[type.split(':')[1]]) :
+            angular.copy(itemsMaster[type.split(':')[0]]);
+        var minRarity = 1;
+        for(var poolKey in poolObject) { if(!poolObject.hasOwnProperty(poolKey)) { continue; }
+            var thisRarity = poolObject[poolKey].hasOwnProperty('rarity') ? poolObject[poolKey].rarity :
+                poolObject[poolKey].abundance*-1;
+            minRarity = minRarity > thisRarity ? thisRarity : minRarity;
+        }
+        var picked = pickInObject(poolObject);
+        var rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
+            1 + picked.abundance / minRarity;
+        var count = 0;
+        var random = Math.random();
+        while(rarity > random && count < 100) { count++;
+            delete poolObject[picked.key]; // Remove from pool
+            picked = pickInObject(poolObject);
+            rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
+                1 + picked.abundance / minRarity;
+        }
+        if(picked.key.split(':').length > 1) {
+            picked.type = picked.key.split(':')[0]; picked.name = picked.key.split(':')[1];
+        } else { picked.type = type.split(':')[0]; picked.name = picked.key; }
+        picked = dressItem(picked);
+        return picked;
+    };
+
+    var countProperties = function(object) { // Return number of properties an object has
+        var count = 0; for(var key in object) { if(!object.hasOwnProperty(key)) { continue; } count++; } 
+        return count; };
     // Return a random element from input array
     var pickInArray = function(array) { return array[Math.floor(Math.random()*array.length)]; };
     var pickInObject = function(object) { // Return a random property from input object (attach name)
         var array = [];
         for(var key in object) { if(object.hasOwnProperty(key)) { 
-            var property = object[key]; property.name = key; array.push(object[key]); } }
+            var property = object[key]; property.key = key; array.push(property); } }
         return pickInArray(array);
-    };
-    var pickProduct = function(type) { // Pick a product in an array based on rarity property value
-        Math.seedrandom(); var random = Math.random();
-        var picked = pickInObject(eventProducts[type]);
-        while(picked.rarity > random) {
-            picked = pickInObject(eventProducts[type]);
-        }
-        return picked;
     };
     var getBoxNeighbors = function(nodes,x,y,dist) { // Check a box area around x,y
         var neighbors = [];
@@ -155,7 +461,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         for(var i = Math.ceil(dist)*-1; i <= Math.ceil(dist); i++) {
             for(var ii = Math.ceil(dist)*-1; ii <= Math.ceil(dist); ii++) {
                 if(dist*dist >= i*i + ii*ii) {
-                    neighbors.push({ grid:(loc[0]+i)+':'+(loc[1]+ii), dist2: i*i + ii*ii });
+                    var pixel = { grid:(loc[0]+i)+':'+(loc[1]+ii), dist2: i*i + ii*ii, inBounds: true };
+                    if(loc[0]+i < 0 && loc[0]+i > 299 && loc[1]+i < 0 && loc[1]+i > 299) { 
+                        pixel.inBounds = false; }
+                    neighbors.push(pixel);
                 }
             }
         }
@@ -188,17 +497,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         return inventoryCopy;
     };
     var dressItem = function(item) { // Dress item with properties not stored on firebase
-        var parent;
-        switch(item.type) {
-            case 'resource': parent = resourceList[item.name]; break;
-            case 'plant': parent = eventProducts.forage[item.name]; break;
-            case 'animal': parent = eventProducts.hunt[item.name]; break;
-            case 'mineral': parent = eventProducts.mine[item.name]; break;
-            default: parent = item; break;
-        }
-        item.color = parent.color; item.value = parent.value; item.weight = parent.weight;
-        item.unit = parent.unit; item.materials = parent.materials; item.profession = parent.profession;
-        item.materials = item.status == 'pelt' ? undefined : item.materials;
+        var parent = itemsMaster[item.type][item.name];
+        for(var key in parent) { if(!parent.hasOwnProperty(key)) { continue; } item[key] = parent[key]; }
         var eatKey = item.status ? item.name+':'+item.status : item.name;
         if(scope.user.hasOwnProperty('autoEat') &&
             jQuery.inArray(eatKey,scope.user.autoEat) >= 0) { item.autoEat = true; }
@@ -213,28 +513,28 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'animal':
                 if(item.status || !scope.user.equipment || 
                     scope.user.equipment['small dagger'].condition <= 0) { return false; }
-                if(jQuery.inArray('pelt',eventProducts.hunt[item.name].classes) >= 0) {
-                    actions.skin = function(item,amount) {
-                        if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
-                        amount = parseInt(amount);
-                        console.log('skinning',amount,item.name);
-                        if(item.amount - amount > 0) {
-                            fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
-                            scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
-                        } else { fireInventory.child(item.type+':'+item.name).remove();
-                            delete scope.inventory[item.type+':'+item.name]; }
-                        Math.seedrandom();
-                        scope.user.equipment['small dagger'].condition -= 5;
-                        fireUser.child('equipment/small dagger').set(
-                            scope.user.equipment['small dagger'].condition);
-                        if(Math.random()<0.5) { return; } // TODO: Skinning skill level
-                        var invItem =
-                        { type: item.type, name: item.name, status: 'pelt', amount: parseInt(amount) };
-                        addToInventory(invItem);
-                    }
-                }
                 actions.eviscerate = function(item,amount) {
-                    console.log('eviscerate',item,amount);
+                    if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
+                    amount = parseInt(amount);
+                    console.log('eviscerating',amount,item.name);
+                    if(item.amount - amount > 0) {
+                        fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
+                        scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
+                    } else { fireInventory.child(item.type+':'+item.name).remove();
+                        delete scope.inventory[item.type+':'+item.name]; }
+                    Math.seedrandom();
+                    scope.user.equipment['small dagger'].condition -= 5;
+                    fireUser.child('equipment/small dagger').set(
+                        scope.user.equipment['small dagger'].condition);
+                    var products = [];
+                    if(Math.random()<0.5 && jQuery.inArray('pelt',item.classes) >= 0) { 
+                        products.push({type:item.type,name:item.name,status:'pelt',amount:parseInt(amount)}); }
+                    // TODO: Evisceration skill level
+                    products.push({ type: item.type, name: item.name, status: 'meat',
+                        amount: randomIntRange(amount,
+                            amount*Math.ceil(Math.sqrt(item.weight)))
+                    });
+                    addToInventory(products);
                 };
                 return actions; break;
         }
@@ -250,19 +550,38 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }}
         return false;
     };
+    var isCoast = function(grid) {
+        if(!terrain.hasOwnProperty(grid)) { return false; }
+        grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+        for(var i = -1; i <= 1; i++) { for(var ii = -1; ii <= 1; ii++) {
+            if(grid.x+i < 0 || grid.x+i > 299 || grid.y+ii < 0 || grid.y+ii > 299) { continue; } // Out of bounds
+            if(!terrain.hasOwnProperty((grid.x+i)+':'+(grid.y+ii))) { return true; }
+        }}
+        return false;
+    };
     var getNearWater = function(grid,distance) {
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         var inRange = getCircle([grid.x,grid.y],distance), nearWater = [];
         for(var i = 0; i < inRange.length; i++) {
-            if(!terrain.hasOwnProperty(inRange[i].grid)) { nearWater.push(inRange[i].grid); }
+            if(inRange[i].inBounds && !terrain.hasOwnProperty(inRange[i].grid)) { 
+                nearWater.push(inRange[i].grid); }
         }
         return nearWater;
+    };
+    var getNearCoast = function(grid,distance) {
+        grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+        var inRange = getCircle([grid.x,grid.y],distance), nearCoast = [];
+        for(var i = 0; i < inRange.length; i++) {
+            if(inRange[i].inBounds && isCoast(inRange[i].grid)) { nearCoast.push(inRange[i].grid); }
+        }
+        return nearCoast;
     };
     var getNearAverageElevation = function(grid,distance) {
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         var inRange = getCircle([grid.x,grid.y],distance), count = 0, total = 0;
         for(var i = 0; i < inRange.length; i++) {
-            if(terrain.hasOwnProperty(inRange[i].grid)) { count++; total += terrain[inRange[i].grid]; }
+            if(inRange[i].inBounds && terrain.hasOwnProperty(inRange[i].grid)) { 
+                count++; total += terrain[inRange[i].grid]; }
         }
         return count > 0 ? total/count : 0;
     };
@@ -275,15 +594,16 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         } else {
             grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
             var inRange = getCircle([grid.x,grid.y],distance);
-            for(var i = 0; i < inRange.length; i++) { if(!terrain.hasOwnProperty(inRange[i].grid)) { continue; }
+            for(var i = 0; i < inRange.length; i++) { 
+                if(!terrain.hasOwnProperty(inRange[i].grid) || !inRange[i].inBounds) { continue; }
                 elevation = terrain[inRange[i].grid]; slope = getSlope(inRange[i].grid);
                 var thisAbundance = elevation < 7 ? slope/5 * Math.random()/20 :
                     Math.min(1,((slope + elevation/8) / 10)) * (Math.random()/10+0.9);
                 thisAbundance *= 1 - inRange[i].dist2 / 15; // Weakens over distance
-                abundance += thisAbundance;
+                abundance += thisAbundance > 0.4 ? thisAbundance : 0;
             }
+            return abundance;
         }
-        return abundance;
     };
     var getSlope = function(grid) {
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
@@ -326,7 +646,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var result = 1;
         var type = factor.split(':')[0], amount = factor.split(':')[1];
         switch(type) {
-            case 'nearWater': result = 1/(getCoastDistance(grid)/8); break;
+            case 'nearWater': result = 1/(getCoastDistance(grid)/4); break;
             case 'nearMountains': result = getNearMiningAbundance(grid,3.5)/2.5; break;
             case 'withLumberAndIron': 
                 result = 2 * Math.min(30,resources.lumber.supply)/30 * Math.min(20,resources.iron.supply)/10;
@@ -335,79 +655,6 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }
         return Math.max(0,amount * result);
     };
-    var genCampEconomy = function(grid) {
-        var economy = {}; var resources = {};
-        for(var resKey in resourceList) { if(!resourceList.hasOwnProperty(resKey)) { continue; }
-            // TODO: Supply and demands influenced by location & terrain 
-            Math.seedrandom(grid+resKey); var random = Math.random();
-            resources[resKey] = { color: resourceList[resKey].color };
-//            console.log(resKey,'-',parseInt(random*100),'---------------------------------');
-            resources[resKey].demand = (1 - random)*20+40;
-//            console.log('original demand:',resources[resKey].demand);
-            if(resourceList[resKey].hasOwnProperty('terrainFactors')) {
-                for(var i = 0; i < resourceList[resKey].terrainFactors.length; i++) {
-//                    console.log(resKey,'---------------');
-//                    console.log('demand:',resources[resKey].demand);
-                    var factor = calculateFactor(grid,resourceList[resKey].terrainFactors[i],null);
-//                    console.log('terrain factor:',resourceList[resKey].terrainFactors[i],factor);
-                    resources[resKey].demand = factor > 1 ? resources[resKey].demand/Math.max(0.01,factor) :
-                        factor == 0 ? resources[resKey].demand : resources[resKey].demand * (2 - factor);
-//                    console.log('new demand:',resources[resKey].demand);
-//                    console.log('---------------');
-                }
-            }
-            resources[resKey].demand = Math.max(0,Math.min(100,
-                Math.max(0,Math.min(100,Math.round(resources[resKey].demand))+Math.random()*8-4)));
-            resources[resKey].value = Math.max(0.1,
-                resourceList[resKey].value * ((resources[resKey].demand+10) / 60));
-            resources[resKey].supply = Math.round(
-                ((random*4+1) * resourceList[resKey].abundance)/(resources[resKey].value/2));
-        }
-        for(var resKey2 in resources) { if(!resources.hasOwnProperty(resKey2)) { continue; }
-            var res = resourceList[resKey2];
-//            console.log(resKey2,'---------------------------------------------------');
-            if(resourceList[resKey2].hasOwnProperty('metaFactors')) {
-                for(var j = 0; j < resourceList[resKey2].metaFactors.length; j++) {
-                    var metaFactor = calculateFactor(grid,resourceList[resKey2].metaFactors[j],resources);
-//                    console.log(resourceList[resKey2].metaFactors[j],'meta factor:',metaFactor,
-//                        'demand:',resources[resKey2].demand);
-                    resources[resKey2].demand = metaFactor > 1 ? 
-                        resources[resKey2].demand/Math.max(0.01,metaFactor) :
-                        metaFactor == 0 ? resources[resKey2].demand : 
-                        resources[resKey2].demand * (2 - metaFactor);
-                }
-            }
-            resources[resKey2].demand = Math.max(0,Math.min(100,
-                Math.round(Math.max(0,Math.min(100,resources[resKey2].demand))+Math.random()*8-4)));
-            resources[resKey2].value = Math.max(0.1,
-                res.value * ((resources[resKey2].demand+10) / 60));
-            resources[resKey2].supply = Math.round(
-                ((random*4+1) * res.abundance)/(resources[resKey2].value/2));
-            resources[resKey2].value = Math.max(1,resources[resKey2].value);
-//            console.log('weighted demand:',resources[resKey2].demand);
-//            console.log('supply:',resources[resKey2].supply);
-//            console.log('abundance:',res.abundance,'raw value:',res.value);
-//            console.log('camp value:',resources[resKey2].value);
-            
-        }
-        economy.ecoZone = getCircle([grid.split(':')[0],grid.split(':')[1]],3.5);
-        economy.resources = resources;
-        var blacksmithFactor = resources['coal'].demand + resources['iron'].demand 
-            + resources['copper'].demand + resources['tools'].demand + resources['weapons'].demand;
-        if(blacksmithFactor/500 < Math.random() * 0.7 + 0.3) {
-            economy.blacksmith = {};
-            for(var minKey in eventProducts.mine) {
-                if(!eventProducts.mine.hasOwnProperty(minKey)) { continue; }
-                var mineral = eventProducts.mine[minKey];
-                if(mineral.profession != 'blacksmith') { continue; }
-                economy.blacksmith[minKey] = {};
-                economy.blacksmith[minKey].value = resources[minKey] ? resources[minKey].value / 2 
-                    : mineral.rarity * 40;
-            }
-        }
-        return economy;
-    };
-    // Generate pool of resources for event
     var createEventPool = function(event) {
         var pool = [], number, i, product, item;
         var typesChosen = []; // Prevent 2 instances of same product, if necessary
@@ -416,12 +663,11 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'forage':
                 number = Math.max(Math.round(event.abundance * 3 + Math.random()*2*event.abundance),1);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct(event.type);
+                    product = pickProduct('event:'+event.type);
                     while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
-                        product = pickProduct(event.type);
+                        product = pickProduct('event:'+event.type);
                     }
                     typesChosen.push(product.name);
-                    product.type = 'plant';
                     item = { product: product,
                         targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                     item.product.amount = Math.max(1,item.product.avgQty * event.abundance
@@ -432,8 +678,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'hunt':
                 number = Math.max(Math.round(event.abundance * 2 + Math.random()*event.abundance),1);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct(event.type);
-                    product.type = 'animal';
+                    product = pickProduct('event:'+event.type);
                     item = { product: product,
                         targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                     pool.push(item);
@@ -442,8 +687,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'mine':
                 number = Math.round(1 + event.abundance * 8 + Math.random()*8*event.abundance);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct(event.type);
-                    product.type = 'mineral';
+                    product = pickProduct('event:'+event.type);
+                    product.status = 'unrefined';
                     item = { product: product,
                         targetX: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)], 
                         targetY: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)] };
@@ -484,6 +729,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     return {
         setupActivity: function(eventInfo,skill) {
             event = {}; event.skill = skill ? Math.floor(skill / 10) : 0;
+            actCanvasUtility.clearAll();
             Math.seedrandom();
             event.pool = createEventPool(eventInfo); event.result = {};
             event.seed = randomIntRange(0,10000); // For consistent redrawing
@@ -576,15 +822,17 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             var x = parseInt(coords.split(':')[0]), y = parseInt(coords.split(':')[1]);
             var inRange = getCircle([x,y],3.5);
             for(var key in visible) { // Set all pixels to explored
-                if(visible.hasOwnProperty(key)) { visible[key] = 2; }
+                if(visible.hasOwnProperty(key)) { visible[key] = visible[key] < 2 ? 
+                    visible[key] == 1.5 ? 2.5 : 2 : visible[key]; }
             }
             for(var i = 0; i < inRange.length; i++) { // Set in-range pixels to visible
-                visible[inRange[i].grid] = 1;
+                if(!inRange[i].inBounds) { continue; } // Don't add out-of-bounds pixels
+                visible[inRange[i].grid] = visible[inRange[i].grid] == 2 ? 1 : inRange[i].dist2 <= 5 ? 1 : 1.5;
             }
-            var remove = [];
-            for(var j = remove.length-1; j > -1; j--) { // Delete grids in remove array from inRange array
-                inRange.splice(remove[j],1);
-            }
+//            var remove = [];
+//            for(var j = remove.length-1; j > -1; j--) { // Delete grids in remove array from inRange array
+//                inRange.splice(remove[j],1);
+//            }
             return visible;
         },
         getActivityAbundance: function(location,camps) {
@@ -620,12 +868,13 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 var x = parseInt(tKey.split(':')[0]), y = parseInt(tKey.split(':')[1]);
                 var area = parseInt(x/20) * 20 + ':' + parseInt(y/20) * 20;
                 Math.seedrandom(area);
-                var minRange = randomIntRange(10,16);
+                var minRange = randomIntRange(8,15);
                 if(Math.random() < 0.06) { minRange = randomIntRange(4,10) }
                 if(isCampNear(camps,tKey.split(':'),minRange)) { continue; } // If camp nearby, veto this grid
                 var nearGrids = getCircle(tKey.split(':'),2.5);
                 var nearStats = { water: 0, avgElevation: 0 };
                 for(var i = 0; i < nearGrids.length; i++) {
+                    if(!nearGrids[i].inBounds) { continue; } // Don't examine out of bounds pixels
                     nearStats.water += terrain[nearGrids[i].grid] ? 0 : 1;
                     nearStats.avgElevation += terrain[nearGrids[i].grid] ? terrain[nearGrids[i].grid] : 0;
                     if(i == nearGrids.length - 1) {
@@ -644,7 +893,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         expandCamp: function(grid) {
             Math.seedrandom(grid); // Deterministic based on grid
             var x = parseInt(grid.split(':')[0]), y = parseInt(grid.split(':')[1]);
-            return { economy: genCampEconomy(grid), type: 'camp', name: Chance(x*1000 + y).word(),
+            var economy = genCampEconomy(grid);
+            return { economy: economy, type: 'camp', name: Chance(x*1000 + y).word(),
                 grid: grid }
         },
         expandObjects: function(objects,grid) { // Generate traits and properties of objects
@@ -712,7 +962,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         attachFireInventory: function(fireInv) { fireInventory = fireInv; },
         addToInventory: addToInventory, cleanInventory: cleanInventory, dressItem: dressItem,
         getItemActions: getItemActions, getSlope: getSlope,
-        resourceList: resourceList, event: event, eventMessages: eventMessages, 
-        eventProducts: eventProducts, edibles: edibles, equipment: equipment
+        itemsMaster: itemsMaster, event: event,
+        edibles: edibles, equipment: equipment
     }
 });

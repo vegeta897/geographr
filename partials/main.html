@@ -41,13 +41,20 @@
         <div ng-include="'partials/controls.html'" onload="attachControls()"></div>
     </div>
 </div>
-<div id="uiContainer" ng-show="userInit && terrainReady" class="container">
+<div id="uiContainer" ng-show="userInit && terrainReady && user.location" class="container">
     <div class="row">
+        <div ng-show="commits.show" id="commits">
+            <table class="table"><tr ng-repeat="commit in commits.list"><td><span class="text-muted">
+        {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td>
+                <td>{{ commit.message }}</td></tr></table>
+        </div>
         <!-- Info/Event/Stats -->
-        <div id="info" class="col-xs-3" ng-include="'partials/info.html'"></div>
+        <div id="info" class="col-xs-3" ng-hide="onPixel.camp" ng-include="'partials/info.html'"></div>
+        <!-- TODO: Show mini-stats view (hunger) above camp UI when at a camp -->
         <div class="col-xs-6" ng-hide="user.camp"></div>
         <!-- Inventory -->
-        <div id="location" class="col-xs-3" ng-include="'partials/location.html'" ng-show="user.camp"></div>
+        <div id="location" ng-class="{'col-xs-3':!onPixel.camp, 'col-xs-6':onPixel.camp}"
+             ng-include="'partials/location.html'" ng-show="user.camp"></div>
         <!-- Inventory -->
         <div id="inventory" class="col-xs-3" ng-include="'partials/inventory.html'" ng-show="user.camp"></div>
         <div class="col-xs-3">

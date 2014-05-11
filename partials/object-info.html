@@ -2,19 +2,6 @@
 <p><span class="text-muted">({{ selectedObject.grid | grid }})</span>
     <em ng-show="selectedObject.visited">&emsp;Visited</em>
 </p>
-<h3 ng-show="selectedObject.economy.resources">Resource Demands</h3>
-<div class="row" ng-show="selectedObject.economy.resources"><div class="col-xs-6" ng-repeat="column in [0,1]">
-    <table class="unstyled table-tiny">
-        <tr ng-repeat="resource in selectedObject.economy.resources | splitList: column">
-            <td class="has-label"><span ng-style="{'background-color': '#'+resource.color}" class="label">
-                {{ resource.name | capitalize }}</span></td>
-            <td class="text-right" style="color: white;"
-                ng-style="{ opacity: (resource.demand+15)/115 }">{{ resource.demand }}</td>
-            <td ng-show="user.id == 2" class="text-right">{{ resource.supply }}</td>
-            <td style="color: gold" ng-show="user.id == 2" class="text-right">{{ resource.value | int }}</td>
-        </tr>
-    </table>
-</div></div>
 <h3 ng-show="selectedObject.visited && selectedObject.economy.blacksmith">Camp Services</h3>
 <p ng-show="selectedObject.visited">
     <span ng-show="selectedObject.economy.blacksmith" style="background-color: #3C3C3C;"

@@ -80,16 +80,19 @@ angular.module('Geographr.directives', [])
 .directive('changeEffect', function() {
     return {
         restrict: 'C',
-        scope: { model: '=', plain: '=' },
+        scope: { model: '=', neutral: '=' },
         link: function(scope, element) {
+            var originalShadow = element.css('text-shadow'), originalSize = element.css('font-size');
             scope.$watch('model', function(newVal,oldVal) {
-                var color = newVal > oldVal && !scope.plain ? 'rgba(0,255,0,255)' : 
-                    newVal < oldVal && !scope.plain ? 'rgba(255,0,0,255)' : 'rgba(255,255,255,255)';
-                element.css({textShadow: '0 0 6px ' + color, fontSize: '1.1em'});
+                element.css({'-webkit-transition': 'text-shadow 0s, font-size 0s',
+                    transition: 'text-shadow 0s, font-size 0s'});
+                var color = newVal > oldVal && !scope.neutral ? 'rgba(0,255,0,255)' : 
+                    newVal < oldVal && !scope.neutral ? 'rgba(255,0,0,255)' : 'rgba(255,255,255,255)';
+                element.css({textShadow: '0 0 6px ' + color, fontSize: '1.2em'});
                 setTimeout(function(){
-                    element.css({'-webkit-transition': 'text-shadow 0.8s ease-out, font-size 0.4s ease-out',
-                        transition: 'text-shadow 0.8s ease-out, font-size 0.4s ease-out'});
-                    element.css({textShadow: '0 0 0 rgba(255,255,255,0)', fontSize: '1em'});
+                    element.css({'-webkit-transition': 'text-shadow 0.8s ease-out, font-size 0.7s ease-out',
+                        transition: 'text-shadow 0.8s ease-out, font-size 0.7s ease-out'});
+                    element.css({textShadow: originalShadow, fontSize: originalSize});
                     setTimeout(function(){
                         element.css({'-webkit-transition': 'text-shadow 0s, font-size 0s',
                             transition: 'text-shadow 0s, font-size 0s'});
@@ -130,7 +133,7 @@ angular.module('Geographr.directives', [])
 .filter('typeFilter', function(gameUtility) {
     return function(input,types) {
         if(!input) { return input; }
-        var list = [];
+        var list = [], inputCopy = angular.copy(input);
         switch(types[0]) {
             case 'edible':
                 for(var edKey in input) { if(!input.hasOwnProperty(edKey)) { continue; }
@@ -155,6 +158,10 @@ angular.module('Geographr.directives', [])
                 for(var bsKey in input) { if(!input.hasOwnProperty(bsKey)) { continue; }
                     if(input[bsKey].profession == 'blacksmith') { list.push(input[bsKey]); }
                 }
+                break;
+            case 'all':
+                for(var allKey in input) { if(input.hasOwnProperty(allKey)) { 
+                    var allItem = input[allKey]; allItem.name = allKey; list.push(input[allKey]); } }
                 break;
             default:
                 for(var key in input) {

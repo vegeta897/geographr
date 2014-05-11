@@ -1,7 +1,7 @@
 <h2>Inventory<small>&emsp;&emsp;&emsp;&emsp;Gold:&emsp;
     <strong data-model="user.money" class="change-effect">{{ user.money | number }}</strong></small></h2>
 <p ng-hide="inventory" class="text-muted">No items</p>
-<div ng-repeat="(key,val) in showItemTypes">
+<div ng-repeat="(key,val) in showItemTypes" ng-show="hasItem({type:key})">
     <h3 ng-hide="val">{{ key | capitalize }}</h3>
     <button class="btn btn-default btn-xs" ng-click="toggleItemType(key)">
         <i ng-show="val" class="glyphicon glyphicon-minus"></i><i ng-hide="val" class="glyphicon glyphicon-plus"></i>
@@ -14,19 +14,22 @@
             <td style="width: 16px;"><a href="#" data-toggle-panel>
                 <span ng-style="{background: '#'+item.color}" ng-class="item.status" class="item-color">
                     <span ng-show="item.status == 'cooked'">C</span><span ng-show="item.status == 'pelt'">P</span>
+                    <span ng-show="item.status == 'meat'">M</span>
                 </span></a></td>
             <td>
-                <span ng-show="item.unit.pre">{{ item.unit.pre }} of</span>
-                <span ng-show="item.profession == 'blacksmith' || item.profession == 'saltFarm'">unrefined</span>
-                <span ng-show="item.profession == 'jeweler'">uncut</span>
+                <span ng-show="item.unit.pre && item.status != 'unrefined'">{{ item.unit.pre }} of</span>
+                <span ng-show="(item.profession == 'blacksmith' || item.profession == 'saltFarm') 
+                    && item.status == 'unrefined'">unrefined</span>
+                <span ng-show="item.profession == 'jeweler' && item.status == 'unrefined'">uncut</span>
                 <span ng-show="item.status == 'cooked'">cooked</span>
                 <a href="#" data-toggle-panel>{{ item.name }}</a>
-                <span ng-show="item.unit.post">{{ item.unit.post }}</span>
-                <span ng-show="item.type == 'animal' && item.status != 'pelt'"> carcass</span>
+                <span ng-show="item.unit.post && item.status != 'unrefined'">{{ item.unit.post }}</span>
+                <span ng-show="item.type == 'animal' && item.status != 'pelt' && item.status != 'meat'"> carcass</span>
                 <span ng-show="item.status == 'pelt'"> pelt</span>
+                <span ng-show="item.status == 'meat'"> meat</span>
             </td>
         </tr>
-        <tr ng-repeat-end class="actions && val">
+        <tr ng-repeat-end class="actions" ng-hide="!val">
             <td colspan="3"><div class="well well-sm">
                 <div ng-show="item.hasActions">
                     <select class="form-control num-select" ng-model="doAmount" ng-init="doAmount = item.amount || 1">

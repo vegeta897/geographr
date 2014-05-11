@@ -8,9 +8,12 @@ weather? moves across map in bands, server-controlled
 each pixel has a temperature that gets updated every X minutes, seed-based, influenced by elevation and weather
 
 find random native camps that have seed-generated desire levels for different goods/resources
-    set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons
-    either buy from a camp and sell in another, or carry out a trade, in which you could run off with the goods
-        if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity
+    - set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons
+    - either buy from a camp and sell in another, or carry out a trade, in which you could run off with the goods
+        - if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity
+    - to sell goods, need to set up a market stall of your own
+    - can't sell to market stalls directly, but can engage in a supplier relationship
+        - if you don't meet the market requirements when agreeing to supply, they stop buying from you
         
 random encounters possible for every moved grid (server-side?)
 

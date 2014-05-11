@@ -305,13 +305,17 @@ angular.module('Geographr.canvas', [])
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.clearRect((thisX - offset[0])*canvasPixSize,
                         (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
-                    if(pixels[key] == 2 && canvasType == 'full') { // If explored pixel
+                    if(pixels[key] > 1 && canvasType == 'full') { // If semi-visible/explored pixel
                         var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
                         var isWater = !terrain.hasOwnProperty(key);
                         var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114)-15;
-                        var greyed = {r:grey+(p[0]-grey)*0.3,g:grey+(p[1]-grey)*0.3, b:grey+(p[2]-grey)*0.3};
+                        var greyAmount = pixels[key] == 1.5 ? 0.8 : pixels[key] == 2 ? 0.4 : 0.25;
+                        var greyed = {r:grey+(p[0]-grey)*greyAmount,g:grey+(p[1]-grey)*greyAmount,
+                            b:grey+(p[2]-grey)*greyAmount};
                         greyed.b += isWater ? 10 : 0; greyed.g += isWater ? 6 : 0;
-                        var fogDiff = {r:(46-greyed.r)*0.2,g:(51-greyed.g)*0.2, b:(56-greyed.b)*0.2};
+                        var fogAmount = pixels[key] == 1.5 ? 0.3 : pixels[key] == 2 ? 0.45 : 0.65;
+                        var fogDiff = 
+                            {r:(42-greyed.r)*fogAmount,g:(47-greyed.g)*fogAmount, b:(51-greyed.b)*fogAmount};
                         context.fillStyle = 'rgb('+parseInt(greyed.r+fogDiff.r)+','
                             +parseInt(greyed.g+fogDiff.g)+','+parseInt(greyed.b+fogDiff.b)+')';
                         context.fillRect((thisX - offset[0])*canvasPixSize,
@@ -413,11 +417,20 @@ angular.module('Geographr.canvas', [])
                 var fontSize = 10 + zoomPixSize / 4;
                 context.font = fontSize + 'px Georgia'; context.textAlign = 'center';
                 context.textBaseline = 'bottom'; context.fillStyle = 'rgba(0,0,0,0.8)';
+                var xOffset = 0, yOffset = 0;
+                if(x*zoomPixSize+zoomPixSize/2-context.measureText(text).width/2 < 0) {
+                    xOffset = Math.abs(x*zoomPixSize+zoomPixSize/2-context.measureText(text).width/2) + 1;
+                } else if(x*zoomPixSize+zoomPixSize/2+context.measureText(text).width/2 > 899) {
+                    xOffset = 899 - (x*zoomPixSize+zoomPixSize/2+context.measureText(text).width/2) - 2;
+                }
+                if(y == 0) { yOffset = zoomPixSize * 2; }
                 context.shadowColor = 'black'; context.shadowOffsetX = context.shadowOffsetY = 0;
                 context.shadowBlur = 1;
-                context.fillText(text, x*zoomPixSize+2+zoomPixSize/2, y*zoomPixSize+1-4-zoomPixSize/20);
+                context.fillText(text, x*zoomPixSize+2+zoomPixSize/2+xOffset, 
+                    y*zoomPixSize+1-4-zoomPixSize/20 + yOffset);
                 context.fillStyle = 'white';
-                context.fillText(text, x*zoomPixSize+zoomPixSize/2, y*zoomPixSize-4-zoomPixSize/20);
+                context.fillText(text, x*zoomPixSize+zoomPixSize/2+xOffset, 
+                    y*zoomPixSize-4-zoomPixSize/20 + yOffset);
                 context.shadowColor = 'rgba(0,0,0,0)';
             },
             drawDot: function(context,coords,size,color,alpha,zoomPixSize) {

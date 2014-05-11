@@ -1,16 +1,18 @@
-<h2>Location <small>({{ user.location | grid }})</small></h2>
-<p><span class="text-muted">Terrain:</span> {{ onPixel.terrain }}&emsp;
+<div class="heading">
+    <h2 ng-class="{'inline-header':onPixel.camp}">Location <small>({{ user.location | grid }})</small></h2>
+    <span class="text-muted">Terrain:</span> {{ onPixel.terrain }}&emsp;
     <span class="text-muted">Elevation:</span> {{ onPixel.elevation }}&emsp;
-    <span class="text-muted">Slope:</span> {{ onPixel.slope }}</p>
+    <span class="text-muted">Slope:</span> {{ onPixel.slope }}
+</div>
 <p ng-hide="onPixel.camp || onPixel.campfire" class="text-muted">Nothing here.</p>
 <button ng-disabled="looking || moving || inEvent" ng-hide="onPixel.campfire || onPixel.camp" 
     class="btn btn-default btn-sm" ng-click="buildCampfire()">Build Campfire</button>
-<div class="well object-well" ng-show="onPixel.campfire" id="campfire">
+<div class="well camp-ui" ng-show="onPixel.campfire" id="campfire">
     <h3>Campfire</h3>
     <table class="unstyled">
         <tr><th>Cookable Item</th>
-            <th class="text-right"><button ng-click="cookAll()" class="btn btn-primary btn-xs">
-                Cook All</button></th></tr>
+            <th colspan="2" class="text-right"><button ng-show="cookable.amount > 0" ng-click="cookAll()" 
+                class="btn btn-primary btn-xs">Cook All</button></th></tr>
         <tr class="show-if-last"><td colspan="3">Nothing to cook.</td></tr>
         <tr ng-repeat="cookable in inventory | typeFilter:['cookable']">
             <td><span ng-style="{'background-color': '#'+cookable.color}" class="label">
@@ -22,73 +24,96 @@
                 </select>
                 <span class="btn-group btn-group-xs">
                     <button class="btn btn-default" ng-click="cookAmount = 1">1</button>
-                    <button class="btn btn-default primary"
-                        ng-click="cookFood(cookable,cookAmount)">Cook</button>
+                    <button class="btn btn-default primary" ng-click="cookFood(cookable,cookAmount)">Cook</button>
                 </span>
             </td>
         </tr>
     </table>
 </div>
-<div class="well object-well" ng-show="onPixel.camp">
-    <div class="row"><div class="col-xs-12">
-        <h3 class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
-        <button class="btn btn-default btn-sm pull-right" ng-click="showEco = !showEco">Resources</button>
-        <table class="unstyled" ng-show="showEco">
-            <tr><th>Resource</th><th class="text-right">Supply</th><th class="text-right">Demand</th></tr>
-            <tr ng-repeat-start="(key,val) in onPixel.camp.economy.resources"
-                ng-show="showAllRes || (val.supply > 0 || val.invItem || 
-                    hasItem({profession:'blacksmith',name:key}))">
-                <td><button data-toggle-panel class="btn btn-xs btn-item"
-                    ng-style="{'background-color': '#'+val.color}">{{ key | capitalize }}</button></td>
-                <td class="text-right change-effect" data-model="val.supply" data-plain="true"
-                    ng-class="{'text-muted': val.supply < 1}">{{ val.supply }}</td>
-                <td style="color: #fff;" class="text-right" ng-style="{opacity:(val.demand+15)/115}">
-                    {{ val.invItem | iif : '*' : '' }}{{ val.demand }}</td>
-            </tr>
-            <tr class="actions" ng-repeat-end><td colspan="3" ng-show="showAllRes || (val.supply > 0 || val.invItem || 
-                hasItem({profession:'blacksmith',name:key}))" class="hard-right">
-                <div class="well well-sm">
-                    <div ng-show="val.supply > 0" ng-class="{'action-row':val.invItem}">
-                        <select class="form-control num-select" ng-model="buyAmount"
-                            ng-init="buyAmount = val.supply || 1">
-                            <option ng-repeat="count in countTo(val.supply)">{{ count }}</option>
-                        </select>
-                        <span class="btn-group btn-group-xs">
-                            <button class="btn btn-default" ng-click="buyAmount = 1">1</button>
-                            <button class="btn btn-default" 
-                                ng-click="buyAmount = val.supply">All</button>
-                            <button ng-disabled="buyAmount * val.value > user.money"
-                                class="btn btn-default primary" style="width: 40px;" 
-                                ng-click="buyResource(key,buyAmount)">Buy</button>
-                            <span class="text-muted">Cost: </span>
-                            <strong ng-class="{'text-danger': (buyAmount * val.value > user.money)}">
-                                {{ buyAmount * val.value | int }}</strong>
-                        </span>
-                    </div>
-                    <div ng-show="val.invItem">
-                        <select class="form-control num-select" ng-model="sellAmount"
-                                ng-init="sellAmount = val.invItem.amount || 1">
-                            <option ng-repeat="count in countTo(val.invItem.amount)">{{ count }}</option>
-                        </select>
-                        <span class="btn-group btn-group-xs">
-                            <button class="btn btn-default" ng-click="sellAmount = 1">1</button>
-                            <button class="btn btn-default"
-                                ng-click="sellAmount = val.invItem.amount">All</button>
-                            <button class="btn btn-default primary" style="width: 40px;"
-                                ng-click="sellResource(val.invItem,sellAmount,val.value)">Sell</button>
-                            <span class="text-muted">Value: </span>
-                            <strong>{{ sellAmount * val.value * 0.8 | int }}</strong>
-                        </span>
+<div class="well camp-ui" ng-show="onPixel.camp">
+    <h3 ng-hide="onPixel.camp === true" class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
+    <h3 ng-show="onPixel.camp === true" class="pull-left">Camp</h3>
+    <button class="btn btn-default btn-market pull-right" ng-click="showMarket = !showMarket">Market</button>
+    <button ng-show="onPixel.camp.economy.blacksmith"
+        class="btn btn-default btn-blacksmith pull-right" ng-click="showBS = !showBS">Blacksmith</button>
+    <div class="market" ng-init="showMarket = true" ng-show="showMarket" 
+         ng-class="{'three-rows':onPixel.camp.economy.market.stallCount>8}">
+        
+        <!-- TODO: Maybe don't need .invItem property? Use inventory[type+':'+name]? -->
+
+        <div ng-show="onPixel.camp.economy.market.selectedStall" class="stall stall-open" id="selectedStall"
+             ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.rightSide}">
+            <div class="canvas" 
+                ng-style="{'background-color':'#'+onPixel.camp.economy.market.selectedStall.canvas}"
+                ng-click="changeStall(onPixel.camp.economy.market.selectedStall.id)"></div>
+            <div class="stall-content">
+                <div ng-show="onPixel.camp.economy.market.selectedStall.selectedGood" 
+                     class="good good-open" id="selectedGood"
+                     ng-style="{background:'#'+onPixel.camp.economy.market.selectedStall.selectedGood.color}"
+                     ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.selectedGood.rightSide}">
+                    <h4>{{ onPixel.camp.economy.market.selectedStall.selectedGood.id | capitalize }}</h4>
+                    <p><strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood.value | int }} </strong>
+                        gold</p>
+                    <p><strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood.amount }} </strong>
+                        in stock</p>
+                    <select class="form-control num-select" ng-model="buyAmount" ng-init="buyAmount = 
+                        onPixel.camp.economy.market.selectedStall.selectedGood.amount || 1">
+                        <option ng-repeat="count in 
+                        countTo(onPixel.camp.economy.market.selectedStall.selectedGood.amount)">
+                            {{ count }}</option>
+                    </select>
+                    <p>Cost: <strong>
+                        {{ onPixel.camp.economy.market.selectedStall.selectedGood.value * buyAmount | int }}
+                    </strong> gold</p>
+                    <button ng-click="buyGood(onPixel.camp.economy.market.selectedStall.selectedGood,buyAmount)">
+                        Buy</button>
+                </div>
+                <div ng-class="{'goods-min':onPixel.camp.economy.market.selectedStall.selectedGood}">
+                    <div class="good" ng-style="{background:'#'+good.color}"
+                        ng-click="changeGood(good.name,$index)"
+                        ng-repeat="good in onPixel.camp.economy.market.selectedStall.goods | typeFilter:['all']"
+                        ng-class="{'good-min':onPixel.camp.economy.market.selectedStall.selectedGood,
+                        'good-selected':onPixel.camp.economy.market.selectedStall.selectedGood.id == good.key}">
+                        <h4>{{ good.name | capitalize }}</h4>
+                        <p><strong>{{ good.value | int }} </strong>gold</p>
+                        <p><strong>{{ good.amount }} </strong>
+                            {{ onPixel.camp.economy.market.selectedStall.selectedGood 
+                                | iif : 'qty' : 'in stock' }}</p>
                     </div>
                 </div>
-            </td></tr>
-            <tr><td colspan="3"><div class="checkbox-inline text-muted"><label>
-                <input ng-model="showAllRes" type="checkbox">Show All Resources
-            </label></div></td></tr>
-        </table>
-    </div></div>
-    <button ng-show="onPixel.camp.economy.blacksmith"
-            class="btn btn-default btn-sm" ng-click="showBS = !showBS">Blacksmith</button>
+            </div>
+        </div>
+        <div ng-class="{'stalls-min':onPixel.camp.economy.market.selectedStall}">
+            <div class="stall" ng-repeat="(stall, stallData) in onPixel.camp.economy.market.stalls"
+                ng-click="changeStall(stall,$index)" 
+                ng-class="{'stall-min':onPixel.camp.economy.market.selectedStall,
+                'stall-selected':onPixel.camp.economy.market.selectedStall.id == stall,
+                'stall-1cat':stallData.categoryCount == 1, 'stall-2cat':stallData.categoryCount == 2,
+                'stall-3cat':stallData.categoryCount == 3, 'stall-4cat':stallData.categoryCount == 4}">
+                <div class="canvas" ng-style="{'background-color':'#'+stallData.canvas}"></div>
+                <ul ng-hide="onPixel.camp.economy.market.selectedStall" class="list-unstyled list-inline">
+                    <li ng-repeat="(catName,catGoods) in stallData.categories">
+                        <h4>{{ catName | capitalize }}</h4>
+                        <div>
+                            <strong ng-show="isNumber(catGoods[0])">{{ catGoods[0] }}</strong>
+                            <div>
+                                <div ng-repeat="good in stallData.goods | typeFilter:['all']" class="color-square"
+                                     ng-class="{'double-row':catGoods.length > 4}"
+                                     ng-hide="good.type != catName"
+                                     ng-style="{'background-color':'#'+good.color}">
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div ng-show="onPixel.camp.economy.market.selectedStall">
+                    <div ng-repeat="good in stallData.goods | typeFilter:['all']" class="color-square"
+                         ng-style="{'background-color':'#'+good.color}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div ng-show="showBS" class="row"><div class="col-xs-12">
         <table class="unstyled">
             <tr ng-show="hasItem({profession:'blacksmith'})">
@@ -139,7 +164,7 @@
         </table>
     </div></div>
 </div>
-<div class="well object-well" ng-repeat="object in onPixel.objects"
+<div class="well camp-ui" ng-repeat="object in onPixel.objects"
     ng-show="onPixel.objects && object.type != 'camp' && object.type != 'campfire' && !object.activity">
     {{ object | itemDisplay }}
 </div>

@@ -161,6 +161,12 @@ angular.module('Geographr.colors', [])
                                 sat: Math.round(Math.random()*3)/100,
                                 val: Math.round(Math.random()*5 + 35)/100
                             }; break;
+                        case 'stallCanvas':
+                            hsv = {
+                                hue: Math.floor(Math.random()*360),
+                                sat: Math.round(Math.random()*60+20)/100,
+                                val: Math.round(Math.random()*40 + 40)/100
+                            }; break;
                     }
                 } else {
                     hsv = {

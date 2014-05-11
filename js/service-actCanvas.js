@@ -64,6 +64,7 @@ angular.module('Geographr.actCanvas', [])
             context.closePath(); context.fillStyle = color; context.fill();
         };
         return {
+            clearAll: clear,
             fillCanvas: function(context,color) {
                 var method = color == 'erase' ? 'clearRect' : 'fillRect';
                 if(color != 'erase') { context.fillStyle = color.charAt(0) == 'r' ? color : '#' + color; }

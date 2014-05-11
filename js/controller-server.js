@@ -532,8 +532,9 @@ angular.module('Geographr.controllerServer', [])
                         var deltas = camps[camp].deltas; if(!deltas) { continue; }
                         var campInfo = gameUtility.expandCamp(camp);
                         for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
-                            var demand = campInfo.economy.resources[resource].demand;
-                            var abundance = gameUtility.resourceList[resource].abundance;
+                            resource = { type: resource.split(':')[0], name: resource.split(':')[1] };
+                            var demand = 50 /*campInfo.economy.resources[resource].demand*/;
+                            var abundance = gameUtility.itemsMaster[resource.type][resource.name].abundance;
                             // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
                             // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
                             var interval = camps[camp].deltas[resource].amount < 0 ? 
