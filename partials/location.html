@@ -49,22 +49,30 @@
                 <div ng-show="onPixel.camp.economy.market.selectedStall.selectedGood" 
                      class="good good-open" id="selectedGood"
                      ng-style="{background:'#'+onPixel.camp.economy.market.selectedStall.selectedGood.color}"
-                     ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.selectedGood.rightSide}">
+                     ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.selectedGood.rightSide,
+                     'has-error':onPixel.camp.economy.market.selectedStall.selectedGood.value * 
+                     onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount * 
+                        onPixel.camp.economy.market.selectedStall.markup > user.money}">
                     <h4>{{ onPixel.camp.economy.market.selectedStall.selectedGood.id | capitalize }}</h4>
-                    <p><strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood.value | int }} </strong>
-                        gold</p>
+                    <p><strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood.value * 
+                        onPixel.camp.economy.market.selectedStall.markup | number:1 }} </strong>gold</p>
                     <p><strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood.amount }} </strong>
                         in stock</p>
-                    <select class="form-control num-select" ng-model="buyAmount" ng-init="buyAmount = 
-                        onPixel.camp.economy.market.selectedStall.selectedGood.amount || 1">
-                        <option ng-repeat="count in 
-                        countTo(onPixel.camp.economy.market.selectedStall.selectedGood.amount)">
+                    <select class="form-control num-select" 
+                        ng-model="onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount">
+                        <option 
+                            ng-selected="onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount == count"                               ng-repeat="count in countTo(onPixel.camp.economy.market.selectedStall.selectedGood.amount)">
                             {{ count }}</option>
                     </select>
                     <p>Cost: <strong>
-                        {{ onPixel.camp.economy.market.selectedStall.selectedGood.value * buyAmount | int }}
+                        {{ onPixel.camp.economy.market.selectedStall.selectedGood.value *
+                        onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount * 
+                        onPixel.camp.economy.market.selectedStall.markup | int }}
                     </strong> gold</p>
-                    <button ng-click="buyGood(onPixel.camp.economy.market.selectedStall.selectedGood,buyAmount)">
+                    <button ng-click="buyGood()"
+                        ng-disabled="onPixel.camp.economy.market.selectedStall.selectedGood.value * 
+                        onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount * 
+                        onPixel.camp.economy.market.selectedStall.markup > user.money">
                         Buy</button>
                 </div>
                 <div ng-class="{'goods-min':onPixel.camp.economy.market.selectedStall.selectedGood}">
@@ -74,7 +82,11 @@
                         ng-class="{'good-min':onPixel.camp.economy.market.selectedStall.selectedGood,
                         'good-selected':onPixel.camp.economy.market.selectedStall.selectedGood.id == good.key}">
                         <h4>{{ good.name | capitalize }}</h4>
-                        <p><strong>{{ good.value | int }} </strong>gold</p>
+                        <p><strong ng-show="onPixel.camp.economy.market.selectedStall.selectedGood">
+                            {{ good.value * onPixel.camp.economy.market.selectedStall.markup | int }} </strong>
+                            <strong ng-hide="onPixel.camp.economy.market.selectedStall.selectedGood">
+                                {{ good.value * onPixel.camp.economy.market.selectedStall.markup | number:1 }} </strong>
+                            gold</p>
                         <p><strong>{{ good.amount }} </strong>
                             {{ onPixel.camp.economy.market.selectedStall.selectedGood 
                                 | iif : 'qty' : 'in stock' }}</p>

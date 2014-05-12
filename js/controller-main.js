@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.272; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.273; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -454,12 +454,21 @@ angular.module('Geographr.controllerMain', [])
                 }
                 good.animate({'opacity':1,'height':'184px'},150);
             }
+            if($scope.onPixel.camp.economy.market.selectedStall.hasOwnProperty('selectedGood')) {
+                var buyAmount = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount;
+                $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount = buyAmount ? buyAmount : 1;
+            }
         };
-        $scope.buyGood = function(good,amount) {
+        $scope.buyGood = function() {
+            var good = $scope.onPixel.camp.economy.market.selectedStall.selectedGood,
+                amount = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount;
             if(amount < 1 || amount > good.amount || !parseInt(amount)) { return; }
-            if(Math.round($scope.user.money - amount * good.value) < 0) { return; }
+            if($scope.user.money -
+                Math.round(amount * good.value * $scope.onPixel.camp.economy.market.selectedStall.markup) < 0) {
+                return; }
             amount = parseInt(amount);
-            console.log('buying',amount,good.name,'at',good.value,'gold per unit');
+            console.log('buying',amount,good.name,'at',
+                good.value * $scope.onPixel.camp.economy.market.selectedStall.markup,'gold per unit');
             var invItem = { type: good.type, name: good.name, amount: parseInt(amount) }; 
             gameUtility.addToInventory(invItem);
 //            var newDelta = $scope.onPixel.camp.deltas[good.name];
@@ -467,7 +476,8 @@ angular.module('Geographr.controllerMain', [])
 //            newDelta.amount -= amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
 //            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+good.name).set(newDelta);
             $scope.user.money =
-                Math.round($scope.user.money - amount * good.value);
+                Math.round($scope.user.money -
+                    Math.round(amount * good.value * $scope.onPixel.camp.economy.market.selectedStall.markup));
             fireUser.child('money').set($scope.user.money);
         };
         $scope.sellGood = function(good,amount,value) {

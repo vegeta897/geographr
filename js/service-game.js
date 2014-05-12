@@ -146,7 +146,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         metal: { goods: ['metal'], capacity: 300 }, 
         'industrial metal': { goods: ['metal:copper','metal:iron'], capacity: 300 },
         jewelry: { goods: ['gem','metal:silver','metal:gold'], capacity: 20 }, 
-        mineral: { goods: ['salt','coal'], capacity: 100 },
+        mineral: { goods: ['salt','coal'], capacity: 180 },
         construction: { goods: ['lumber','metal:copper','metal:iron'], capacity: 500 }, 
         lumber: { goods: ['lumber'], capacity: 800 }
     };
@@ -230,7 +230,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     pushProduct.type = node.output[0].split(':')[0]; 
                     pushProduct.name = node.output[0].split(':')[1];
                 } else { pushProduct = pickProduct(node.output[0]); }
-                pushProduct.value = Math.max(0.1,pushProduct.value * (campNode.variance - 2) * -1);
+                pushProduct.value = Math.max(0.1,pushProduct.value * (campNode.variance - 2) * -1 
+                    * (1+Math.random()*0.05));
                 pushProduct.type = pushProduct.type == 'other' ? pushProduct.name : pushProduct.type;
                 productPool.list.push(pushProduct);
                 for(var msTypeKey in marketStallTypes) { 
@@ -253,26 +254,30 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 } else { productPool.categories[pushProduct.type] = 1; }
             }
         }
-//        console.log('camp nodes:',campNodes,'pool categories:',productPool.categories);
+//        console.log('camp nodes:',campNodes,'pool:',angular.copy(productPool));
         Math.seedrandom('stalls'+grid);
         
         // Set up stall types
         var chosenStallTypes = {};
-        while(productPool.list.length > 0 && countProperties(productPool.stallTypes) > 0) {
-            msTypeKey = pickProperty(productPool.stallTypes);
-            chosenStallTypes[msTypeKey] = chosenStallTypes.hasOwnProperty(msTypeKey) ? 
-                chosenStallTypes[msTypeKey] : { goods: {}, weight: 0, totalGoods: 0 };
-            var stall = chosenStallTypes[msTypeKey]; stall.stallType = msTypeKey;
-            Math.seedrandom('stalls'+grid+msTypeKey);
-            stall.markup = Math.random()*0.3 + 1.2;
+        while(productPool.list.length > 0 /*&& countProperties(productPool.stallTypes) > 0*/) {
+            msTypeKey = pickProperty(productPool.stallTypes); var stall;
+            if(chosenStallTypes.hasOwnProperty(msTypeKey+'1')) {
+                chosenStallTypes[msTypeKey+'2'] = { goods: {}, weight: 0, totalGoods: 0 };
+                stall = chosenStallTypes[msTypeKey+'2'];
+                Math.seedrandom('stalls'+grid+msTypeKey+'2');
+            } else { 
+                chosenStallTypes[msTypeKey+'1'] = { goods: {}, weight: 0, totalGoods: 0 };
+                stall = chosenStallTypes[msTypeKey+'1'];
+                Math.seedrandom('stalls'+grid+msTypeKey+'1');
+            }
+            stall.stallType = msTypeKey;
             for(var p = 0; p < productPool.list.length; p++) { // Find matching products
                 if(jQuery.inArray(productPool.list[p].type,marketStallTypes[msTypeKey].goods) +
                     jQuery.inArray(productPool.list[p].type+':'+productPool.list[p].name,
                         marketStallTypes[msTypeKey].goods) +
                     jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods) < -2) {
                 continue; }
-                var product = productPool.list.splice(p,1)[0];
-                p--; // Since we spliced, don't skip next product
+                var product = productPool.list.splice(p,1)[0]; p--; // Don't skip next product
                 if(stall.hasOwnProperty('categories')) { // If stall has categories
                     if(stall.categories.hasOwnProperty(product.type)) { // If category match
                         if(stall.goods.hasOwnProperty(product.name)) { // If good already here
@@ -282,7 +287,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                             stall.categories[product.type][0]++; // Increment category item count
                             stall.goods[product.name] = // Add good
                             { color: product.color, type: product.type, weight: product.weight,
-                                value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                                value: Math.max(1,Math.round(product.value*100)/100),
                                 amount: 1, name: product.name, key: product.type+':'+product.name };
                             stall.categories[product.type].push(product.name); // Add name
                         }
@@ -290,7 +295,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         stall.categories[product.type] = [1,product.name]; // Initialize new category
                         stall.goods[product.name] = // Add good
                         { color: product.color, type: product.type, weight: product.weight,
-                            value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                            value: Math.max(1,Math.round(product.value*100)/100),
                             amount: 1, name: product.name, key: product.type+':'+product.name };
                     }
                 } else { // Stall has no categories
@@ -298,20 +303,27 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     stall.categories[product.type] = [1,product.name]; // Initialize new category
                     stall.goods[product.name] = // Add good
                     { color: product.color, type: product.type, weight: product.weight,
-                        value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                        value: Math.max(1,Math.round(product.value*100)/100),
                         amount: 1, name: product.name, key: product.type+':'+product.name };
                 }
                 stall.weight += product.weight; // Add product weight to total stall weight
                 stall.totalGoods++; // Increment total stall good count
-                if(stall.totalGoods >= productPool.stallTypes[msTypeKey].count ||
+                productPool.stallTypes[msTypeKey].count--;
+                if(productPool.stallTypes[msTypeKey].count <= 0) { // If no goods left in this stall type
+                    delete productPool.stallTypes[msTypeKey]; break; // Don't try this stall type again
+                }
+                if(productPool.stallTypes[msTypeKey].count <= 0 ||
                     stall.weight >= marketStallTypes[msTypeKey].capacity ||
                     countProperties(stall.goods) > 7) {
                     break; // All applicable products added, or stall over weight capacity/good variety
                 }
             }
+            if(stall.weight < marketStallTypes[msTypeKey].capacity && countProperties(stall.goods) < 8) {
+                delete productPool.stallTypes[msTypeKey]; // Don't try this stall type again
+            }
             stall.categoryCount = countProperties(stall.categories); // Store number of categories
             stall.goodCount = countProperties(stall.goods); // Store number of goods
-            delete productPool.stallTypes[msTypeKey]; // Don't try this stall type again
+            stall.markup = 1 + Math.random()*0.4 + countProperties(stall.goods) * 0.2;
         }
         // Remove empty stall types
         for(var stKey in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(stKey)) { continue; }
@@ -320,11 +332,12 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         // Combine similar under-capacity stalls
         for(var cs1Key in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(cs1Key)) { continue; }
             var stall1 = chosenStallTypes[cs1Key];
-            for(var cs2Key in chosenStallTypes) { 
+            for(var cs2Key in chosenStallTypes) {
                 if(!chosenStallTypes.hasOwnProperty(cs2Key) || cs1Key == cs2Key) { continue; }
                 var stall2 = chosenStallTypes[cs2Key];
-                if(stall2.weight > marketStallTypes[cs2Key].capacity / 1.5) { continue; }
-                if(stall2.weight > marketStallTypes[cs1Key].capacity - stall1.weight ) { continue; }
+                if(stall2.weight > marketStallTypes[stall2.stallType].capacity / 1.5) { continue; }
+                if(stall2.weight > 
+                    marketStallTypes[stall1.stallType].capacity - stall1.weight ) { continue; }
                 // Candidate stall is less than 3/4 capacity and not too heavy
                 var combinedCats = angular.copy(stall1.categories);
                 for(var s2CatKey in stall2.categories) { // Combine stall categories
@@ -338,13 +351,13 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     combinedGoods[s2GoodKey] = stall2.goods[s2GoodKey];
                 }
                 if(countProperties(combinedGoods) > 8) { continue; } // If within max good variety
-                if(jQuery.inArray(cs2Key,similarMarketStalls[cs1Key]) < 0) { continue; } // If similar
+                if(jQuery.inArray(stall2.stallType,similarMarketStalls[stall1.stallType]) < 0 &&
+                    stall1.stallType != stall2.stallType) { continue; } // If similar or same
 //                console.log('combining',cs1Key,'and',cs2Key);
                 // All good, commence the combining!
                 for(s2GoodKey in stall2.goods) {
                     if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
                     var s2Good = stall2.goods[s2GoodKey];
-//                    console.log('s2 good:',s2Good.name,s2Good);
                     if(stall1.categories.hasOwnProperty(s2Good.type)) { // Category exists
                         if(stall1.goods.hasOwnProperty(s2GoodKey)) { // Good exists
                             stall1.goods[s2GoodKey].amount += s2Good.amount; // Combine amounts
@@ -352,7 +365,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         } else { // Good doesn't exist
 //                            console.log('    adding',s2GoodKey,'to existing cat');
                             stall1.goods[s2GoodKey] = s2Good;
-                                stall1.categories[s2Good.type].push(s2GoodKey); // Add good to cat goods
+                            stall1.categories[s2Good.type].push(s2GoodKey); // Add good to cat goods
                             stall1.goodCount++; // Increment good count
                         }
                         stall1.categories[s2Good.type][0] += s2Good.amount; // Add to good count
@@ -371,7 +384,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }
 //        console.log('post-combine:',angular.copy(chosenStallTypes));
         
-//        console.log('remaining stall types:',chosenStallTypes,'remaining products:',productPool.list);
+//        console.log('remaining stall types:',angular.copy(chosenStallTypes),'remaining products:',productPool.list);
 
         var stalls = { sa: { goods: {} }, sb: { goods: {} }, sc: { goods: {} }, sd: { goods: {} },
             se: { goods: {} }, sf: { goods: {} }, sg: { goods: {} }, sh: { goods: {} }, si: { goods: {} }, 
@@ -381,7 +394,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         for(var stallKey in stalls) { if(!stalls.hasOwnProperty(stallKey)) { continue; }
             var chosenStallKey = pickProperty(chosenStallTypes);
             stalls[stallKey] = chosenStallTypes[chosenStallKey];
-//            console.log(stallKey,'is a',chosenStallKey,'stall');
+//            console.log(stallKey,'is a',stalls[stallKey].type,'stall - markup:',stalls[stallKey].markup);
             delete chosenStallTypes[chosenStallKey];
             if(countProperties(chosenStallTypes) < 1) { break; }
         }
