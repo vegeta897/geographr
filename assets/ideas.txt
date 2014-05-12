@@ -9,7 +9,7 @@ each pixel has a temperature that gets updated every X minutes, seed-based, infl
 
 find random native camps that have seed-generated desire levels for different goods/resources
     - set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons
-    - either buy from a camp and sell in another, or carry out a trade, in which you could run off with the goods
+    - either buy from a camp and sell in another, or carry out a trade (you could run off with the goods)
         - if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity
     - to sell goods, need to set up a market stall of your own
     - can't sell to market stalls directly, but can engage in a supplier relationship
@@ -20,9 +20,6 @@ random encounters possible for every moved grid (server-side?)
 find random objects/things/activities in the 9grid view
     - no click-fests!
     - puzzle type games!
-    
-player can build campfire, begins timer to gather kindling etc.
-    - use campfire to cook food
 
 carrier pigeon/bird flies between players at all times, delivering messages
     - arrives, delivers message, then prompts player to write one. if player afk too long, it leaves.

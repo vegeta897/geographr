@@ -200,10 +200,13 @@ angular.module('Geographr.directives', [])
     }
 })
 .filter('capitalize', function() {
-    return function(input, scope) {
+    return function(input) {
         if(!input) { return ''; }
         return input.substring(0,1).toUpperCase()+input.substring(1);
     }
+})
+.filter('left', function() {
+    return function(input, chars) { if(!input) { return ''; } return input.substring(0,chars); }
 })
 .filter('timeUnits', function() {
     return function(input, scope) {

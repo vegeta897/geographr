@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.271; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.272; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -53,7 +53,7 @@ angular.module('Geographr.controllerMain', [])
                         $timeout(function() { 
                             $scope.scoreBoard = sortArrayByProperty($scope.scoreBoard,'score',true); });
                     });
-                    if($scope.user.new) { tutorialStep = -1; tutorial('next'); }
+                    if($scope.user.new) { tutorialStep = -1; } else { tutorialStep = 0; } tutorial('next');
                     initTerrain();
                     fireUser.child('money').on('value',
                         function(snap) { $timeout(function() {$scope.user.money = snap.val();}); });
@@ -178,9 +178,11 @@ angular.module('Geographr.controllerMain', [])
         };
         $scope.attachControls = function() { // Define controls when controls partial is loaded
             controlsDIV = jQuery('#controls');
-            progressBar = controlsDIV.children('.progress').children('.progress-bar');
+            progressBar = controlsDIV.children('.progress').children('.progress-bar')
+                .on('contextmenu', '#zoomHighCanvas', function(e){ return false; });
             controlsDIV.mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
-                .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
+                .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll)
+                .on('contextmenu', '#zoomHighCanvas', function(e){ return false; });
         };
         // Reset player
         $scope.reset = function() {
@@ -421,7 +423,7 @@ angular.module('Geographr.controllerMain', [])
                 if(jQuery.inArray(index,[2,3,6,7]) >= 0) {
                     $scope.onPixel.camp.economy.market.selectedStall.rightSide = true;
                 }
-                stall.animate({'opacity':1},200).children('.stall-content').animate({'height':'194px'},300);
+                stall.animate({'opacity':1},200).children('.stall-content').animate({'height':'206px'},300);
             }
             
         };
@@ -450,7 +452,7 @@ angular.module('Geographr.controllerMain', [])
                 if(jQuery.inArray(index,[2,3,6,7]) >= 0) {
                     $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = true;
                 }
-                good.animate({'opacity':1,'height':'174px'},150);
+                good.animate({'opacity':1,'height':'184px'},150);
             }
         };
         $scope.buyGood = function(good,amount) {
@@ -484,6 +486,7 @@ angular.module('Geographr.controllerMain', [])
             fireUser.child('money').set($scope.user.money);
         };
         $scope.refineItem = function(item,amount,cost) {
+            // TODO: No instant refining. Put on server, takes 5-10 min?
             if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
             if(Math.round($scope.user.money - amount * cost * 2) < 0) { return; }
             console.log('refining',amount,item.name,'at',cost * 2,'gold per unit');

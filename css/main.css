@@ -121,6 +121,8 @@ div.label { display: inline-block; cursor: default; }
 #eventHUD .checkbox-inline { margin-left: 4px; }
 #eventHUD button.btn-item { margin-bottom: 4px; }
 
+#info { margin-bottom: 12px; }
+
 .skills, .stats { width: 100%; }
 .skills .progress, .stats .progress { width: 130px; margin: 4px 0; float: right; }
 .stats tr:first-child td:not(:first-child):not(:last-child) { width: 70px; }
@@ -171,14 +173,13 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     background-image: -webkit-linear-gradient(#575757, #3c3c3c);
     background-image: linear-gradient(#575757, #3c3c3c);
 }
-.market { margin-top: 3.3em; margin-left: 2px; height: 214px; }
-.market.three-rows { height: 320px; }
+.market { margin-top: 3.3em; margin-left: 2px; }
 .market * { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
     user-select: none; }
-.market .stalls-min { width: 104px; padding-top: 8px; float: left; }
+.market .stalls-min { width: 104px; float: left; }
 .market .stall { 
     font-size: 0.9em; float: left; cursor: pointer; margin: 13px 18px 10px 0; background: #393c3f; padding: 0 3px;
-    width: 128px; height: 84px; box-shadow: 1px 1px 3px rgba(0,0,0,0.5); transition: background-color 0.06s ease;
+    width: 128px; height: 94px; box-shadow: 1px 1px 3px rgba(0,0,0,0.5); transition: background-color 0.06s ease;
 }
 .market .stall.stall:hover:not(.stall-open) { background: #2d2e33 !important; }
 .market .stall:nth-child(4), .market .stall:nth-child(8) { margin-right: 0; }
@@ -190,8 +191,8 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     width: 447px; height: 1px; cursor: default; background: #393c3f; padding-top: 6px; padding-left: 5px;
     box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
 }
-.market .stall.stall-open.pull-right { margin: 0 0 0 10px; }
-.market .stall.stall-min { width: 47px; height: 37px; margin: 4px 10px 10px 0; padding: 1px 3px; }
+.market .stall.stall-open.pull-right { margin: 0 0 8px 10px; }
+.market .stall.stall-min { width: 47px; height: 37px; margin: 4px 10px 8px 0; padding: 1px 3px; }
 .market .stall.stall-min:nth-child(2), .market .stall.stall-min:nth-child(4), 
 .market .stall.stall-min:nth-child(6), .market .stall.stall-min:nth-child(8),
 .market .stall.stall-min:nth-child(10), .market .stall.stall-min:nth-child(12),
@@ -213,32 +214,42 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     border-top-left-radius: 2px; border-top-right-radius: 2px; box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 .market .stall ul, .market .stall ul li { margin-bottom: 0; margin-top: -1px; }
-.market .stall.stall-1cat ul li { width: 100%; padding: 8px; }
-.market .stall.stall-1cat ul li h4 { float: left; font-size: 1.3em; margin: 8px 0; }
-.market .stall.stall-1cat ul li strong { float: right; font-size: 1.1em; margin-top: 10px; }
+.market .stall.stall-1cat ul { margin-top: -2px; }
+.market .stall.stall-1cat ul li { width: 100%; padding: 0 8px; }
+.market .stall.stall-1cat ul li h4 { float: left; font-size: 1.3em; margin: 4px 0 6px; }
+.market .stall.stall-1cat ul li strong { float: right; font-size: 1.2em; margin-top: 5px; }
 .market .stall.stall-1cat ul li>div>div { float: none; clear: both; width: 100%; padding-left: 1px; }
-.market .stall.stall-1cat ul li>div>div .color-square { width: 14px; height: 14px; }
-.market .stall.stall-2cat ul { margin-top: -2px; }
-.market .stall.stall-2cat ul li { width: 100%; padding: 0 7px; margin-bottom: 2px; }
+.market .stall.stall-1cat ul li>div>div .color-square { 
+    width: 27px; height: 27px; margin-top: 0; padding: 3px 1px 0 0; text-align: center; }
+.market .stall.stall-1cat ul li>div>div .color-square span { font-size: 1.2em; color: white; font-weight: bolder;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.7), 1px 0 1px rgba(0,0,0,0.7), 
+    1px 1px 1px rgba(0,0,0,0.7), 0 0 1px rgba(0,0,0,0.7); }
+.market .stall.stall-2cat ul { margin-top: -1px; }
+.market .stall.stall-2cat ul li { width: 100%; padding: 0 7px; margin-bottom: 4px; }
 .market .stall.stall-2cat ul li h4 { float: left; font-size: 1.1em; margin: 2px 0; }
-.market .stall.stall-2cat ul li strong { float: right; font-size: 1em; margin-top: 2px; }
+.market .stall.stall-2cat ul li strong { float: right; font-size: 1.2em; margin-top: 1px; }
 .market .stall.stall-2cat ul li>div>div { float: none; clear: both; width: 100%; padding-left: 2px; }
-.market .stall.stall-2cat ul li>div>div .color-square { width: 14px; height: 14px; margin-top: 1px !important; }
-.market .stall.stall-3cat ul li h4, .market .stall.stall-4cat ul li h4 { font-size: 1em; margin: 1px; }
+.market .stall.stall-2cat ul li>div>div .color-square { width: 14px; height: 14px; margin-top: 3px !important; }
+.market .stall.stall-3cat ul li>div>div.double-row, 
+.market .stall.stall-4cat ul li>div>div.double-row { margin-top: -1px }
+.market .stall.stall-3cat ul li h4, .market .stall.stall-4cat ul li h4 { font-size: 1em; margin: 2px 1px; }
+.market .stall.stall-5cat ul, .market .stall.stall-6cat ul { margin-top: -7px; }
+.market .stall.stall-5cat ul li, .market .stall.stall-6cat ul li { margin-bottom: -1px; }
+.market .stall.stall-5cat ul li h4, .market .stall.stall-6cat ul li h4 { font-size: 0.9em; margin: 0; }
 .market .stall.stall-min div { margin-top: 2px; }
-.market .stall ul li { line-height: 1.3em; width: 61px; margin-bottom: 3px; padding: 0 8px 0 0; }
+.market .stall ul li { line-height: 1.3em; width: 61px; margin-bottom: 6px; padding: 0 5px 0 0; }
 .market .stall ul li strong { font-size: 0.9em; width: 18px; display: inline-block; margin-right: 1px; float: left; 
     color: rgb(142, 145, 146); text-align: right; }
 .market .stall ul li>div>div { width: 28px; float: right; }
 .market .stall .color-square { 
     float: left; width: 10px; height: 10px; margin: 3px 0 -1px -1px; border: 1px solid #000; }
-.market .stall.stall-3cat .color-square.double-row, .market .stall.stall-4cat .color-square.double-row { 
+.market .stall.stall-3cat .double-row .color-square, .market .stall.stall-4cat .double-row .color-square { 
     margin-top: 0; }
 .market .stall.stall-min .color-square { float: left; margin: 0 -1px -1px 0; width: 11px; height: 11px; }
 /* Goods */
-.market .goods-min { width: 308px; float: left; padding-top: 14px; }
+.market .goods-min { width: 308px; float: left; padding-top: 20px; }
 .market .stall.stall-open .good { 
-    display: block; float: left; width: 97px; height: 80px; margin: 6px 6px; text-align: center; cursor: pointer;
+    display: block; float: left; width: 97px; height: 85px; margin: 6px 6px; text-align: center; cursor: pointer;
     border-radius: 4px; text-shadow: 0 1px 1px rgba(0,0,0,0.7), 1px 0 1px rgba(0,0,0,0.7),
     1px 1px 1px rgba(0,0,0,0.7), 0 0 1px rgba(0,0,0,0.7); 
     box-shadow: 1px 1px 3px rgba(0,0,0,0.5); transition: background-color 0.06s ease;
@@ -250,11 +261,11 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     width: 65px; height: 65px; border-radius: 2px; padding-top: 2px; transition: background-color 0.1s ease; }
 .market .stall.stall-open .good.good-min.good-selected { background: #24272b !important; }
 .market .stall.stall-open .good h4 { 
-    margin: 6px 0 3px; color: white; font-size: 1.2em;
+    margin: 8px 0 3px; color: white; font-size: 1.2em;
     text-shadow: 0 1px 2px #000, 1px 0 2px #000,
     1px 1px 2px #000, 0 0 2px #000;
 }
-.market .stall.stall-open .good.good-open h4 { margin: 3px 0 0; font-size: 1.4em; }
+.market .stall.stall-open .good.good-open h4 { margin: 6px 0 5px; font-size: 1.4em; }
 .market .stall.stall-open .good.good-min h4 { margin: 2px 0; font-size: 0.9em; }
 .market .stall.stall-open .good p { margin-bottom: 0; color: #DDD; font-size: 1.1em; }
 .market .stall.stall-open .good.good-open p { font-size: 1.15em; margin: 0; line-height: 1.45em; }

@@ -36,8 +36,7 @@
     <button class="btn btn-default btn-market pull-right" ng-click="showMarket = !showMarket">Market</button>
     <button ng-show="onPixel.camp.economy.blacksmith"
         class="btn btn-default btn-blacksmith pull-right" ng-click="showBS = !showBS">Blacksmith</button>
-    <div class="market" ng-init="showMarket = true" ng-show="showMarket" 
-         ng-class="{'three-rows':onPixel.camp.economy.market.stallCount>8}">
+    <div class="market" ng-init="showMarket = true" ng-show="showMarket">
         
         <!-- TODO: Maybe don't need .invItem property? Use inventory[type+':'+name]? -->
 
@@ -89,18 +88,20 @@
                 ng-class="{'stall-min':onPixel.camp.economy.market.selectedStall,
                 'stall-selected':onPixel.camp.economy.market.selectedStall.id == stall,
                 'stall-1cat':stallData.categoryCount == 1, 'stall-2cat':stallData.categoryCount == 2,
-                'stall-3cat':stallData.categoryCount == 3, 'stall-4cat':stallData.categoryCount == 4}">
+                'stall-3cat':stallData.categoryCount == 3, 'stall-4cat':stallData.categoryCount == 4,
+                'stall-5cat':stallData.categoryCount == 5, 'stall-6cat':stallData.categoryCount == 6}">
                 <div class="canvas" ng-style="{'background-color':'#'+stallData.canvas}"></div>
                 <ul ng-hide="onPixel.camp.economy.market.selectedStall" class="list-unstyled list-inline">
                     <li ng-repeat="(catName,catGoods) in stallData.categories">
                         <h4>{{ catName | capitalize }}</h4>
                         <div>
                             <strong ng-show="isNumber(catGoods[0])">{{ catGoods[0] }}</strong>
-                            <div>
+                            <div ng-class="{'double-row':catGoods.length > 4}">
                                 <div ng-repeat="good in stallData.goods | typeFilter:['all']" class="color-square"
-                                     ng-class="{'double-row':catGoods.length > 4}"
-                                     ng-hide="good.type != catName"
-                                     ng-style="{'background-color':'#'+good.color}">
+                                    ng-hide="good.type != catName"
+                                    ng-style="{'background-color':'#'+good.color}">
+                                    <!--<span ng-show="stallData.categoryCount == 1">-->
+                                        <!--{{ good.name | left:2 | capitalize }}</span>-->
                                 </div>
                             </div>
                         </div>
@@ -113,6 +114,7 @@
                 </div>
             </div>
         </div>
+        <div class="clearfix"></div>
     </div>
     <div ng-show="showBS" class="row"><div class="col-xs-12">
         <table class="unstyled">

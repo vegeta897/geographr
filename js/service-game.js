@@ -28,7 +28,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             'wolf': { color: '4b4c4f', weight: 60, value: 80, classes: ['pelt'] },
             'mole': { color: '433a32', weight: 2, value: 20, classes: ['pelt'] },
             'pheasant': { color: '713926', weight: 1, value: 5, classes: [] },
-            'duck': { color: '433a32', weight: 3, value: 8, classes: [] }
+            'duck': { color: '356943', weight: 3, value: 8, classes: [] }
         },
         fish: {
             'bass': { color: 'a8b490', weight: 1.6, value: 5 }, 
@@ -146,7 +146,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         metal: { goods: ['metal'], capacity: 300 }, 
         'industrial metal': { goods: ['metal:copper','metal:iron'], capacity: 300 },
         jewelry: { goods: ['gem','metal:silver','metal:gold'], capacity: 20 }, 
-        mineral: { goods: ['other:salt','other:coal','gem'], capacity: 100 },
+        mineral: { goods: ['salt','coal'], capacity: 100 },
         construction: { goods: ['lumber','metal:copper','metal:iron'], capacity: 500 }, 
         lumber: { goods: ['lumber'], capacity: 800 }
     };
@@ -269,53 +269,54 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 if(jQuery.inArray(productPool.list[p].type,marketStallTypes[msTypeKey].goods) +
                     jQuery.inArray(productPool.list[p].type+':'+productPool.list[p].name,
                         marketStallTypes[msTypeKey].goods) +
-                    jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods) > -3) {
-                    var product = productPool.list.splice(p,1)[0];
-                    p--; // Since we spliced, don't skip next product
-                    if(stall.hasOwnProperty('categories')) { // If stall has categories
-                        if(stall.categories.hasOwnProperty(product.type)) { // If category match
-                            if(stall.goods.hasOwnProperty(product.name)) { // If good already here
-                                stall.categories[product.type][0]++; // Increment category item count
-                                stall.goods[product.name].amount++; // Increment good amount
-                            } else { // If good not already here
-                                stall.categories[product.type][0]++; // Increment category item count
-                                stall.goods[product.name] = // Add good
-                                { color: product.color, type: product.type,
-                                    value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
-                                    amount: 1, key: product.type+':'+product.name };
-                                stall.categories[product.type].push(product.name); // Add name
-                            }
-                        } else { // No matching category, add as new
-                            stall.categories[product.type] = [1,product.name]; // Initialize new category
+                    jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods) < -2) {
+                continue; }
+                var product = productPool.list.splice(p,1)[0];
+                p--; // Since we spliced, don't skip next product
+                if(stall.hasOwnProperty('categories')) { // If stall has categories
+                    if(stall.categories.hasOwnProperty(product.type)) { // If category match
+                        if(stall.goods.hasOwnProperty(product.name)) { // If good already here
+                            stall.categories[product.type][0]++; // Increment category item count
+                            stall.goods[product.name].amount++; // Increment good amount
+                        } else { // If good not already here
+                            stall.categories[product.type][0]++; // Increment category item count
                             stall.goods[product.name] = // Add good
-                            { color: product.color, type: product.type,
+                            { color: product.color, type: product.type, weight: product.weight,
                                 value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
-                                amount: 1, key: product.type+':'+product.name };
+                                amount: 1, name: product.name, key: product.type+':'+product.name };
+                            stall.categories[product.type].push(product.name); // Add name
                         }
-                    } else { // Stall has no categories
-                        stall.categories = {}; stall.canvas = colorUtility.generate('stallCanvas').hex;
+                    } else { // No matching category, add as new
                         stall.categories[product.type] = [1,product.name]; // Initialize new category
                         stall.goods[product.name] = // Add good
-                        { color: product.color, type: product.type,
+                        { color: product.color, type: product.type, weight: product.weight,
                             value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
-                            amount: 1, key: product.type+':'+product.name };
+                            amount: 1, name: product.name, key: product.type+':'+product.name };
                     }
-                    stall.weight += product.weight; // Add product weight to total stall weight
-                    stall.totalGoods++; // Increment total stall good count
-                    if(stall.totalGoods >= productPool.stallTypes[msTypeKey].count ||
-                        stall.weight >= marketStallTypes[msTypeKey].capacity ||
-                        countProperties(stall.goods) > 7) {
-                        break; // All applicable products added, or stall over weight capacity/good variety
-                    }
+                } else { // Stall has no categories
+                    stall.categories = {}; stall.canvas = colorUtility.generate('stallCanvas').hex;
+                    stall.categories[product.type] = [1,product.name]; // Initialize new category
+                    stall.goods[product.name] = // Add good
+                    { color: product.color, type: product.type, weight: product.weight,
+                        value: Math.max(1,Math.round(product.value*stall.markup*100)/100),
+                        amount: 1, name: product.name, key: product.type+':'+product.name };
+                }
+                stall.weight += product.weight; // Add product weight to total stall weight
+                stall.totalGoods++; // Increment total stall good count
+                if(stall.totalGoods >= productPool.stallTypes[msTypeKey].count ||
+                    stall.weight >= marketStallTypes[msTypeKey].capacity ||
+                    countProperties(stall.goods) > 7) {
+                    break; // All applicable products added, or stall over weight capacity/good variety
                 }
             }
             stall.categoryCount = countProperties(stall.categories); // Store number of categories
+            stall.goodCount = countProperties(stall.goods); // Store number of goods
             delete productPool.stallTypes[msTypeKey]; // Don't try this stall type again
         }
         // Remove empty stall types
         for(var stKey in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(stKey)) { continue; }
             if(chosenStallTypes[stKey].totalGoods < 1) { delete chosenStallTypes[stKey]; } }
-
+//        console.log('pre-combine:',angular.copy(chosenStallTypes));
         // Combine similar under-capacity stalls
         for(var cs1Key in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(cs1Key)) { continue; }
             var stall1 = chosenStallTypes[cs1Key];
@@ -330,7 +331,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     if(!stall2.categories.hasOwnProperty(s2CatKey)) { continue; }
                     combinedCats[s2CatKey] = stall2.categories[s2CatKey];
                 }
-                if(countProperties(combinedCats) > 4) { continue; } // If within 4-category limit
+                if(countProperties(combinedCats) > 6) { continue; } // If within 6-category limit
                 var combinedGoods = angular.copy(stall1.goods);
                 for(var s2GoodKey in stall2.goods) { // Combine stall goods
                     if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
@@ -343,6 +344,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 for(s2GoodKey in stall2.goods) {
                     if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
                     var s2Good = stall2.goods[s2GoodKey];
+//                    console.log('s2 good:',s2Good.name,s2Good);
                     if(stall1.categories.hasOwnProperty(s2Good.type)) { // Category exists
                         if(stall1.goods.hasOwnProperty(s2GoodKey)) { // Good exists
                             stall1.goods[s2GoodKey].amount += s2Good.amount; // Combine amounts
@@ -350,22 +352,24 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         } else { // Good doesn't exist
 //                            console.log('    adding',s2GoodKey,'to existing cat');
                             stall1.goods[s2GoodKey] = s2Good;
-                            stall1.categories[s2Good.type].push(s2GoodKey); // Add good to cat goods
+                                stall1.categories[s2Good.type].push(s2GoodKey); // Add good to cat goods
+                            stall1.goodCount++; // Increment good count
                         }
                         stall1.categories[s2Good.type][0] += s2Good.amount; // Add to good count
                     } else { // Category doesn't exist
 //                        console.log('    adding',s2GoodKey,'with new cat',s2Good.type);
-                        stall1.categories[s2Good.type] = stall2.categories[s2Good.type];
-                        stall1.categories[s2Good.type][0] = s2Good.amount; // Reset cat amount
+                        stall1.categories[s2Good.type] = [s2Good.amount,s2Good.name];
                         stall1.goods[s2GoodKey] = s2Good;
                         stall1.categoryCount++; // Increment category count
+                        stall1.goodCount++; // Increment good count
                     }
                     stall1.weight += s2Good.weight * s2Good.amount; // Add weight to stall
-                    stall1.combined = true; // Mark stall as a combined stall
-                    delete chosenStallTypes[cs2Key]; // Delete combined stall
                 }
+                stall1.combined = true; // Mark stall as a combined stall
+                delete chosenStallTypes[cs2Key]; // Delete combined stall
             }
         }
+//        console.log('post-combine:',angular.copy(chosenStallTypes));
         
 //        console.log('remaining stall types:',chosenStallTypes,'remaining products:',productPool.list);
 

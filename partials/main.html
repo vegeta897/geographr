@@ -48,22 +48,29 @@
         {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td>
                 <td>{{ commit.message }}</td></tr></table>
         </div>
-        <!-- Info/Event/Stats -->
-        <div id="info" class="col-xs-3" ng-hide="onPixel.camp" ng-include="'partials/info.html'"></div>
+        <div class="col-xs-3">
+            <!-- Info/Event/Stats -->
+            <div id="info" ng-include="'partials/info.html'"></div>
+            <!-- Misc Stuff - Left Side -->
+            <div ng-show="onPixel.camp" ng-include="'partials/misc.html'"></div>
+        </div>
         <!-- TODO: Show mini-stats view (hunger) above camp UI when at a camp -->
         <div class="col-xs-6" ng-hide="user.camp"></div>
         <!-- Inventory -->
         <div id="location" ng-class="{'col-xs-3':!onPixel.camp, 'col-xs-6':onPixel.camp}"
              ng-include="'partials/location.html'" ng-show="user.camp"></div>
         <!-- Inventory -->
-        <div id="inventory" class="col-xs-3" ng-include="'partials/inventory.html'" ng-show="user.camp"></div>
+        <div id="inventory" class="col-xs-3" ng-include="'partials/inventory.html'" 
+             ng-show="user.camp && !onPixel.camp"></div>
         <div class="col-xs-3">
             <!-- Object Info -->
             <div id="objectInfo">
                 <div ng-show="selectedObject" onLoad="attachObjInfo()" ng-include="'partials/object-info.html'"></div>
             </div>
-            <!-- Misc Stuff -->
-            <div ng-include="'partials/misc.html'"></div>
+            <!-- Inventory -->
+            <div id="inventory" ng-include="'partials/inventory.html'" ng-show="user.camp && onPixel.camp"></div>
+            <!-- Misc Stuff - Right Side -->
+            <div ng-hide="onPixel.camp" ng-include="'partials/misc.html'"></div>
         </div>
     </div>
 </div>
