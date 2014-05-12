@@ -5,6 +5,16 @@ angular.module('Geographr.canvas', [])
         var fullPixSize = 1;
         var fullPixOff = fullPixSize/2;
         
+        var mid = [{r:60,g:93,b:44},{r:70,g:107,b:53},{r:82,g:125,b:62},{r:106,g:140,b:70},
+            {r:136,g:158,b:86},{r:174,g:172,b:102},{r:98,g:140,b:118},{r:71,g:121,b:110},
+            {r:62,g:102,b:99},{r:51,g:79,b:87},{r:46,g:69,b:79},{r:44,g:61,b:75}];
+        var north = [{r:212,g:213,b:213},{r:192,g:192,b:190},{r:170,g:170,b:166},{r:150,g:147,b:142},
+            {r:128,g:125,b:117},{r:105,g:101,b:91},{r:88,g:100,b:105},{r:84,g:94,b:100},
+            {r:78,g:89,b:94},{r:73,g:84,b:88},{r:68,g:77,b:83},{r:62,g:71,b:77}];
+        var south = [{r:89,g:103,b:49},{r:108,g:119,b:70},{r:123,g:132,b:87},{r:140,g:145,b:108},
+            {r:158,g:161,b:127},{r:176,g:175,b:147},{r:113,g:158,b:134},{r:101,g:143,b:122},
+            {r:86,g:125,b:108},{r:72,g:107,b:94},{r:57,g:90,b:80},{r:42,g:71,b:65}];
+        
         // Return a list of coordinates surrounding and including the input coords
         var listNear = function(coords,dist) {
             coords[0] = parseInt(coords[0]); coords[1] = parseInt(coords[1]);
@@ -38,34 +48,85 @@ angular.module('Geographr.canvas', [])
                         landNear +=10; // If land on border, pretend there's land out of bounds
                     }
             }
-            if(type > 0) {
-                if(landNear >= 95) { color = {r:60,g:93,b:44}; }
-                else if(landNear >= 90) { color = {r:70,g:107,b:53}; }
-                else if(landNear >= 80) { color = {r:82,g:125,b:62}; }
-                else if(landNear >= 70) { color = {r:106,g:140,b:70}; }
-                else if(landNear >= 60) { color = {r:136,g:158,b:86}; }
-                else { color = {r:174,g:172,b:102}; }
-            } else {
-                if(landNear >= 90) { color = {r:98,g:140,b:118}; }
-                else if(landNear >= 65) { color = {r:71,g:121,b:110}; }
-                else if(landNear >= 40) { color = {r:62,g:102,b:99}; }
-                else if(landNear >= 15) { color = {r:51,g:79,b:87}; }
-                else if(landNear >= 10) { color = {r:46,g:69,b:79}; }
-                else { color = {r:44,g:61,b:75}; }
+            var clump = near[4].split(':')[0] % 4 < 2 ? 
+                Math.ceil(near[4].split(':')[0]/2)+':'+Math.floor(near[4].split(':')[1]/2) :
+                Math.floor(near[4].split(':')[0]/2)+':'+Math.ceil(near[4].split(':')[1]/2);
+            Math.seedrandom('chunk-'+clump);
+            var nearRandom = Math.random() * 0.5 + 0.8;
+            Math.seedrandom('grid-'+near[4]);
+            var random = Math.random() * 0.2 + 1;
+            var northCoef = Math.min(1,nearRandom*random*Math.max(0,120-near[4].split(':')[1])/80);
+            var southCoef = Math.min(1,Math.max(0,near[4].split(':')[1]-200)/100);
+            var latDiff = [];
+            if(northCoef > 0) { // If north of y:120
+                for(var n = 0; n < mid.length; n++) {
+                    latDiff.push({r:(north[n].r-mid[n].r)*northCoef,
+                        g:(north[n].g-mid[n].g)*northCoef,
+                        b:(north[n].b-mid[n].b)*northCoef});
+                }
+            } else if(southCoef > 0) { // If south of y:200
+                for(var m = 0; m < mid.length; m++) {
+                    latDiff.push({r:(south[m].r-mid[m].r)*southCoef,
+                        g:(south[m].g-mid[m].g)*southCoef,
+                        b:(south[m].b-mid[m].b)*southCoef});
+                }
+            } else { // If in the middle
+                for(var o = 0; o < mid.length; o++) {
+                    latDiff.push({r:0,g:0,b:0});
+                }
             }
+            var getLatColor = function(i) {
+                return {r:mid[i].r+latDiff[i].r,g:mid[i].g+latDiff[i].g,b:mid[i].b+latDiff[i].b};
+            };
+            if(type > 0) {
+                if(landNear >= 95) { color = getLatColor(0); }
+                else if(landNear >= 90) { color = getLatColor(1); }
+                else if(landNear >= 80) { color = getLatColor(2); }
+                else if(landNear >= 70) { color = getLatColor(3); }
+                else if(landNear >= 60) { color = getLatColor(4); }
+                else { color = getLatColor(5); }
+            } else {
+                if(landNear >= 90) { color = getLatColor(6); }
+                else if(landNear >= 65) { color = getLatColor(7); }
+                else if(landNear >= 40) { color = getLatColor(8); }
+                else if(landNear >= 15) { color = getLatColor(9); }
+                else if(landNear >= 10) { color = getLatColor(10); }
+                else { color = getLatColor(11); }
+            }
+            var midHills = { r:88, g:93, b:70 };
+            var midMountains = { r:145, g:144, b:144 };
+            var northHills = { r:132, g:131, b:122 };
+            var northMountains = { r:69, g:68, b:64 };
+            var southHills = { r:103, g:99, b:68 };
+            var southMountains = { r:146, g:144, b:130 };
+            var hillDiff = northCoef > 0 ? {r:(northHills.r-midHills.r)*northCoef,
+                g:(northHills.g-midHills.g)*northCoef,b:(northHills.b-midHills.b)*northCoef} : southCoef > 0 ?
+                {r:(southHills.r-midHills.r)*southCoef,g:(southHills.g-midHills.g)*southCoef,
+                b:(southHills.b-midHills.b)*southCoef} : {r:0,g:0,b:0};
+            var mountainDiff = northCoef > 0 ? {r:(northMountains.r-midMountains.r)*northCoef,
+                g:(northMountains.g-midMountains.g)*northCoef,
+                b:(northMountains.b-midMountains.b)*northCoef} : southCoef > 0 ?
+                {r:(southMountains.r-midMountains.r)*southCoef,
+                g:(southMountains.g-midMountains.g)*southCoef,
+                b:(southMountains.b-midMountains.b)*southCoef} : {r:0,g:0,b:0};
             var coef = 0, diff = {};
-            if(terrain[near[4]] > 4) { // Draw brown mountains
-                coef = (terrain[near[4]]-4)/12;
-                diff = {r:color.r - 88,g:color.g - 93, b:color.b - 70};
+            var hillRange = [4,12-northCoef*3];
+            var mountainRange = [16-northCoef*7,12+northCoef*6];
+            if(terrain[near[4]] > hillRange[0]) { // Draw brown heights
+                coef = Math.min(hillRange[1],(terrain[near[4]]-hillRange[0]))/hillRange[1];
+                diff = {r:color.r - (midHills.r+hillDiff.r),g:color.g - (midHills.g+hillDiff.g), 
+                    b:color.b - (midHills.b+hillDiff.b)};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
-            if(terrain[near[4]] > 16) { // Draw grey heights
-                coef = (terrain[near[4]]-16)/10;
-                diff = {r:color.r - 144,g:color.g - 144, b:color.b - 145};
+            if(terrain[near[4]] > mountainRange[0]) { // Draw grey mountains
+                coef = Math.min(mountainRange[1],(terrain[near[4]]-mountainRange[0]))/mountainRange[1];
+                diff = {r:color.r - (midMountains.r+mountainDiff.r),
+                    g:color.g - (midMountains.g+mountainDiff.g),
+                    b:color.b - (midMountains.b+mountainDiff.b)};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
             if(terrain[near[4]] > 26) { // Draw whiter peaks
-                coef = (terrain[near[4]]-26)/30;
+                coef = Math.min(30,(terrain[near[4]]-26))/30;
                 diff = {r:color.r - 255,g:color.g - 255, b:color.b - 255};
                 color = {r:color.r - diff.r*coef,g:color.g - diff.g*coef,b:color.b - diff.b*coef};
             }
@@ -241,19 +302,23 @@ angular.module('Geographr.canvas', [])
                     context.fillRect((x - offset[0]),(y - offset[1]),1,1); return;
                 }
                 context.shadowColor = 'rgba(0,0,0,0.6)';
-                context.shadowOffsetX = context.shadowOffsetY = 1;
-                context.shadowBlur = 2;
+                context.shadowOffsetX = context.shadowOffsetY = 1; context.shadowBlur = 2;
                 context.lineWidth = canvasType == 'full' ? 1 : zoomPixSize/9;
                 context.beginPath();
                 context.arc((x - offset[0])*canvasPixSize+canvasPixSize/2,
                     (y - offset[1])*canvasPixSize+canvasPixSize/2,
                     canvasPixSize/3, 0, Math.PI*2);
-                context.closePath();
-                context.stroke();
+                context.closePath(); context.stroke();
                 context.shadowColor = 'rgba(0,0,0,0)';
             },
             drawAllTerrain: function(context,terrain,visible) {
-                context.fillStyle = 'rgb(44,61,75)'; // Clear canvas first
+                var waterGradient = context.createLinearGradient(0,0,0,299);
+                waterGradient.addColorStop(0,'rgb(62,71,77)');
+                waterGradient.addColorStop(0.13,'rgb(62,71,77)');
+                waterGradient.addColorStop(0.4,'rgb(44,61,75)');
+                waterGradient.addColorStop(0.67,'rgb(42,71,65)');
+                waterGradient.addColorStop(1,'rgb(42,71,65)');
+                context.fillStyle = waterGradient;
                 context.fillRect(0,0,300,300);
                 for(var key in terrain) {
                     if(terrain.hasOwnProperty(key)) {

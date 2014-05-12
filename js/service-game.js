@@ -21,33 +21,33 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     };
     var itemsMaster = {
         animal: {
-            'deer': { color: '6f4c32', weight: 180, value: 30, classes: ['pelt'] },
-            'boar': { color: '49413d', weight: 150, value: 25, classes: ['pelt'] },
-            'rabbit': { color: '6d5f58', weight: 3, value: 6, classes: ['pelt'] },
-            'fox': { color: '6d341e', weight: 35, value: 50, classes: ['pelt'] },
-            'wolf': { color: '4b4c4f', weight: 60, value: 80, classes: ['pelt'] },
-            'mole': { color: '433a32', weight: 2, value: 20, classes: ['pelt'] },
-            'pheasant': { color: '713926', weight: 1, value: 5, classes: [] },
-            'duck': { color: '356943', weight: 3, value: 8, classes: [] }
+            'deer': { color: '6f4c32', weight: 180, value: 30, classes: ['pelt'], nativeY: 0, range: 40 },
+            'boar': { color: '49413d', weight: 150, value: 25, classes: ['pelt'], nativeY: 0, range: 40 },
+            'rabbit': { color: '6d5f58', weight: 3, value: 6, classes: ['pelt'], nativeY: 0, range: 40 },
+            'fox': { color: '6d341e', weight: 35, value: 50, classes: ['pelt'], nativeY: 0, range: 40 },
+            'wolf': { color: '4b4c4f', weight: 60, value: 80, classes: ['pelt'], nativeY: 0, range: 40 },
+            'mole': { color: '433a32', weight: 2, value: 20, classes: ['pelt'], nativeY: 0, range: 40 },
+            'pheasant': { color: '713926', weight: 1, value: 5, classes: [], nativeY: 0, range: 40 },
+            'duck': { color: '356943', weight: 3, value: 8, classes: [], nativeY: 0, range: 40 }
         },
         fish: {
-            'bass': { color: 'a8b490', weight: 1.6, value: 5 }, 
-            'herring': { color: '838d96', weight: 0.2, value: 1 }, 
-            'salmon': { color: 'c69c9e', weight: 0.5, value: 7 }, 
-            'trout': { color: 'd0ae91', weight: 1.2, value: 3 }, 
-            'tuna': { color: '8ea293', weight: 2, value: 10 }, 
-            'sardine': { color: '67778e', weight: 0.1, value: 0.5 },
-            'mackerel': { color: '71978e', weight: 0.4, value: 1 }, 
-            'cod': { color: 'aba383', weight: 2, value: 3 }, 
-            'swordfish': { color: '8189af', weight: 2.1, value: 20 }
+            'bass': { color: 'a8b490', weight: 1.6, value: 5, nativeY: 0, range: 40 }, 
+            'herring': { color: '838d96', weight: 0.2, value: 1, nativeY: 0, range: 40 }, 
+            'salmon': { color: 'c69c9e', weight: 0.5, value: 7, nativeY: 0, range: 40 }, 
+            'trout': { color: 'd0ae91', weight: 1.2, value: 3, nativeY: 0, range: 40 }, 
+            'tuna': { color: '8ea293', weight: 2, value: 10, nativeY: 0, range: 40 }, 
+            'sardine': { color: '67778e', weight: 0.1, value: 0.5, nativeY: 0, range: 40 },
+            'mackerel': { color: '71978e', weight: 0.4, value: 1, nativeY: 0, range: 40 }, 
+            'cod': { color: 'aba383', weight: 2, value: 3, nativeY: 0, range: 40 }, 
+            'swordfish': { color: '8189af', weight: 2.1, value: 20, nativeY: 0, range: 40 }
         },
         fruit: {
-            'apple': { color: '9c2c36', weight: 1, value: 5, abundance: 10 },
-            'blueberries': { color: '334c9e', weight: 0.8, value: 1, abundance: 8 },
-            'pear': { color: '9cc245', weight: 1.2, value: 8, abundance: 8 }, 
-            'banana': { color: 'e3d843', weight: 1.3, value: 7, abundance: 4 },
-            'orange': { color: 'd98f40', weight: 1.2, value: 6, abundance: 8 }, 
-            'peach': { color: 'e9a16c', weight: 1.1, value: 9, abundance: 6 }
+            'apple': { color: '9c2c36', weight: 1, value: 5, abundance: 10, nativeY: 0, range: 40 },
+            'blueberries': { color: '334c9e', weight: 0.8, value: 1, abundance: 8, nativeY: 0, range: 40 },
+            'pear': { color: '9cc245', weight: 1.2, value: 8, abundance: 8, nativeY: 0, range: 40 }, 
+            'banana': { color: 'e3d843', weight: 1.3, value: 7, abundance: 4, nativeY: 0, range: 40 },
+            'orange': { color: 'd98f40', weight: 1.2, value: 6, abundance: 8, nativeY: 0, range: 40 }, 
+            'peach': { color: 'e9a16c', weight: 1.1, value: 9, abundance: 6, nativeY: 0, range: 40 }
         },
         gem: {
             'emerald': { color: '4f8e4f', value: 200, weight: 0.5, profession: 'jeweler' },
@@ -67,10 +67,11 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 profession: 'blacksmith' }
         },
         plant: {
-            'brown mushroom': { color: '6f6053' }, 'white mushroom': { color: 'b0a9a4' },
-            'herbs': { color: '728448' },
-            'red berries': { color: '9e3333', weight: 0.1, abundance: 20 },
-            'green berries': { color: '689e48', weight: 0.1, abundance: 23 }
+            'brown mushroom': { color: '6f6053', nativeY: 0, range: 40 }, 
+            'white mushroom': { color: 'b0a9a4', nativeY: 0, range: 40 },
+            'herbs': { color: '728448', nativeY: 0, range: 40 },
+            'red berries': { color: '9e3333', weight: 0.1, abundance: 20, nativeY: 0, range: 40 },
+            'green berries': { color: '689e48', weight: 0.1, abundance: 23, nativeY: 0, range: 40 }
         },
         tool: {
             'pitchfork': { color: '88837f', weight: 15 }
@@ -79,14 +80,14 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             'small dagger': { color: '757270', weight: 4, classes: ['blade'] }
         },
         vegetable: {
-            'potato': { color: '675342', weight: 1.2, value: 3, abundance: 18 }, 
-            'onion': { color: 'aaa982', weight: 1.1, value: 4, abundance: 13 },
-            'carrot': { color: 'e1934f', weight: 0.7, value: 2.5, abundance: 18 },
-            'lettuce': { color: 'b4d474', weight: 2, value: 4, abundance: 10 },
-            'tomato': { color: 'd3352e', weight: 1.2, value: 5, abundance: 15 },
-            'broccoli': { color: '62803c', weight: 1, value: 2, abundance: 14 },
-            'cabbage': { color: 'aac37a', weight: 2.4, value: 3, abundance: 8 },
-            'corn': { color: 'e9cb63', weight: 0.9, value: 4, abundance: 20 }
+            'potato': { color: '675342', weight: 1.2, value: 3, abundance: 18, nativeY: 0, range: 40 }, 
+            'onion': { color: 'aaa982', weight: 1.1, value: 4, abundance: 13, nativeY: 0, range: 40 },
+            'carrot': { color: 'e1934f', weight: 0.7, value: 2.5, abundance: 18, nativeY: 0, range: 40 },
+            'lettuce': { color: 'b4d474', weight: 2, value: 4, abundance: 10, nativeY: 0, range: 40 },
+            'tomato': { color: 'd3352e', weight: 1.2, value: 5, abundance: 15, nativeY: 0, range: 40 },
+            'broccoli': { color: '62803c', weight: 1, value: 2, abundance: 14, nativeY: 0, range: 40 },
+            'cabbage': { color: 'aac37a', weight: 2.4, value: 3, abundance: 8, nativeY: 0, range: 40 },
+            'corn': { color: 'e9cb63', weight: 0.9, value: 4, abundance: 20, nativeY: 0, range: 40 }
         },
         other: {
             'salt': { color: 'a8a797', value: 4, weight: 3, abundance: 20, unit: {pre:'pouches'}, 
@@ -423,13 +424,16 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var picked = pickInObject(poolObject);
         var rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
             1 + picked.abundance / minRarity;
+        var distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
+        var maxDistance = picked.range + picked.nativeY ? Math.random() * (picked.range/2) : 1;
         var count = 0;
-        var random = Math.random();
-        while(rarity > random && count < 100) { count++;
+        var randomRarity = Math.random(); 
+        while(rarity > randomRarity && count < 1000 && distance < maxDistance) { count++;
             delete poolObject[picked.key]; // Remove from pool
             picked = pickInObject(poolObject);
             rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
                 1 + picked.abundance / minRarity;
+            distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
         }
         if(picked.key.split(':').length > 1) {
             picked.type = picked.key.split(':')[0]; picked.name = picked.key.split(':')[1];
