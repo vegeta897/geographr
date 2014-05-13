@@ -56,7 +56,7 @@ angular.module('Geographr.canvas', [])
             Math.seedrandom('grid-'+near[4]);
             var random = Math.random() * 0.2 + 1;
             var northCoef = Math.min(1,nearRandom*random*Math.max(0,120-near[4].split(':')[1])/80);
-            var southCoef = Math.min(1,nearRandom*random*Math.max(0,near[4].split(':')[1]-200)/100);
+            var southCoef = Math.min(1,nearRandom*random*Math.max(0,near[4].split(':')[1]-180)/120);
             var latDiff = [];
             if(northCoef > 0) { // If north of y:120
                 for(var n = 0; n < mid.length; n++) {
@@ -64,7 +64,7 @@ angular.module('Geographr.canvas', [])
                         g:(north[n].g-mid[n].g)*northCoef,
                         b:(north[n].b-mid[n].b)*northCoef});
                 }
-            } else if(southCoef > 0) { // If south of y:200
+            } else if(southCoef > 0) { // If south of y:180
                 for(var m = 0; m < mid.length; m++) {
                     latDiff.push({r:(south[m].r-mid[m].r)*southCoef,
                         g:(south[m].g-mid[m].g)*southCoef,
@@ -93,12 +93,9 @@ angular.module('Geographr.canvas', [])
                 else if(landNear >= 10) { color = getLatColor(10); }
                 else { color = getLatColor(11); }
             }
-            var midHills = { r:88, g:93, b:70 };
-            var midMountains = { r:145, g:144, b:144 };
-            var northHills = { r:132, g:131, b:122 };
-            var northMountains = { r:69, g:68, b:64 };
-            var southHills = { r:103, g:99, b:68 };
-            var southMountains = { r:146, g:144, b:130 };
+            var midHills = { r:88, g:93, b:70 }; var midMountains = { r:145, g:144, b:144 };
+            var northHills = { r:132, g:131, b:122 }; var northMountains = { r:69, g:68, b:64 };
+            var southHills = { r:103, g:99, b:68 }; var southMountains = { r:146, g:144, b:130 };
             var hillDiff = northCoef > 0 ? {r:(northHills.r-midHills.r)*northCoef,
                 g:(northHills.g-midHills.g)*northCoef,b:(northHills.b-midHills.b)*northCoef} : southCoef > 0 ?
                 {r:(southHills.r-midHills.r)*southCoef,g:(southHills.g-midHills.g)*southCoef,
@@ -316,7 +313,7 @@ angular.module('Geographr.canvas', [])
                 waterGradient.addColorStop(0,'rgb(62,71,77)');
                 waterGradient.addColorStop(0.13,'rgb(62,71,77)');
                 waterGradient.addColorStop(0.4,'rgb(44,61,75)');
-                waterGradient.addColorStop(0.67,'rgb(42,71,65)');
+                waterGradient.addColorStop(0.6,'rgb(42,71,65)');
                 waterGradient.addColorStop(1,'rgb(42,71,65)');
                 context.fillStyle = waterGradient;
                 context.fillRect(0,0,300,300);

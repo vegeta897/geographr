@@ -21,33 +21,34 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     };
     var itemsMaster = {
         animal: {
-            'deer': { color: '6f4c32', weight: 180, value: 30, classes: ['pelt'], nativeY: 0, range: 40 },
-            'boar': { color: '49413d', weight: 150, value: 25, classes: ['pelt'], nativeY: 0, range: 40 },
-            'rabbit': { color: '6d5f58', weight: 3, value: 6, classes: ['pelt'], nativeY: 0, range: 40 },
-            'fox': { color: '6d341e', weight: 35, value: 50, classes: ['pelt'], nativeY: 0, range: 40 },
-            'wolf': { color: '4b4c4f', weight: 60, value: 80, classes: ['pelt'], nativeY: 0, range: 40 },
-            'mole': { color: '433a32', weight: 2, value: 20, classes: ['pelt'], nativeY: 0, range: 40 },
-            'pheasant': { color: '713926', weight: 1, value: 5, classes: [], nativeY: 0, range: 40 },
-            'duck': { color: '356943', weight: 3, value: 8, classes: [], nativeY: 0, range: 40 }
+            'deer': { color: '6f4c32', weight: 180, value: 30, classes: ['pelt'], nativeY: 150, range: 70 },
+            'boar': { color: '49413d', weight: 150, value: 25, classes: ['pelt'], nativeY: 250, range: 80 },
+            'rabbit': { color: '6d5f58', weight: 3, value: 6, classes: ['pelt'], nativeY: 120, range: 120 },
+            'fox': { color: '6d341e', weight: 35, value: 50, classes: ['pelt'], nativeY: 140, range: 40 },
+            'wolf': { color: '4b4c4f', weight: 60, value: 80, classes: ['pelt'], nativeY: 50, range: 50 },
+            'mole': { color: '433a32', weight: 2, value: 20, classes: ['pelt'], nativeY: 120, range: 40 },
+            'pheasant': { color: '713926', weight: 1, value: 5, classes: [], nativeY: 150, range: 70 },
+            'duck': { color: '356943', weight: 3, value: 8, classes: [], nativeY: 180, range: 100 }
         },
         fish: {
-            'bass': { color: 'a8b490', weight: 1.6, value: 5, nativeY: 0, range: 40 }, 
-            'herring': { color: '838d96', weight: 0.2, value: 1, nativeY: 0, range: 40 }, 
-            'salmon': { color: 'c69c9e', weight: 0.5, value: 7, nativeY: 0, range: 40 }, 
-            'trout': { color: 'd0ae91', weight: 1.2, value: 3, nativeY: 0, range: 40 }, 
-            'tuna': { color: '8ea293', weight: 2, value: 10, nativeY: 0, range: 40 }, 
-            'sardine': { color: '67778e', weight: 0.1, value: 0.5, nativeY: 0, range: 40 },
-            'mackerel': { color: '71978e', weight: 0.4, value: 1, nativeY: 0, range: 40 }, 
-            'cod': { color: 'aba383', weight: 2, value: 3, nativeY: 0, range: 40 }, 
-            'swordfish': { color: '8189af', weight: 2.1, value: 20, nativeY: 0, range: 40 }
+            'bass': { color: 'a8b490', weight: 1.6, value: 5, nativeY: 180, range: 140 }, 
+            'herring': { color: '838d96', weight: 0.2, value: 1, nativeY: 140, range: 60 }, 
+            'salmon': { color: 'c69c9e', weight: 0.5, value: 7, nativeY: 150, range: 200 }, 
+            'trout': { color: 'd0ae91', weight: 1.2, value: 3, 
+                nativeY: 120, range: 50 }, // TODO: Only in rivers/lakes
+            'tuna': { color: '8ea293', weight: 2, value: 10, nativeY: 180, range: 120 }, 
+            'sardine': { color: '67778e', weight: 0.1, value: 0.5, nativeY: 150, range: 80 },
+            'mackerel': { color: '71978e', weight: 0.4, value: 1, nativeY: 200, range: 100 }, 
+            'cod': { color: 'aba383', weight: 2, value: 3, nativeY: 100, range: 80 }, 
+            'swordfish': { color: '8189af', weight: 2.1, value: 20, nativeY: 260, range: 60 }
         },
         fruit: {
-            'apple': { color: '9c2c36', weight: 1, value: 5, abundance: 10, nativeY: 0, range: 40 },
-            'blueberries': { color: '334c9e', weight: 0.8, value: 1, abundance: 8, nativeY: 0, range: 40 },
-            'pear': { color: '9cc245', weight: 1.2, value: 8, abundance: 8, nativeY: 0, range: 40 }, 
-            'banana': { color: 'e3d843', weight: 1.3, value: 7, abundance: 4, nativeY: 0, range: 40 },
-            'orange': { color: 'd98f40', weight: 1.2, value: 6, abundance: 8, nativeY: 0, range: 40 }, 
-            'peach': { color: 'e9a16c', weight: 1.1, value: 9, abundance: 6, nativeY: 0, range: 40 }
+            'apple': { color: '9c2c36', weight: 1, value: 5, abundance: 10, nativeY: 150, range: 80 },
+            'blueberries': { color: '334c9e', weight: 0.8, value: 1, abundance: 8, nativeY: 200, range: 120 },
+            'pear': { color: '9cc245', weight: 1.2, value: 8, abundance: 8, nativeY: 250, range: 80 }, 
+            'banana': { color: 'e3d843', weight: 1.3, value: 7, abundance: 4, nativeY: 280, range: 40 },
+            'orange': { color: 'd98f40', weight: 1.2, value: 6, abundance: 8, nativeY: 220, range: 50 }, 
+            'peach': { color: 'e9a16c', weight: 1.1, value: 9, abundance: 6, nativeY: 210, range: 60 }
         },
         gem: {
             'emerald': { color: '4f8e4f', value: 200, weight: 0.5, profession: 'jeweler' },
@@ -57,7 +58,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             'diamond': { color: 'c8c3c5', value: 2000, weight: 0.6, profession: 'jeweler' }
         },
         metal: {
-            'iron': { color: '593125', value: 36, weight: 10, abundance: 20, unit: {post:'ingots'},
+            'iron': { color: '593125', value: 36, weight: 10, abundance: 15, unit: {post:'ingots'},
                 profession: 'blacksmith' },
             'copper': { color: '924c36', value: 28, weight: 8, abundance: 20, unit: {post:'ingots'},
                 profession: 'blacksmith' },
@@ -67,11 +68,11 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 profession: 'blacksmith' }
         },
         plant: {
-            'brown mushroom': { color: '6f6053', nativeY: 0, range: 40 }, 
-            'white mushroom': { color: 'b0a9a4', nativeY: 0, range: 40 },
-            'herbs': { color: '728448', nativeY: 0, range: 40 },
-            'red berries': { color: '9e3333', weight: 0.1, abundance: 20, nativeY: 0, range: 40 },
-            'green berries': { color: '689e48', weight: 0.1, abundance: 23, nativeY: 0, range: 40 }
+            'brown mushroom': { color: '6f6053', nativeY: 160, range: 100 }, 
+            'white mushroom': { color: 'b0a9a4', nativeY: 150, range: 100 },
+            'herbs': { color: '728448', nativeY: 200, range: 150 },
+            'red berries': { color: '9e3333', weight: 0.1, abundance: 20, nativeY: 200, range: 180 },
+            'green berries': { color: '689e48', weight: 0.1, abundance: 23, nativeY: 160, range: 100 }
         },
         tool: {
             'pitchfork': { color: '88837f', weight: 15 }
@@ -80,14 +81,14 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             'small dagger': { color: '757270', weight: 4, classes: ['blade'] }
         },
         vegetable: {
-            'potato': { color: '675342', weight: 1.2, value: 3, abundance: 18, nativeY: 0, range: 40 }, 
-            'onion': { color: 'aaa982', weight: 1.1, value: 4, abundance: 13, nativeY: 0, range: 40 },
-            'carrot': { color: 'e1934f', weight: 0.7, value: 2.5, abundance: 18, nativeY: 0, range: 40 },
-            'lettuce': { color: 'b4d474', weight: 2, value: 4, abundance: 10, nativeY: 0, range: 40 },
-            'tomato': { color: 'd3352e', weight: 1.2, value: 5, abundance: 15, nativeY: 0, range: 40 },
-            'broccoli': { color: '62803c', weight: 1, value: 2, abundance: 14, nativeY: 0, range: 40 },
-            'cabbage': { color: 'aac37a', weight: 2.4, value: 3, abundance: 8, nativeY: 0, range: 40 },
-            'corn': { color: 'e9cb63', weight: 0.9, value: 4, abundance: 20, nativeY: 0, range: 40 }
+            'potato': { color: '675342', weight: 1.2, value: 3, abundance: 18, nativeY: 120, range: 60 }, 
+            'onion': { color: 'aaa982', weight: 1.1, value: 4, abundance: 13, nativeY: 120, range: 60 },
+            'carrot': { color: 'e1934f', weight: 0.7, value: 2.5, abundance: 18, nativeY: 120, range: 80 },
+            'lettuce': { color: 'b4d474', weight: 2, value: 4, abundance: 10, nativeY: 120, range: 80 },
+            'tomato': { color: 'd3352e', weight: 1.2, value: 5, abundance: 15, nativeY: 220, range: 100 },
+            'broccoli': { color: '62803c', weight: 1, value: 2, abundance: 14, nativeY: 180, range: 100 },
+            'cabbage': { color: 'aac37a', weight: 2.4, value: 3, abundance: 8, nativeY: 120, range: 80 },
+            'corn': { color: 'e9cb63', weight: 0.9, value: 4, abundance: 20, nativeY: 180, range: 100 }
         },
         other: {
             'salt': { color: 'a8a797', value: 4, weight: 3, abundance: 20, unit: {pre:'pouches'}, 
@@ -126,10 +127,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             'gem:sapphire': { rarity: 0.85 }, 'gem:diamond': { rarity: 0.95 }
         }
     };
-    var economyNodes = {
+    var economyNodes = { // TODO: nativeY and range properties
         'hunting post': { output: ['event:hunt:2'], occurrence: 'forest:1' }, // TODO: Sell meat and pelts
         'fishing dock': { output: ['event:fish:15'], occurrence: 'coast:0.6' },
-        'mining camp': { output: ['event:mine:16'], occurrence: 'mountains:1.8' }, 
+        'mining camp': { output: ['event:mine:8'], occurrence: 'mountains:1.8' }, 
         'farm': { output: ['vegetable:10'], occurrence: 'plains:0.5' },
         'orchard': { output: ['fruit:8'], occurrence: 'plains:0.3' }, 
         'lumber camp': { output: ['other:lumber:8'], occurrence: 'forest:1.2' }
@@ -276,8 +277,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 if(jQuery.inArray(productPool.list[p].type,marketStallTypes[msTypeKey].goods) +
                     jQuery.inArray(productPool.list[p].type+':'+productPool.list[p].name,
                         marketStallTypes[msTypeKey].goods) +
-                    jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods) < -2) {
+                    jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods)<-2) {
                 continue; }
+                // TODO: If exotic product picked, have stall owner comment on it
                 var product = productPool.list.splice(p,1)[0]; p--; // Don't skip next product
                 if(stall.hasOwnProperty('categories')) { // If stall has categories
                     if(stall.categories.hasOwnProperty(product.type)) { // If category match
@@ -288,7 +290,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                             stall.categories[product.type][0]++; // Increment category item count
                             stall.goods[product.name] = // Add good
                             { color: product.color, type: product.type, weight: product.weight,
-                                value: Math.max(1,Math.round(product.value*100)/100),
+                                value: Math.max(1,Math.round(product.value*product.exotic*100)/100),
                                 amount: 1, name: product.name, key: product.type+':'+product.name };
                             stall.categories[product.type].push(product.name); // Add name
                         }
@@ -296,7 +298,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         stall.categories[product.type] = [1,product.name]; // Initialize new category
                         stall.goods[product.name] = // Add good
                         { color: product.color, type: product.type, weight: product.weight,
-                            value: Math.max(1,Math.round(product.value*100)/100),
+                            value: Math.max(1,Math.round(product.value*product.exotic*100)/100),
                             amount: 1, name: product.name, key: product.type+':'+product.name };
                     }
                 } else { // Stall has no categories
@@ -304,7 +306,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     stall.categories[product.type] = [1,product.name]; // Initialize new category
                     stall.goods[product.name] = // Add good
                     { color: product.color, type: product.type, weight: product.weight,
-                        value: Math.max(1,Math.round(product.value*100)/100),
+                        value: Math.max(1,Math.round(product.value*product.exotic*100)/100),
                         amount: 1, name: product.name, key: product.type+':'+product.name };
                 }
                 stall.weight += product.weight; // Add product weight to total stall weight
@@ -422,23 +424,32 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             minRarity = minRarity > thisRarity ? thisRarity : minRarity;
         }
         var picked = pickInObject(poolObject);
-        var rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
-            1 + picked.abundance / minRarity;
-        var distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
-        var maxDistance = picked.range + picked.nativeY ? Math.random() * (picked.range/2) : 1;
-        var count = 0;
-        var randomRarity = Math.random(); 
-        while(rarity > randomRarity && count < 1000 && distance < maxDistance) { count++;
-            delete poolObject[picked.key]; // Remove from pool
-            picked = pickInObject(poolObject);
-            rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
-                1 + picked.abundance / minRarity;
-            distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
-        }
         if(picked.key.split(':').length > 1) {
             picked.type = picked.key.split(':')[0]; picked.name = picked.key.split(':')[1];
         } else { picked.type = type.split(':')[0]; picked.name = picked.key; }
         picked = dressItem(picked);
+        var rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
+            1 + picked.abundance / minRarity;
+        var distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
+        var maxDistance = picked.nativeY ?
+            picked.range + Math.random() * (picked.range) - (picked.range/2) : 1;
+        var count = 0;
+        var randomRarity = Math.random();
+        while((rarity > randomRarity || distance > maxDistance) && count < 1000) { count++;
+            delete poolObject[picked.key]; // Remove from pool
+            picked = pickInObject(poolObject);
+            if(picked.key.split(':').length > 1) {
+                picked.type = picked.key.split(':')[0]; picked.name = picked.key.split(':')[1];
+            } else { picked.type = type.split(':')[0]; picked.name = picked.key; }
+            picked = dressItem(picked);
+            rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
+                1 + picked.abundance / minRarity;
+            distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
+            maxDistance = picked.nativeY ?
+                picked.range + Math.random() * (picked.range) - (picked.range/2) : 1;
+        }
+        picked.exotic = picked.nativeY && distance > picked.range ?
+            Math.max(1,1 + (distance - picked.range) / (picked.range/2)) : 1;
         return picked;
     };
 
