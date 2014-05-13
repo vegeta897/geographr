@@ -56,7 +56,7 @@ angular.module('Geographr.canvas', [])
             Math.seedrandom('grid-'+near[4]);
             var random = Math.random() * 0.2 + 1;
             var northCoef = Math.min(1,nearRandom*random*Math.max(0,120-near[4].split(':')[1])/80);
-            var southCoef = Math.min(1,Math.max(0,near[4].split(':')[1]-200)/100);
+            var southCoef = Math.min(1,nearRandom*random*Math.max(0,near[4].split(':')[1]-200)/100);
             var latDiff = [];
             if(northCoef > 0) { // If north of y:120
                 for(var n = 0; n < mid.length; n++) {
