@@ -392,7 +392,6 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var stalls = { sa: { goods: {} }, sb: { goods: {} }, sc: { goods: {} }, sd: { goods: {} },
             se: { goods: {} }, sf: { goods: {} }, sg: { goods: {} }, sh: { goods: {} }, si: { goods: {} }, 
             sj: { goods: {} }, sk: { goods: {} }, sl: { goods: {} }, sm: { goods: {} }, sn: { goods: {} } };
-        var stallIDs = ['sa','sb','sc','sd','se','sf','sg','sh'];
         // Assign final stall types to stall slots
         for(var stallKey in stalls) { if(!stalls.hasOwnProperty(stallKey)) { continue; }
             var chosenStallKey = pickProperty(chosenStallTypes);
@@ -426,7 +425,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var picked = pickInObject(poolObject);
         if(picked.key.split(':').length > 1) {
             picked.type = picked.key.split(':')[0]; picked.name = picked.key.split(':')[1];
-        } else { picked.type = type.split(':')[0]; picked.name = picked.key; }
+        } else { picked.type = type.split(':')[0] == 'event' ? type.split(':')[1] : type.split(':')[0];
+            picked.name = picked.key; }
         picked = dressItem(picked);
         var rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
             1 + picked.abundance / minRarity;
@@ -436,17 +436,17 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var count = 0;
         var randomRarity = Math.random();
         while((rarity > randomRarity || distance > maxDistance) && count < 1000) { count++;
-            delete poolObject[picked.key]; // Remove from pool
             picked = pickInObject(poolObject);
             if(picked.key.split(':').length > 1) {
                 picked.type = picked.key.split(':')[0]; picked.name = picked.key.split(':')[1];
-            } else { picked.type = type.split(':')[0]; picked.name = picked.key; }
+            } else { picked.type = type.split(':')[0] == 'event' ? type.split(':')[1] : type.split(':')[0];
+                picked.name = picked.key; }
             picked = dressItem(picked);
             rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
                 1 + picked.abundance / minRarity;
             distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
             maxDistance = picked.nativeY ?
-                picked.range + Math.random() * (picked.range) - (picked.range/2) : 1;
+                picked.range + Math.random() * (picked.range) - (picked.range/2) + count : 1;
         }
         picked.exotic = picked.nativeY && distance > picked.range ?
             Math.max(1,1 + (distance - picked.range) / (picked.range/2)) : 1;

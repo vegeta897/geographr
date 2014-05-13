@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.275; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.276; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
