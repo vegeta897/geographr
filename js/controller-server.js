@@ -527,39 +527,41 @@ angular.module('Geographr.controllerServer', [])
             
             var passTime = function() {
                 fireRef.child('camps').once('value',function(snap) { if(!snap.val()) { return; }
-                    var theTime = new Date().getTime(); var message = '';
-                    var camps = snap.val(), newCamps = angular.copy(camps);
-                    for(var camp in camps) { if(!camps.hasOwnProperty(camp)) { continue; }
-                        var deltas = camps[camp].deltas; if(!deltas) { continue; }
-                        var campInfo = gameUtility.expandCamp(camp);
-                        for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
-                            resource = { type: resource.split(':')[0], name: resource.split(':')[1] };
-                            var demand = 50 /*campInfo.economy.resources[resource].demand*/;
-                            var abundance = gameUtility.itemsMaster[resource.type][resource.name].abundance;
-                            // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
-                            // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
-                            var interval = camps[camp].deltas[resource].amount < 0 ? 
-                                demand/100 * 14400000 + (50-abundance) * 80000
-                                : 3600000 - demand/100 * 1800000 - abundance * 60000;
-                            var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
-                            interval = Math.max(1,interval);
-                            if(theTime < camps[camp].deltas[resource].time + interval) { continue; }
-                            var difference = theTime - (parseInt(camps[camp].deltas[resource].time) + interval);
-                            multiplier += multiplier * Math.floor(difference / interval);
-                            difference -= interval * Math.floor(difference / interval);
-                            message += camps[camp].deltas[resource].amount < 0 ?
-                                camp + '-' + resource + ' replenished by ' + multiplier + ' | ' :
-                                camp + '-' + resource + ' depleted by ' + multiplier + ' | ' ;
-                            newCamps[camp].deltas[resource].amount = camps[camp].deltas[resource].amount < 0 ? 
-                                Math.min(camps[camp].deltas[resource].amount + multiplier,0) : 
-                                Math.max(camps[camp].deltas[resource].amount - multiplier,0);
-                            newCamps[camp].deltas[resource].time = theTime - difference;
-                            newCamps[camp].deltas[resource] = newCamps[camp].deltas[resource].amount == 0 ?
-                                null : newCamps[camp].deltas[resource];
-                        }
-                    }
-                    if(message.length > 0) { console.log(new Date(),message); }
-                    fireRef.child('camps').set(newCamps);
+                    var theTime = new Date(), message = '', camps = snap.val();
+                    if((camps.hasOwnProperty('lastMarketStock') && 
+                        camps.lastMarketStock == theTime.getMonth()+'/'+theTime.getDay()) ||
+                        !camps.hasOwnProperty('list')) { return; }
+//                    for(var camp in camps.list) { if(!camps.list.hasOwnProperty(camp)) { continue; }
+//                        var deltas = camps.list[camp].deltas; if(!deltas) { continue; }
+//                        // var campInfo = gameUtility.expandCamp(camp);
+//                        for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
+//                            resource = { type: resource.split(':')[0], name: resource.split(':')[1] };
+//                            var demand = 50 /*campInfo.economy.resources[resource].demand*/;
+//                            var abundance = gameUtility.itemsMaster[resource.type][resource.name].abundance;
+//                            // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
+//                            // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
+//                            var interval = camps.list[camp].deltas[resource].amount < 0 ? 
+//                                demand/100 * 14400000 + (50-abundance) * 80000
+//                                : 3600000 - demand/100 * 1800000 - abundance * 60000;
+//                            var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
+//                            interval = Math.max(1,interval);
+//                            if(theTime < camps.list[camp].deltas[resource].time + interval) { continue; }
+//                            var difference = theTime - (parseInt(camps.list[camp].deltas[resource].time) + interval);
+//                            multiplier += multiplier * Math.floor(difference / interval);
+//                            difference -= interval * Math.floor(difference / interval);
+//                            message += camps.list[camp].deltas[resource].amount < 0 ?
+//                                camp + '-' + resource + ' replenished by ' + multiplier + ' | ' :
+//                                camp + '-' + resource + ' depleted by ' + multiplier + ' | ' ;
+//                            newCamps.list[camp].deltas[resource].amount = camps.list[camp].deltas[resource].amount<0 ? 
+//                                Math.min(camps.list[camp].deltas[resource].amount + multiplier,0) : 
+//                                Math.max(camps.list[camp].deltas[resource].amount - multiplier,0);
+//                            newCamps.list[camp].deltas[resource].time = theTime - difference;
+//                            newCamps.list[camp].deltas[resource] = newCamps.list[camp].deltas[resource].amount == 0 ?
+//                                null : newCamps.list[camp].deltas[resource];
+//                        }
+//                    }
+                    /*if(message.length > 0) {*/ console.log(new Date(),'camp markets restocked'); /*}*/
+                    fireRef.child('camps').set({lastMarketStock: theTime.getMonth()+'/'+theTime.getDay()});
                 });
                 fireRef.child('abundances').once('value',function(snap) { if(!snap.val()) { return; }
                     var theTime = new Date().getTime(); var message = '';

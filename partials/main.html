@@ -43,7 +43,7 @@
 </div>
 <div id="uiContainer" ng-show="userInit && terrainReady && (user.location && !user.new) || user.new" class="container">
     <div class="row">
-        <div ng-show="commits.show" id="commits">
+        <div ng-show="commits.show" ng-click="commits.show = false" id="commits">
             <table class="table"><tr ng-repeat="commit in commits.list"><td><span class="text-muted">
         {{ commit.date | timeUnits }} {{ commit.date | timeUnitsLabel }} ago</span></td>
                 <td>{{ commit.message }}</td></tr></table>

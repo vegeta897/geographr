@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.277; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.278; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -471,10 +471,8 @@ angular.module('Geographr.controllerMain', [])
                 good.value * $scope.onPixel.camp.economy.market.selectedStall.markup,'gold per unit');
             var invItem = { type: good.type, name: good.name, amount: parseInt(amount), status: good.status }; 
             gameUtility.addToInventory(invItem);
-//            var newDelta = $scope.onPixel.camp.deltas[good.name];
-//            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
-//            newDelta.amount -= amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
-//            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+good.name).set(newDelta);
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/stock/'+
+                $scope.onPixel.camp.economy.market.selectedStall.id+'/goods/'+good.key).set(good.amount-amount);
             $scope.user.money =
                 Math.round($scope.user.money -
                     Math.round(amount * good.value * $scope.onPixel.camp.economy.market.selectedStall.markup));
@@ -1102,25 +1100,21 @@ angular.module('Geographr.controllerMain', [])
                     $scope.user.visitedCamps.push(snap.val().location);
                     fireUser.child('visitedCamps').update($scope.user.visitedCamps);
                 }
-                fireRef.child('camps/' + snap.val().location).on('value',function(campSnap) {
-                    var campData = gameUtility.expandCamp(snap.val().location);
-                    campData.deltas = {};
-//                    for(var resKey in resources) { if(!resources.hasOwnProperty(resKey)) { continue; }
-//                        // TODO: Have deltas influence demands
-//                        campData.deltas[resKey] = { amount: 0, time: false }; // Default 0 delta
-//                        campData.economy.resources[resKey].invItem = $scope.inventory ? 
-//                            $scope.inventory['resource:'+resKey] : undefined;
-//                        if(campSnap.val() && campSnap.val().hasOwnProperty('deltas')
-//                            && campSnap.val().deltas.hasOwnProperty(resKey)) {
-//                            // Apply delta against supply
-//                            campData.economy.resources[resKey].supply += campSnap.val().deltas[resKey].amount;
-//                            campData.deltas[resKey] = campSnap.val().deltas[resKey];
-//                        }
-//                    }
-                    
-                    // TODO: Apply camp deltas and add any player stalls
-                    
-                    $timeout(function(){ $scope.onPixel.camp = campData; });
+                var campData = gameUtility.expandCamp(snap.val().location);
+                $timeout(function(){ $scope.onPixel.camp = campData; });
+                fireRef.child('camps/list/' + snap.val().location).on('value',function(campSnap) {
+                    campSnap = campSnap.val();
+                    if(!campSnap || !campSnap.hasOwnProperty('stock')) { return; }
+                    for(var stallKey in campSnap.stock) { if(!campSnap.stock.hasOwnProperty(stallKey)) { continue; }
+                        var stall = campSnap.stock[stallKey];
+                        for(var goodKey in stall.goods) { if(!stall.goods.hasOwnProperty(goodKey)) { continue; }
+                            if(!campData.economy.market.stalls.hasOwnProperty(stallKey) || 
+                                !campData.economy.market.stalls[stallKey].goods.hasOwnProperty(goodKey)) { continue; }
+                            campData.economy.market.stalls[stallKey].goods[goodKey].amount = stall.goods[goodKey];
+                            console.log('applying stock',stall.goods[goodKey],'to',goodKey,'in stall',stallKey);
+                        }
+                    }
+                    // TODO: Add player stalls
                 });
             } else { // If no camp
                 fireRef.child('abundances/'+$scope.user.location).on('value',function(snap) {
