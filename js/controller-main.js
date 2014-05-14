@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.276; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.277; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -420,7 +420,7 @@ angular.module('Geographr.controllerMain', [])
             } else {
                 $scope.onPixel.camp.economy.market.selectedStall = $scope.onPixel.camp.economy.market.stalls[stallID];
                 $scope.onPixel.camp.economy.market.selectedStall.id = stallID;
-                if(jQuery.inArray(index,[2,3,6,7]) >= 0) {
+                if(jQuery.inArray(index,[2,3,6,7,10,11,14,15,18,19]) >= 0) {
                     $scope.onPixel.camp.economy.market.selectedStall.rightSide = true;
                 }
                 stall.animate({'opacity':1},200).children('.stall-content').animate({'height':'206px'},300);
@@ -469,7 +469,7 @@ angular.module('Geographr.controllerMain', [])
             amount = parseInt(amount);
             console.log('buying',amount,good.name,'at',
                 good.value * $scope.onPixel.camp.economy.market.selectedStall.markup,'gold per unit');
-            var invItem = { type: good.type, name: good.name, amount: parseInt(amount) }; 
+            var invItem = { type: good.type, name: good.name, amount: parseInt(amount), status: good.status }; 
             gameUtility.addToInventory(invItem);
 //            var newDelta = $scope.onPixel.camp.deltas[good.name];
 //            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;

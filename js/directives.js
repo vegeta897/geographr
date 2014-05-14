@@ -161,7 +161,7 @@ angular.module('Geographr.directives', [])
                 break;
             case 'all':
                 for(var allKey in input) { if(input.hasOwnProperty(allKey)) { 
-                    var allItem = input[allKey]; allItem.name = allKey; list.push(input[allKey]); } }
+                    var allItem = input[allKey]; /*allItem.name = allKey;*/ list.push(input[allKey]); } }
                 break;
             default:
                 for(var key in input) {
@@ -202,7 +202,12 @@ angular.module('Geographr.directives', [])
 .filter('capitalize', function() {
     return function(input) {
         if(!input) { return ''; }
-        return input.substring(0,1).toUpperCase()+input.substring(1);
+        var words = input.split(' '), result = '';
+        for(var i = 0; i < words.length; i++) {
+            result += words[i].substring(0,1).toUpperCase()+words[i].substring(1);
+            result += i == words.length - 1 ? '' : ' ';
+        }
+        return result;
     }
 })
 .filter('left', function() {
