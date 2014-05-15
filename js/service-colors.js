@@ -161,11 +161,17 @@ angular.module('Geographr.colors', [])
                                 sat: Math.round(Math.random()*3)/100,
                                 val: Math.round(Math.random()*5 + 35)/100
                             }; break;
+                        case 'stallBG':
+                            hsv = {
+                                hue: Math.floor(Math.random()*35 + 20),
+                                sat: Math.round(Math.random()*15 + 5)/100,
+                                val: Math.round(Math.random()*5 + 18)/100
+                            }; break;
                         case 'stallCanvas':
                             hsv = {
                                 hue: Math.floor(Math.random()*360),
-                                sat: Math.round(Math.random()*60+20)/100,
-                                val: Math.round(Math.random()*40 + 40)/100
+                                sat: Math.round(Math.random()*45 + 20)/100,
+                                val: Math.round(Math.random()*40 + 30)/100
                             }; break;
                     }
                 } else {
@@ -182,11 +188,7 @@ angular.module('Geographr.colors', [])
                 }
                 return { hex: hsvToHex(hsv), hsv: hsv };
             },
-            rgbToHex: rgbToHex,
-            hexToRGB: hexToRGB,
-            rgbToHSV: rgbToHSV,
-            hsvToHSL: hsvToHSL,
-            hsvToHex: hsvToHex,
+            rgbToHex: rgbToHex, hexToRGB: hexToRGB, rgbToHSV: rgbToHSV, hsvToHSL: hsvToHSL, hsvToHex: hsvToHex,
             hexToHSV: hexToHSV
         }
 });

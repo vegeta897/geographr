@@ -152,9 +152,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         metal: { goods: ['metal'], capacity: 300 }, 
         'industrial metal': { goods: ['metal:copper','metal:iron'], capacity: 300 },
         jewelry: { goods: ['gem','metal:silver','metal:gold'], capacity: 20 }, 
-        mineral: { goods: ['salt','coal'], capacity: 180 },
-        construction: { goods: ['lumber','metal:copper','metal:iron'], capacity: 500 }, 
-        lumber: { goods: ['lumber'], capacity: 800 }
+        mineral: { goods: ['other:salt','other:coal'], capacity: 180 },
+        construction: { goods: ['other:lumber','metal:copper','metal:iron'], capacity: 500 }, 
+        lumber: { goods: ['other:lumber'], capacity: 800 }
     };
     var similarMarketStalls = {
         fish: ['fish','food','vegetable','fruit+veg','animal meat','meat'], 
@@ -247,7 +247,6 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 } else { pushProduct = pickProduct(node.output[0]); }
                 pushProduct.value = Math.max(0.1,pushProduct.value * (campNode.variance - 2) * -1 
                     * (1+Math.random()*0.05));
-                pushProduct.type = pushProduct.type == 'other' ? pushProduct.name : pushProduct.type;
                 var pushProducts = [pushProduct];
                 if(node.output[0].split(':')[2] == 'process') {
                     pushProducts = pushProduct.type == 'animal' ? eviscerate(1,pushProduct,9.6) : null;
@@ -261,8 +260,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         if(!marketStallTypes.hasOwnProperty(msTypeKey)) { continue; }
                         var goods = marketStallTypes[msTypeKey].goods;
                         if(jQuery.inArray(pushProduct.type+ppStatus,goods) +
-                            jQuery.inArray(pushProduct.type+':'+pushProduct.name+ppStatus,goods) +
-                            jQuery.inArray('other:'+pushProduct.name,goods) > -3) {
+                            jQuery.inArray(pushProduct.type+':'+pushProduct.name+ppStatus,goods) > -2) {
                             if(productPool.stallTypes.hasOwnProperty(msTypeKey)) {
                                 productPool.stallTypes[msTypeKey].weight += 
                                     pushProduct.weight * pushProduct.amount;
@@ -290,8 +288,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             while(!chosen) { if(!chosenStallTypes.hasOwnProperty(msTypeKey+num)) {
                 chosenStallTypes[msTypeKey+num] = { goods: {}, weight: 0, totalGoods: 0 };
                 stall = chosenStallTypes[msTypeKey+num];
-                Math.seedrandom('stalls'+grid+msTypeKey+num);
-                chosen = true;
+                Math.seedrandom('stalls'+grid+msTypeKey+num); chosen = true;
             } num++; }
             stall.stallType = msTypeKey;
             for(var p = 0; p < productPool.list.length; p++) { // Find matching products
@@ -299,29 +296,28 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 var catStat = productPool.list[p].status ? ' ' + productPool.list[p].status : '';
                 if(jQuery.inArray(productPool.list[p].type+status,marketStallTypes[msTypeKey].goods) +
                     jQuery.inArray(productPool.list[p].type+':'+productPool.list[p].name+status,
-                        marketStallTypes[msTypeKey].goods) +
-                    jQuery.inArray('other:'+productPool.list[p].name,marketStallTypes[msTypeKey].goods)<-2) {
-                continue; }
+                        marketStallTypes[msTypeKey].goods) < -1) { continue; }
                 // TODO: If exotic product picked, have stall owner comment on it
                 var product = productPool.list.splice(p,1)[0]; p--; // Don't skip next product
+                var goodType = product.type == 'other' ? product.name : product.type;
                 product.amount = product.amount || 1; product.exotic = product.exotic || 1;
                 if(stall.hasOwnProperty('categories')) { // If stall has categories
-                    if(stall.categories.hasOwnProperty(product.type+catStat)) { // If category match
+                    if(stall.categories.hasOwnProperty(goodType+catStat)) { // If category match
                         if(stall.goods.hasOwnProperty(product.name+status)) { // If good already here
-                            stall.categories[product.type+catStat][0] += product.amount; // Add category item count
+                            stall.categories[goodType+catStat][0] += product.amount; // Add cat item count
                             stall.goods[product.name+status].amount += product.amount; // Add good amount
                         } else { // If good not already here
-                            stall.categories[product.type+catStat][0] += product.amount; // Add item count
+                            stall.categories[goodType+catStat][0] += product.amount; // Add item count
                             stall.goods[product.name+status] = // Add good
                             { color: product.color, type: product.type, weight: product.weight,
                                 value: Math.max(1,Math.round((Math.random()*0.4+0.8)*
                                     product.value*product.exotic*100)/100),
                                 amount: product.amount, name: product.name, status: product.status,
                                 key: product.name+status, exotic: product.exotic };
-                            stall.categories[product.type+catStat].push(product.name+status); // Add name
+                            stall.categories[goodType+catStat].push(product.name+status); // Add name
                         }
                     } else { // No matching category, add as new
-                        stall.categories[product.type+catStat] = [product.amount,product.name+status]; // Init
+                        stall.categories[goodType+catStat] = [product.amount,product.name+status]; // Init
                         stall.goods[product.name+status] = // Add good
                         { color: product.color, type: product.type, weight: product.weight,
                             value: Math.max(1,Math.round((Math.random()*0.4+0.8)*
@@ -330,8 +326,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                             key: product.name+status, exotic: product.exotic };
                     }
                 } else { // Stall has no categories
-                    stall.categories = {}; stall.canvas = colorUtility.generate('stallCanvas').hex;
-                    stall.categories[product.type+catStat] = [product.amount,product.name+status]; // Init
+                    stall.categories = {}; 
+                    stall.canvas = colorUtility.generate('stallCanvas').hex;
+                    stall.bg = colorUtility.generate('stallBG').hex;
+                    stall.categories[goodType+catStat] = [product.amount,product.name+status]; // Init
                     stall.goods[product.name+status] = // Add good
                     { color: product.color, type: product.type, weight: product.weight,
                         value: Math.max(1,Math.round((Math.random()*0.4+0.8)*
@@ -392,20 +390,21 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
                     var s2Good = stall2.goods[s2GoodKey];
                     var s2gStatus = s2Good.status ? ' ' + s2Good.status : '';
-                    if(stall1.categories.hasOwnProperty(s2Good.type+s2gStatus)) { // Category exists
+                    var s2gType = s2Good.type == 'other' ? s2Good.name : s2Good.type;
+                    if(stall1.categories.hasOwnProperty(s2gType+s2gStatus)) { // Category exists
                         if(stall1.goods.hasOwnProperty(s2GoodKey)) { // Good exists
                             stall1.goods[s2GoodKey].amount += s2Good.amount; // Combine amounts
 //                            console.log('    combining',s2GoodKey,'with existing');
                         } else { // Good doesn't exist
 //                            console.log('    adding',s2GoodKey,'to existing cat');
                             stall1.goods[s2GoodKey] = s2Good;
-                            stall1.categories[s2Good.type+s2gStatus].push(s2GoodKey); // Add good to cat goods
+                            stall1.categories[s2gType+s2gStatus].push(s2GoodKey); // Add good to cat goods
                             stall1.goodCount++; // Increment good count
                         }
-                        stall1.categories[s2Good.type+s2gStatus][0] += s2Good.amount; // Add to good count
+                        stall1.categories[s2gType+s2gStatus][0] += s2Good.amount; // Add to good count
                     } else { // Category doesn't exist
 //                        console.log('    adding',s2GoodKey,'with new cat',s2Good.type);
-                        stall1.categories[s2Good.type+s2gStatus] = [s2Good.amount,s2GoodKey];
+                        stall1.categories[s2gType+s2gStatus] = [s2Good.amount,s2GoodKey];
                         stall1.goods[s2GoodKey] = s2Good;
                         stall1.categoryCount++; // Increment category count
                         stall1.goodCount++; // Increment good count
@@ -438,10 +437,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         
         // Redistribute goods between like-stalls?
         
-        // TODO: Add blacksmith back in, if at least one mining camp (refined ore being sold in market)
-        
 //        console.log('final stalls',angular.copy(stalls));
-        return { economyNodes: campNodes, market: { stalls: stalls, stallCount: countProperties(stalls) } };
+        return { economyNodes: campNodes, market: { stalls: stalls, stallCount: countProperties(stalls) },
+            blacksmith: { markup: campNodes.hasOwnProperty('mining camp') ? 
+                1 + 1 / campNodes['mining camp'].amount : null } };
     };
 
     var pickProduct = function(type) { // Pick an event product based on rarity property
@@ -538,14 +537,15 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     var addToInventory = function(invItems) {
         if(Object.prototype.toString.call(invItems) !== '[object Array]') { invItems = [invItems] }
         for(var i = 0; i < invItems.length; i++) {
-            var invItem = invItems[i];
+            var invItem = invItems[i]; invItem.amount = parseInt(invItem.amount);
             var status = invItem.status ? ':' + invItem.status : '';
             if(scope.hasOwnProperty('inventory')) {
                 for(var key in scope.inventory) { if(!scope.inventory.hasOwnProperty(key)) { continue; }
                     if(scope.inventory[key].name == invItem.name &&
                         scope.inventory[key].type == invItem.type &&
                         scope.inventory[key].status == invItem.status) {
-                        scope.inventory[key].amount += invItem.amount; invItem.amount = 0;
+                        scope.inventory[key].amount = parseInt(scope.inventory[key].amount) + invItem.amount;
+                        invItem.amount = 0;
                     }
                 }
                 if(invItem.amount > 0) { scope.inventory[invItem.type+':'+invItem.name+status] = invItem; }
@@ -964,8 +964,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             Math.seedrandom(grid); // Deterministic based on grid
             var x = parseInt(grid.split(':')[0]), y = parseInt(grid.split(':')[1]);
             var economy = genCampEconomy(grid);
-            return { economy: economy, type: 'camp', name: Chance(x*1000 + y).word(),
-                grid: grid }
+            return { economy: economy, type: 'camp', name: Chance(x*1000 + y).word(), grid: grid }
         },
         expandObjects: function(objects,grid) { // Generate traits and properties of objects
             if(!objects || objects.length < 1) { return undefined; }

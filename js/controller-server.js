@@ -527,10 +527,12 @@ angular.module('Geographr.controllerServer', [])
             
             var passTime = function() {
                 fireRef.child('camps').once('value',function(snap) { if(!snap.val()) { return; }
-                    var theTime = new Date(), message = '', camps = snap.val();
-                    if((camps.hasOwnProperty('lastMarketStock') && 
-                        camps.lastMarketStock == theTime.getMonth()+'/'+theTime.getDay()) ||
-                        !camps.hasOwnProperty('list')) { return; }
+                    var theTime = new Date(), camps = snap.val(), campList = camps.list, restocking = false;
+                    var message = '';
+                    if(!camps.hasOwnProperty('lastMarketStock') || 
+                        camps.lastMarketStock != theTime.getMonth()+'/'+theTime.getDay()) { 
+                        restocking = true; message = 'markets restocked' }
+                    if(!campList) { return; }
 //                    for(var camp in camps.list) { if(!camps.list.hasOwnProperty(camp)) { continue; }
 //                        var deltas = camps.list[camp].deltas; if(!deltas) { continue; }
 //                        // var campInfo = gameUtility.expandCamp(camp);
@@ -560,8 +562,31 @@ angular.module('Geographr.controllerServer', [])
 //                                null : newCamps.list[camp].deltas[resource];
 //                        }
 //                    }
-                    /*if(message.length > 0) {*/ console.log(new Date(),'camp markets restocked'); /*}*/
-                    fireRef.child('camps').set({lastMarketStock: theTime.getMonth()+'/'+theTime.getDay()});
+                    camps.lastMarketStock = 
+                        restocking ? theTime.getMonth()+'/'+theTime.getDay() : camps.lastMarketStock;
+                    for(var campKey in campList) { if(!campList.hasOwnProperty(campKey)) { continue; }
+                        var camp = campList[campKey];
+                        if(camp.hasOwnProperty('stock') && restocking) { delete camp.stock; }
+                        if(camp.hasOwnProperty('refining')) {
+                            for(var refiningKey in camp.refining) {
+                                if(!camp.refining.hasOwnProperty(refiningKey)) { continue; }
+                                var refining = camp.refining[refiningKey];
+                                if(refining + 600000 < theTime.getTime()) {
+                                    if(!camp.hasOwnProperty('refined')) { camp.refined = {}; }
+                                    var split = refiningKey.split(':-:');
+                                    message += ', ' + localUsers[refiningKey.split(':-:')[0]].nick + '\'s ' +
+                                        split[1] + ' has finished refining at camp ' + campKey;
+                                    var newAmount = 
+                                        Math.round(parseInt(split[2]) + Math.random()/1.5 * parseInt(split[2]));
+                                    var refinedKey = split[0] + ':-:' + split[1] + ':-:' + newAmount + ':-:' + split[3];
+                                    camp.refined[refinedKey] = refining;
+                                    delete camp.refining[refiningKey];
+                                }
+                            }
+                        }
+                    }
+                    if(message.length > 0) { console.log(theTime,message); }
+                    fireRef.child('camps').set(camps);
                 });
                 fireRef.child('abundances').once('value',function(snap) { if(!snap.val()) { return; }
                     var theTime = new Date().getTime(); var message = '';
@@ -585,7 +610,7 @@ angular.module('Geographr.controllerServer', [])
                     fireRef.child('abundances').set(newAbundances);
                 });
             };
-            setInterval(passTime,300000); passTime();
+            setInterval(passTime,300000); passTime(); // Every 5 min
             canvasUtility.fillCanvas(fullFogContext,'erase');
             zoomFogCanvas.style.visibility="hidden";
         };

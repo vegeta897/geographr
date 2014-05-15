@@ -1,13 +1,13 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.278; $scope.versionName = 'Dominant Disco'; $scope.needUpdate = false;
+        $scope.version = 0.28; $scope.versionName = 'Holy Calculation'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
         $scope.onPixel = {}; $scope.login = { email: '', password: '' };
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
         $scope.placingObject = {}; $scope.mapElements = { labels: true, objects: true };
-        $scope.editTerrain = false; $scope.smoothTerrain = false;
+        $scope.editTerrain = false; $scope.smoothTerrain = false; $scope.uiOptions = {};
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = []; $scope.tutorialSkips = []; $scope.skipTutorial = false;
         $scope.movePath = []; $scope.lookCount = 0;
@@ -130,7 +130,7 @@ angular.module('Geographr.controllerMain', [])
         tutorial('init');
     
         // Attempt to get these variables from localstorage
-        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate','tutorialSkips','showItemTypes'];
+        var localStores = ['zoomPosition','zoomLevel','lastTerrainUpdate','tutorialSkips','showItemTypes','uiOptions'];
         for(var i = 0; i < localStores.length; i++) { if(localStorage.get(localStores[i])) {
             $scope[localStores[i]] = localStorage.get(localStores[i]);
         }}
@@ -178,11 +178,11 @@ angular.module('Geographr.controllerMain', [])
         };
         $scope.attachControls = function() { // Define controls when controls partial is loaded
             controlsDIV = jQuery('#controls');
-            progressBar = controlsDIV.children('.progress').children('.progress-bar')
-                .on('contextmenu', '#zoomHighCanvas', function(e){ return false; });
+            progressBar = controlsDIV.children('.progress').children('.progress-bar');
+            jQuery('body').on('contextmenu', '#controls', function(e){ return false; })
+                .on('contextmenu', '.progress-bar', function(e){ return false; });
             controlsDIV.mousedown(zoomOnMouseDown).mousemove(zoomOnMouseMove)
-                .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll)
-                .on('contextmenu', '#zoomHighCanvas', function(e){ return false; });
+                .mouseleave(zoomOnMouseOut).mousewheel(zoomScroll);
         };
         // Reset player
         $scope.reset = function() {
@@ -238,6 +238,10 @@ angular.module('Geographr.controllerMain', [])
         $scope.toggleItemType = function(type) {
             $scope.showItemTypes[type] = !$scope.showItemTypes[type];
             localStorage.set('showItemTypes',$scope.showItemTypes);
+        };
+        $scope.changeUIOption = function(option,value) { // Modify a persistent UI option
+            $scope.uiOptions[option] = value;
+            localStorage.set('uiOptions',$scope.uiOptions);
         };
         // Create player camp, newbie's first step
         $scope.createCamp = function() {
@@ -459,6 +463,40 @@ angular.module('Geographr.controllerMain', [])
                 $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount = buyAmount ? buyAmount : 1;
             }
         };
+        $scope.changeMineral = function(goodID,index) {
+            var mineral = jQuery(document.getElementById('selectedMineral')).finish();
+            if($scope.onPixel.camp.economy.blacksmith.hasOwnProperty('selectedMineral')) {
+                if($scope.onPixel.camp.economy.blacksmith.selectedMineral.id == goodID) {
+                    mineral.animate({'opacity':0,'height':'1px'},100,function() {
+                        delete $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide;
+                        delete $scope.onPixel.camp.economy.blacksmith.selectedMineral;
+                        $timeout(function(){});
+                    });
+                } else {
+                    var keptSide = $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide;
+                    delete $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide;
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral = $scope.inventory[goodID];
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.id = goodID;
+                    if(keptSide) {
+                        $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide = keptSide; }
+                }
+            } else {
+                $scope.onPixel.camp.economy.blacksmith.selectedMineral = $scope.inventory[goodID];
+                $scope.onPixel.camp.economy.blacksmith.selectedMineral.id = goodID;
+                if(jQuery.inArray(index,[2,3,6,7,10,11,14,15,18,19]) >= 0) {
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide = true;
+                }
+                mineral.animate({'opacity':1,'height':'184px'},150);
+            }
+            if($scope.onPixel.camp.economy.blacksmith.hasOwnProperty('selectedMineral')) {
+                var sellAmount = $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount;
+                var refineAmount = $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount;
+                $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount = sellAmount ? 
+                    sellAmount : $scope.inventory[goodID].amount;
+                $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount = refineAmount ? 
+                    refineAmount : $scope.inventory[goodID].amount;
+            }
+        };
         $scope.buyGood = function() {
             var good = $scope.onPixel.camp.economy.market.selectedStall.selectedGood,
                 amount = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount;
@@ -473,44 +511,58 @@ angular.module('Geographr.controllerMain', [])
             gameUtility.addToInventory(invItem);
             fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/stock/'+
                 $scope.onPixel.camp.economy.market.selectedStall.id+'/goods/'+good.key).set(good.amount-amount);
-            $scope.user.money =
-                Math.round($scope.user.money -
+            $scope.user.money = Math.round($scope.user.money -
                     Math.round(amount * good.value * $scope.onPixel.camp.economy.market.selectedStall.markup));
             fireUser.child('money').set($scope.user.money);
         };
-        $scope.sellGood = function(good,amount,value) {
-            if(amount < 1 || amount > good.amount || !parseInt(amount)) { return; }
+        $scope.sellItem = function(item,amount,value) {
+            if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
             amount = parseInt(amount);
-            console.log('selling',amount,'at',value * 0.8,'gold per unit');
-            if(good.amount - amount > 0) { $scope.inventory[good.type+':'+good.name].amount = good.amount - amount;
-                fireInventory.child(good.type+':'+good.name).set(good.amount - amount);
-            } else { fireInventory.child(good.type+':'+good.name).remove(); 
-                delete $scope.inventory[good.type+':'+good.name]; }
-            var newDelta = $scope.onPixel.camp.deltas[good.name];
-            newDelta.time = newDelta.time ? newDelta.time : Firebase.ServerValue.TIMESTAMP;
-            newDelta.amount += amount; newDelta = newDelta.amount == 0 ? null : newDelta; // Don't save 0 deltas
-            fireRef.child('camps/'+$scope.onPixel.camp.grid+'/deltas/'+good.name).set(newDelta);
-            $scope.user.money = Math.round($scope.user.money + amount * value * 0.8); 
+            console.log('selling',amount,item.name,'at',value,'gold per unit');
+            var status = item.status ? ':' + item.status : '';
+            if(item.amount - amount > 0) {
+                fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
+                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.amount -= amount;
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount =
+                        $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount = item.amount - amount;
+                }
+            } else {
+                fireInventory.child(item.type+':'+item.name+status).remove();
+                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
+                    delete $scope.onPixel.camp.economy.blacksmith.selectedMineral; }
+            }
+            $scope.user.money = Math.round($scope.user.money + amount * value); 
             fireUser.child('money').set($scope.user.money);
         };
         $scope.refineItem = function(item,amount,cost) {
-            // TODO: No instant refining. Put on server, takes 5-10 min?
             if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
-            if(Math.round($scope.user.money - amount * cost * 2) < 0) { return; }
-            console.log('refining',amount,item.name,'at',cost * 2,'gold per unit');
-            Math.seedrandom();
-            var getAmount = parseInt(amount) + Math.round(amount * (Math.random() / 1.5));
-            if(getAmount > amount) { console.log('got',getAmount-amount,'bonus',item.name,'!!'); }
-            var invItem = { type: 'resource', name: item.name, amount: getAmount }; 
-            gameUtility.addToInventory(invItem);
-            $scope.onPixel.camp.economy.resources[item.name].invItem = $scope.inventory['resource:'+item.name];
+            amount = parseInt(amount);
+            if(Math.round($scope.user.money - amount * cost) < 0) { return; }
+            console.log('refining',amount,item.name,'at',cost,'gold per unit');
+            var status = item.status ? ':' + item.status : '';
             if(item.amount - amount > 0) {
-                fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
-                $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
-            } else { fireInventory.child(item.type+':'+item.name).remove(); 
-                delete $scope.inventory[item.type+':'+item.name]; }
-            $scope.user.money = Math.round($scope.user.money - amount * cost * 2);
+                fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
+                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.amount -= amount;
+                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount =
+                        $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount = item.amount - amount;
+                }
+            } else {
+                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
+                    delete $scope.onPixel.camp.economy.blacksmith.selectedMineral; }
+                fireInventory.child(item.type+':'+item.name+status).remove();
+            }
+            $scope.user.money = Math.round($scope.user.money - amount * cost);
             fireUser.child('money').set($scope.user.money);
+            var uniqueID = fireRef.push().name(); uniqueID = uniqueID.substr(uniqueID.length - 6,5);
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refining/'+userID+':-:'+item.type+':'+
+                item.name+status+':-:'+amount+':-:'+uniqueID).set(Firebase.ServerValue.TIMESTAMP);
+        };
+        $scope.claimRefined = function(refined) {
+            var invItem = { type: refined.type, name: refined.name, amount: refined.amount, status: refined.status };
+            gameUtility.addToInventory(invItem);
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refined/'+refined.key).remove();
         };
         $scope.cookFood = function(item,amount) {
             if(amount < 1 || amount > item.amount) { return; }
@@ -719,16 +771,12 @@ angular.module('Geographr.controllerMain', [])
             canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var labKey in localLabels) {
                 if(localLabels.hasOwnProperty(labKey) && visiblePixels.hasOwnProperty(labKey)) {
-                    coords = labKey.split(":");
-                    drawLabel(coords,localLabels[labKey]);
-                }
+                    coords = labKey.split(":"); drawLabel(coords,localLabels[labKey]); }
             }
             canvasUtility.fillCanvas(fullObjectContext,'erase');
             for(var objKey in localObjects) {
                 if(localObjects.hasOwnProperty(objKey) && visiblePixels.hasOwnProperty(objKey)) {
-                    coords = objKey.split(":");
-                    drawObject(coords,localObjects[objKey]);
-                }
+                    coords = objKey.split(":"); drawObject(coords,localObjects[objKey]); }
             }
             $timeout(function(){
                 objectInfoPanel.css('visibility', 'visible');
@@ -777,8 +825,7 @@ angular.module('Geographr.controllerMain', [])
         };
         // Middle mouse panning on zoomed view
         var startDragPanning = function(e) {
-            dragPanning = true;
-            panOrigin = [$scope.overPixel.x,$scope.overPixel.y];
+            dragPanning = true; panOrigin = [$scope.overPixel.x,$scope.overPixel.y];
             dimPixel();
             jQuery(zoomHighCanvas).unbind('mousemove').unbind('mousedown')
                 .mousemove(dragPan).mouseup(stopDragPanning);
@@ -798,9 +845,7 @@ angular.module('Geographr.controllerMain', [])
             newPosition[0] = Math.min(Math.max(newPosition[0],0),300 - zoomSize[0]);
             newPosition[1] = Math.min(Math.max(newPosition[1],0),300 - zoomSize[1]);
             viewCenter = [newPosition[0]+zoomSize[0]/2,newPosition[1]+zoomSize[1]/2];
-            changeZoomPosition(newPosition[0],newPosition[1]);
-            dimPixel();
-            return false;
+            changeZoomPosition(newPosition[0],newPosition[1]); dimPixel(); return false;
         };
         var stopDragPanning = function() {
             dragPanning = false;
@@ -809,11 +854,8 @@ angular.module('Geographr.controllerMain', [])
             controlsDIV.unbind('mousemove').unbind('mousedown').unbind('mouseup').mousemove(zoomOnMouseMove);
             objectInfoPanel.children('div').unbind('mousemove').unbind('mousedown').unbind('mouseup')
                 .mousemove(zoomOnMouseMove);
-            if($scope.placingObject.hasOwnProperty('type')) {
-                jQuery(zoomHighCanvas).mousedown(placeObject);
-            } else {
-                jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown);
-            }
+            if($scope.placingObject.hasOwnProperty('type')) { jQuery(zoomHighCanvas).mousedown(placeObject); }
+                else { jQuery(zoomHighCanvas).mousedown(zoomOnMouseDown); }
         };
         // When panning the full view
         var fullViewPan = function(e) {
@@ -826,13 +868,11 @@ angular.module('Geographr.controllerMain', [])
             if(x > 300 - zoomSize[0]) { x = 300 - zoomSize[0]; }
             if(y > 300 - zoomSize[1]) { y = 300 - zoomSize[1]; }
             if(lastZoomPosition[0] == x && lastZoomPosition[1] == y) { return; }
-            changeZoomPosition(x,y);
-            dimPixel();
+            changeZoomPosition(x,y); dimPixel();
         };
         // Mouse down on full view
         var panOnMouseDown = function(e) {
-            e.preventDefault(); if(dragPanning) { return; } panMouseDown = true; fullViewPan(e);
-        };
+            e.preventDefault(); if(dragPanning) { return; } panMouseDown = true; fullViewPan(e); };
         var panOnMouseMove = function(e) { if(!panMouseDown || e.which == 0) { return; } fullViewPan(e); };
         var onMouseUp = function(e) { panMouseDown = dragPanning = false; };
         
@@ -848,13 +888,9 @@ angular.module('Geographr.controllerMain', [])
             if(!userID) { return false; } // Ignore actions from non-user
             var x = $scope.overPixel.x, y = $scope.overPixel.y;
             // Make stuff happen when user clicks on map
-            if(addingLabel) {
-                fireRef.child('labels/' + x + ':' + y).set($scope.labelText); 
-                $scope.labelText = ''; addingLabel = false;
-                return false;
-            }
+            if(addingLabel) { fireRef.child('labels/' + x + ':' + y).set($scope.labelText); 
+                $scope.labelText = ''; addingLabel = false; return false; }
             if(localObjects.hasOwnProperty(x+':'+y)) { selectGrid(e); return false; } // If selecting an object
-            
             // If an object is selected, but is not clicked, clear the selected object
             if($scope.selectedGrid && $scope.selectedGrid[0]) { if($scope.selectedGrid[0].grid != x + ':' + y) { 
                 $timeout(function() { 
@@ -1101,19 +1137,59 @@ angular.module('Geographr.controllerMain', [])
                     fireUser.child('visitedCamps').update($scope.user.visitedCamps);
                 }
                 var campData = gameUtility.expandCamp(snap.val().location);
-                $timeout(function(){ $scope.onPixel.camp = campData; });
                 fireRef.child('camps/list/' + snap.val().location).on('value',function(campSnap) {
                     campSnap = campSnap.val();
-                    if(!campSnap || !campSnap.hasOwnProperty('stock')) { return; }
-                    for(var stallKey in campSnap.stock) { if(!campSnap.stock.hasOwnProperty(stallKey)) { continue; }
-                        var stall = campSnap.stock[stallKey];
-                        for(var goodKey in stall.goods) { if(!stall.goods.hasOwnProperty(goodKey)) { continue; }
-                            if(!campData.economy.market.stalls.hasOwnProperty(stallKey) || 
-                                !campData.economy.market.stalls[stallKey].goods.hasOwnProperty(goodKey)) { continue; }
-                            campData.economy.market.stalls[stallKey].goods[goodKey].amount = stall.goods[goodKey];
-                            console.log('applying stock',stall.goods[goodKey],'to',goodKey,'in stall',stallKey);
+                    campData.economy.blacksmith.refining = {}; campData.economy.blacksmith.refined = {};
+                    if(!campSnap) {
+                        campData.economy.blacksmith.refining = campData.economy.blacksmith.refined = null;
+                        $timeout(function(){ $scope.onPixel.camp = campData; }); 
+                        return; 
+                    }
+                    if(campSnap.hasOwnProperty('stock')) {
+                        for(var stallKey in campSnap.stock) { 
+                            if(!campSnap.stock.hasOwnProperty(stallKey)) { continue; }
+                            var stall = campSnap.stock[stallKey];
+                            for(var goodKey in stall.goods) { if(!stall.goods.hasOwnProperty(goodKey)) { continue; }
+                                if(!campData.economy.market.stalls.hasOwnProperty(stallKey) ||
+                                    !campData.economy.market.stalls[stallKey].goods.hasOwnProperty(goodKey)) { 
+                                    continue; }
+                                campData.economy.market.stalls[stallKey].goods[goodKey].amount = stall.goods[goodKey];
+                                console.log('applying stock',stall.goods[goodKey],'to',goodKey,'in stall',stallKey);
+                            }
                         }
                     }
+                    if(campSnap.hasOwnProperty('refining')) {
+                        for(var refiningKey in campSnap.refining) {
+                            if(!campSnap.refining.hasOwnProperty(refiningKey)) { continue; }
+                            var refining = campSnap.refining[refiningKey];
+                            if(refiningKey.split(':-:')[0] == userID) {
+                                refining = {
+                                    amount: refiningKey.split(':-:')[2], 
+                                    type: refiningKey.split(':-:')[1].split(':')[0],
+                                    name: refiningKey.split(':-:')[1].split(':')[1],
+                                    status: refiningKey.split(':-:')[1].split(':')[2], started: refining
+                                };
+                                campData.economy.blacksmith.refining[refiningKey.split(':-:')[1]+
+                                    refiningKey.split(':-:')[3]] = gameUtility.dressItem(refining);
+                            }
+                        }
+                    } else { campData.economy.blacksmith.refining = null; }
+                    if(campSnap.hasOwnProperty('refined')) {
+                        for(var refinedKey in campSnap.refined) {
+                            if(!campSnap.refined.hasOwnProperty(refinedKey)) { continue; }
+                            var refined = campSnap.refined[refinedKey];
+                            if(refinedKey.split(':-:')[0] == userID) {
+                                refined = {
+                                    amount: refinedKey.split(':-:')[2], type: refinedKey.split(':-:')[1].split(':')[0],
+                                    name: refinedKey.split(':-:')[1].split(':')[1], key: refinedKey
+                                };
+                                campData.economy.blacksmith.refined[refinedKey.split(':-:')[1]+
+                                    refinedKey.split(':-:')[3]] = gameUtility.dressItem(refined);
+                            }
+                        }
+                    } else { campData.economy.blacksmith.refined = null; }
+                    $timeout(function(){ $scope.onPixel.camp = campData; });
+                    
                     // TODO: Add player stalls
                 });
             } else { // If no camp

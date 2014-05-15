@@ -158,7 +158,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 
 .btn.primary { font-weight: bold; padding: 1px 7px; }
 
-.camp-ui { min-height: 52px; }
+.camp-ui.well { min-height: 52px; padding-bottom: 0; }
 .heading { margin-bottom: 1em; }
 .camp-ui h3 { color: #778187; font-size: 1.3em; margin-top: 8px; }
 .inline-header { display: inline; margin-right: 3em; }
@@ -168,14 +168,21 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     background-image: -webkit-linear-gradient(#6C6D53, #4C4D36);
     background-image: linear-gradient(#6C6D53, #4C4D36);
 }
+.btn-market + div { font-size: 0.9em; }
+.btn-market + div.checkbox-inline { padding-top: 8px; margin-left: 24px; }
+.btn-blacksmith + div { height: 40px; width: 100px; font-size: 0.9em; }
 .btn-blacksmith {
     background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#575757), to(#3c3c3c));
     background-image: -webkit-linear-gradient(#575757, #3c3c3c);
     background-image: linear-gradient(#575757, #3c3c3c);
 }
-.market { margin-top: 3.3em; margin-left: 2px; }
+.market, .blacksmith { margin: 4px 0 18px 2px; border-top: 1px solid #464f57; }
+.market.last-section, .blacksmith.last-section { margin-bottom: 6px; }
 .market * { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
     user-select: none; }
+.market>h4, .blacksmith>h4 { float: left; margin: -12px 0 0; background: #24272b; padding-right: 8px; }
+.market>h4+div { clear: both; }
+.market>div:nth-last-child(2) { margin-top: 8px; }
 .market .stalls-min { width: 104px; float: left; }
 .market .stall { 
     font-size: 0.9em; float: left; cursor: pointer; margin: 13px 18px 10px 0; background: #393c3f; padding: 0 3px;
@@ -184,14 +191,14 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall.stall:hover:not(.stall-open) { background: #2d2e33 !important; }
 .market .stall:nth-child(4), .market .stall:nth-child(8) { margin-right: 0; }
 .market .stall.stall-open { 
-    opacity: 0; cursor: default; margin: 0 10px 0 0; padding: 0; width: auto; height: auto;
+    opacity: 0; cursor: default; margin: 4px 10px 0 0; padding: 0; width: auto; height: auto;
     background: none; box-shadow: none;
 }
 .market .stall.stall-open .stall-content {
     width: 447px; height: 1px; cursor: default; background: #393c3f; padding-top: 6px; padding-left: 5px;
     box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
 }
-.market .stall.stall-open.pull-right { margin: 0 0 8px 10px; }
+.market .stall.stall-open.pull-right { margin: 4px 0 8px 10px; }
 .market .stall.stall-min { width: 47px; height: 37px; margin: 4px 10px 8px 0; padding: 1px 3px; }
 .market .stall.stall-min:nth-child(2), .market .stall.stall-min:nth-child(4), 
 .market .stall.stall-min:nth-child(6), .market .stall.stall-min:nth-child(8),
@@ -200,7 +207,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall.stall-min.stall-selected { background: #24272b !important; }
 .market .stall .canvas { 
     height: 7px; width: 132px;
-    background-image: url('../img/stripe.gif'); background-size: 12px 1px;
+    background-image: url('../img/stripe.png'); background-size: 12px 1px;
     top: -7px; left: -5px; position: relative; box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
     border-top-left-radius: 3px; border-top-right-radius: 3px;
 }
@@ -213,6 +220,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     width: 49px; height: 4px; background-size: 4px 1px; top: -5px; left: -4px;
     border-top-left-radius: 2px; border-top-right-radius: 2px; box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
+.market .stall .canvas.no-stripes { background-image: none; }
 .market .stall ul, .market .stall ul li { margin-bottom: 0; margin-top: -1px; }
 .market .stall.stall-1cat ul { margin-top: -2px; }
 .market .stall.stall-1cat ul li { width: 100%; padding: 0 8px; }
@@ -259,10 +267,10 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall .color-square.out-of-stock {
     box-shadow: inset 0 0 8px 3px rgba(50,50,50,0.8), inset 0 0 0 30px rgba(100,100,100,0.4); }
 /* Goods */
-.market .goods-min { width: 308px; float: left; padding-top: 20px; }
+.market .goods-min, .blacksmith .minerals-min { width: 308px; float: left; padding-top: 20px; }
 .market .stall.stall-open .good { 
-    display: block; float: left; width: 101px; height: 85px; margin: 6px 4px; text-align: center; cursor: pointer;
-    border-radius: 4px; text-shadow: 0 1px 1px rgba(0,0,0,0.7), 1px 0 1px rgba(0,0,0,0.7),
+    display: block; float: left; width: 101px; height: 85px; margin: 6px 4px; text-align: center; 
+    cursor: pointer; border-radius: 4px; text-shadow: 0 1px 1px rgba(0,0,0,0.7), 1px 0 1px rgba(0,0,0,0.7),
     1px 1px 1px rgba(0,0,0,0.7), 0 0 1px rgba(0,0,0,0.7); 
     box-shadow: 1px 1px 3px rgba(0,0,0,0.5); transition: background-color 0.06s ease;
 }
@@ -270,52 +278,102 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall.stall-open .good.out-of-stock h4 { color: #aaa; text-shadow: none; }
 .market .stall.stall-open .good.out-of-stock p { color: #888; text-shadow: none; }
 .market .stall.stall-open .good.out-of-stock p strong { text-shadow: none; }
-.market .stall.stall-open .good.pelt { box-shadow: inset 0 0 4px 3px rgba(46,25,0,0.7); }
-.market .stall.stall-open .good.meat { box-shadow: inset 0 0 4px 3px rgba(151,45,65,0.7); }
-.market .stall.stall-open .good:hover:not(.good-open) { background: #2d2e33 !important; }
+.market .stall.stall-open .good.pelt { 
+    box-shadow: inset 0 0 4px 3px rgba(46,25,0,0.7), 1px 1px 3px rgba(0,0,0,0.5); }
+.market .stall.stall-open .good.meat { 
+    box-shadow: inset 0 0 4px 3px rgba(151,45,65,0.7), 1px 1px 3px rgba(0,0,0,0.5); }
+.market .stall.stall-open .good:hover:not(.good-open), 
+.blacksmith .mineral:hover:not(.mineral-open):not(.mineral-refine) { background: #2d2e33 !important; }
 .market .stall.stall-open .good.good-open { 
     width: 120px; height: 1px; opacity: 0; border-radius: 6px; cursor: default; }
 .market .stall.stall-open .good.good-min { 
     width: 69px; height: 65px; border-radius: 2px; padding-top: 2px; transition: background-color 0.1s ease; }
-.market .stall.stall-open .good.good-min.good-selected { background: #24272b !important; box-shadow: none; }
-.market .stall.stall-open .good h4 { 
+.market .stall.stall-open .good.good-min.good-selected {
+    background: #24272b !important; box-shadow: none; }
+.market .stall.stall-open .good h4, .blacksmith .mineral h4 { 
     margin: 8px 0 3px; color: white; font-size: 1.2em;
     text-shadow: 0 1px 2px #000, 1px 0 2px #000,
     1px 1px 2px #000, 0 0 2px #000;
 }
-.market .stall.stall-open .good.good-open h4 { margin: 6px 0 5px; font-size: 1.4em; }
-.market .stall.stall-open .good.good-min h4 { margin: 2px 0; font-size: 0.9em; }
+.market .stall.stall-open .good.good-open h4, .blacksmith .mineral.mineral-open h4 { 
+    margin: 6px 0 5px; font-size: 1.4em; }
+.market .stall.stall-open .good.good-min h4 { 
+    margin: 2px 0; font-size: 0.9em; }
 .market .stall.stall-open .good h4 small { font-size: 0.7em; color: rgba(255,255,255,0.7);
     text-shadow: 0 1px 2px rgba(0,0,0,0.7), 1px 0 2px rgba(0,0,0,0.7), 
     1px 1px 2px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.7); }
-.market .stall.stall-open .good p { margin-bottom: 0; color: #DDD; font-size: 1.1em; }
-.market .stall.stall-open .good p strong.text-danger { color: rgb(224, 89, 89); }
-.market .stall.stall-open .good.good-open p { font-size: 1.15em; margin: 0; line-height: 1.45em; }
+.market .stall.stall-open .good p, .blacksmith .mineral p { 
+    margin-bottom: 0; color: #DDD; font-size: 1.1em; white-space: nowrap; }
+.market .stall.stall-open .good p strong.text-danger, .blacksmith .mineral p strong.text-danger { 
+    color: rgb(224, 89, 89); }
+.market .stall.stall-open .good.good-open p, .blacksmith .mineral.mineral-open p { 
+    font-size: 1.15em; margin: 0; line-height: 1.45em; }
 .market .stall.stall-open .good.good-open p+p { font-size: 1em; }
-.market .stall.stall-open .good.good-min p { margin-bottom: 0; font-size: 1em; }
-.market .stall.stall-open .good strong { color: #f3f3f3; font-size: 1.2em;
+.market .stall.stall-open .good.good-min p { 
+    margin-bottom: 0; font-size: 1em; }
+.market .stall.stall-open .good strong, .blacksmith .mineral strong { 
+    color: #f3f3f3; font-size: 1.2em;
     text-shadow: 0 1px 1px rgba(0,0,0,0.9), 1px 0 1px rgba(0,0,0,0.9), 
     1px 1px 1px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.9); }
 .market .stall.stall-open .good.good-open strong { color: #f8f8f8; font-size: 1.3em; }
-.market .stall.stall-open .good.good-open select.num-select {
-    float: none; margin: 3px auto; width: 70px; height: 30px; padding: 0 6px; font-size: 1.1em; font-weight: bold;
-    box-shadow: inset 1px 2px 6px rgba(0,0,0,0.45), inset 1px 1px 1px rgba(0,0,0,0.3); border: none;
-}
-.market .stall.stall-open .good.good-open.has-error select.num-select { border: 1px solid #ee5f5b; 
+.market .stall.stall-open .good.good-open select.num-select, 
+.blacksmith .mineral.mineral-open select.num-select {
+    float: none; margin: 3px auto; width: 70px; height: 30px; padding: 0 6px; font-size: 1.1em; border: none;
+    font-weight: bold; box-shadow: inset 1px 2px 6px rgba(0,0,0,0.45), inset 1px 1px 1px rgba(0,0,0,0.3); }
+.market .stall.stall-open .good.good-open.has-error select.num-select,
+.blacksmith .mineral.mineral-open.has-error select.num-select:not(.no-error) { border: 1px solid #ee5f5b; 
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ee5f5b; }
-.market .stall.stall-open .good.good-open button {
+.market .stall.stall-open .good.good-open button, .blacksmith .mineral.mineral-open button {
     width: 70px; height: 36px; margin-top: 5px; font-size: 1.2em; font-weight: bold;
     color: white; background: rgba(0,0,0,0.4); border-color: transparent; border-radius: 5px;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.8); transition: background-color 0.08s ease;
 }
-.market .stall.stall-open .good.good-open button:hover {
+.market .stall.stall-open .good.good-open button:hover, .blacksmith .mineral.mineral-open button:hover {
     background: rgba(0,0,0,0.5); box-shadow: 1px 1px 3px rgba(0,0,0,0.9);
 }
-.market .stall.stall-open .good.good-open button:active {
+.market .stall.stall-open .good.good-open button:active, .blacksmith .mineral.mineral-open button:active {
     background: rgba(255,255,255,0.1); box-shadow: 1px 1px 3px #000;
 }
-.market .stall.stall-open .good.good-open button[disabled] { 
+.market .stall.stall-open .good.good-open button[disabled], 
+.blacksmith .mineral.mineral-open button[disabled] { 
     background: rgba(0,0,0,0.2); color: #aaa; box-shadow: none; }
+
+/* Blacksmith */
+.blacksmith .blacksmith-content { background-color: #1e1e1f; border-top: 6px outset #313136;
+    border-bottom: 6px outset #636364; border-right: 3px outset #64646B; margin: 16px 2px 12px;
+    border-left: 3px outset #29292B; padding: 4px 8px; box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.8); 
+}
+.blacksmith .blacksmith-content>p { margin: 4px; } .blacksmith .blacksmith-content>p strong { color: #aaa; }
+.blacksmith .mineral {
+    display: block; float: left; width: 125px; height: 112px; margin: 6px 5px 10px; text-align: center;
+    cursor: pointer; border-right: 3px inset rgba(0,0,0,0.3); border-bottom: 4px inset rgba(0,0,0,0.5);
+    border-top: 4px inset rgba(255,255,255,0.28); border-left: 3px inset rgba(255,255,255,0.08);
+    text-shadow: 0 1px 1px rgba(0,0,0,0.7), 1px 0 1px rgba(0,0,0,0.7),
+    1px 1px 1px rgba(0,0,0,0.7), 0 0 1px rgba(0,0,0,0.7);
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.5); transition: background-color 0.06s ease;
+}
+.blacksmith .mineral.mineral-open {
+    width: 180px; height: 1px; opacity: 0; border-top-width: 5px; border-bottom-width: 5px;
+    border-left-width: 4px; border-right-width: 4px; cursor: default; }
+.blacksmith .mineral h4 { margin: 4px 0 6px; }
+.blacksmith .mineral>div { width: 50%; float: right; }
+.blacksmith .mineral>div:first-of-type { float: left; border-right: 1px solid rgba(0,0,0,0.2); }
+.blacksmith .mineral>div+p { clear: both; }
+.blacksmith .mineral.mineral-open p { line-height: 1.6em; }
+.blacksmith .mineral.mineral-open p:first-of-type { font-size: 1em; }
+.blacksmith .minerals-min { width: 351px; }
+.blacksmith .mineral.mineral-min {
+    width: 77px; height: 95px; padding-top: 2px; transition: background-color 0.1s ease; }
+.blacksmith .mineral.mineral-min.mineral-selected { display: none; }
+.blacksmith .mineral.mineral-min h4 { margin: 1px 0 4px; font-size: 1em; }
+.blacksmith .mineral.mineral-min>div { float: none; width: 100%; }
+.blacksmith .mineral.mineral-min p { display: inline; line-height: 1.2em; margin: 0; }
+.blacksmith .mineral.mineral-min strong { font-size: 1.1em; }
+.blacksmith .refined, .blacksmith .refining { clear: both; }
+.blacksmith h5 { font-size: 1.2em; margin-bottom: 4px; }
+.blacksmith .refined .mineral, .blacksmith .refining .mineral {
+    width: auto; height: auto; padding: 6px 10px; }
+.blacksmith .refining .mineral { cursor: default; }
 
 #inventory>div>table.unstyled { width: 100%; margin-bottom: 7px; }
 #inventory>div { border-bottom: 1px solid #50575c; margin: 5px 0; min-height: 22px; }
@@ -324,8 +382,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 #inventory>div:last-child { border-bottom: none; }
 #inventory>div>button { position: absolute; right: 16px; font-size: 0.7em; padding: 0 4px; margin-top: 1px; }
 #inventory>div>table.unstyled tr.actions .well { 
-    padding-left: 12px; padding-right: 12px; margin-top: 4px; margin-bottom: 4px;
-}
+    padding-left: 12px; padding-right: 12px; margin-top: 4px; margin-bottom: 4px; }
 #uiContainer #inventory td.quantity { width: 44px; padding-right: 10px; }
 
 #objectInfo p { margin-bottom: 6px; }

@@ -156,7 +156,8 @@ angular.module('Geographr.directives', [])
                 break;
             case 'blacksmith':
                 for(var bsKey in input) { if(!input.hasOwnProperty(bsKey)) { continue; }
-                    if(input[bsKey].profession == 'blacksmith') { list.push(input[bsKey]); }
+                    if(input[bsKey].profession == 'blacksmith' && input[bsKey].status == 'unrefined') {
+                        list.push(input[bsKey]); }
                 }
                 break;
             case 'all':
@@ -214,22 +215,23 @@ angular.module('Geographr.directives', [])
     return function(input, chars) { if(!input) { return ''; } return input.substring(0,chars); }
 })
 .filter('timeUnits', function() {
-    return function(input, scope) {
+    return function(input,exact) {
         if(!input) { return 0; }
         var now = new Date().getTime();
         var seconds = Math.floor((now-input)/1000);
-        if(seconds < 60) { return seconds; } // seconds
+        if(seconds < 60 && exact) { return seconds; } // seconds
+        if(seconds < 60) { return 0; } // less than a min
         if(seconds < 3600) { return Math.floor(seconds/60); } // minutes
         if(seconds < 86400) { return Math.floor(seconds/3600); } // hours
         else { return Math.floor(seconds/86400); } // days
     }
 })
 .filter('timeUnitsLabel', function() {
-    return function(input, scope) {
+    return function(input,exact) {
         if(!input) { return ''; }
         var now = new Date().getTime();
         var seconds = Math.floor((now-input)/1000);
-        if(seconds < 60) { return seconds > 1 ? 'seconds' : 'second'; } // seconds
+        if(seconds < 60 && exact) { return seconds > 1 ? 'seconds' : 'second'; } // seconds
         if(seconds < 3600) { return seconds > 119 ? 'minutes' : 'minute'; } // minutes
         if(seconds < 86400) { return seconds > 7199 ? 'hours' : 'hour'; } // hours
         else { return seconds > 172799 ? 'days' : 'day'; } // days
