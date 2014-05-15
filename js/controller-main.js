@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.28; $scope.versionName = 'Holy Calculation'; $scope.needUpdate = false;
+        $scope.version = 0.281; $scope.versionName = 'Holy Calculation'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -523,9 +523,7 @@ angular.module('Geographr.controllerMain', [])
             if(item.amount - amount > 0) {
                 fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.amount -= amount;
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount =
-                        $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount = item.amount - amount;
+                    item.amount -= amount; item.refineAmount = item = item.amount;
                 }
             } else {
                 fireInventory.child(item.type+':'+item.name+status).remove();
@@ -544,9 +542,7 @@ angular.module('Geographr.controllerMain', [])
             if(item.amount - amount > 0) {
                 fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.amount -= amount;
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount =
-                        $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount = item.amount - amount;
+                    item.amount -= amount; item.refineAmount = item = item.amount;
                 }
             } else {
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {

@@ -232,6 +232,7 @@ angular.module('Geographr.directives', [])
         var now = new Date().getTime();
         var seconds = Math.floor((now-input)/1000);
         if(seconds < 60 && exact) { return seconds > 1 ? 'seconds' : 'second'; } // seconds
+        if(seconds < 60) { return 'minutes'; } // less than a min
         if(seconds < 3600) { return seconds > 119 ? 'minutes' : 'minute'; } // minutes
         if(seconds < 86400) { return seconds > 7199 ? 'hours' : 'hour'; } // hours
         else { return seconds > 172799 ? 'days' : 'day'; } // days
