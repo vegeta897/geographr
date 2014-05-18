@@ -3,7 +3,7 @@
 <div id="mainContainer" class="container">
     <div class="canvas-container side">
         <div id="minimap">
-            <canvas id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
+            <canvas class="hidden" id="fullTerrainCanvas" width="300" height="300"></canvas> <!-- Terrain canvas -->
             <canvas id="fullFogCanvas" width="300" height="300"></canvas> <!-- Fog canvas -->
             <canvas id="fullObjectCanvas" width="300" height="300"></canvas> <!-- Object canvas -->
             <canvas id="fullPingCanvas" width="300" height="300"></canvas> <!-- Ping canvas -->
@@ -20,19 +20,18 @@
             <img src="" id="tutorialImage" width="300" height="300" ng-src="img/{{ event.type || 'loading' }}.png" />
         </div>
         <table ng-hide="inEvent" id="gridView"><tr ng-repeat="row in ['536','201','748']">
-            <td ng-repeat="col in row.split('')" ng-click="activateObject(col)"
-                ng-class="[onPixel.objects[col].type, 
-                !onPixel.objects[col].activity || onPixel.objects[col].abundance >= 0.006 || 'dry']">
-                {{ onPixel.objects[col] | itemDisplay }}
-                <div class="progress" ng-show="onPixel.objects[col].activity">
-                    <div class="progress-bar full" ng-style="{width: onPixel.objects[col].abundance*100+'%'}"></div>
+            <td ng-repeat="col in row.split('')" ng-click="doActivity(col)"
+                ng-class="[onPixel.activities[col].type, 
+                !onPixel.activities[col] || onPixel.activities[col].abundance >= 0.006 || 'dry']">
+                {{ onPixel.activities[col].type | capitalize }}
+                <div class="progress" ng-show="onPixel.activities[col]">
+                    <div class="progress-bar full" ng-style="{width: onPixel.activities[col].abundance*100+'%'}"></div>
                 </div>
             </td>
         </tr></table>
     </div>
     <div class="canvas-container"> <!-- Right side canvases -->
         <div id="zoomCanvases">
-            <canvas id="zoomTerrainCanvas" width="900" height="600"></canvas> <!-- Terrain canvas -->
             <canvas id="zoomFogCanvas" width="900" height="600"></canvas> <!-- Fog canvas -->
             <canvas id="zoomObjectCanvas" width="900" height="600"></canvas> <!-- Object canvas -->
             <canvas id="zoomHighCanvas" width="900" height="600"></canvas> <!-- Highlight canvas -->
@@ -65,7 +64,7 @@
         <div class="col-xs-3">
             <!-- Object Info -->
             <div id="objectInfo">
-                <div ng-show="selectedObject" onLoad="attachObjInfo()" ng-include="'partials/object-info.html'"></div>
+                <div ng-show="selectedGrid.camp" onLoad="attachObjInfo()" ng-include="'partials/object-info.html'"></div>
             </div>
             <!-- Inventory -->
             <div id="inventory" ng-include="'partials/inventory.html'" ng-show="user.camp && onPixel.camp"></div>

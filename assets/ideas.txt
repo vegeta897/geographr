@@ -3,11 +3,17 @@ need food/water to survive. hunt, forage, etc. full stats skills and inventory s
     
 fog of war - visibility based on elevation.
 
+toggleable map overlays for things like mining/foraging abundance
+
+can train proteges/apprentices that you can resume control of when you die
+    - they are mortal, so you may want to train more than 1
+        - BUT, when you die you control one of them, and must fight for inheritance
+
 weather? moves across map in bands, server-controlled
     
 each pixel has a temperature that gets updated every X minutes, seed-based, influenced by elevation and weather
 
-find random native camps that have seed-generated desire levels for different goods/resources
+find random native camps that have their own economy nodes and services
     - set up trade routes (or move the goods yourself at first) between 2 camps by hiring wagons
     - either buy from a camp and sell in another, or carry out a trade (you could run off with the goods)
         - if wanted by a camp, every move has a chance of being found by camp rangers, based on proximity

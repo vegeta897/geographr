@@ -53,28 +53,24 @@ angular.module('Geographr.controllerServer', [])
         // Set up our canvases
         var fullTerrainCanvas = document.getElementById('fullTerrainCanvas'); // Mini-map
         var fullObjectCanvas = document.getElementById('fullObjectCanvas');
-        var fullFogCanvas = document.getElementById('fullFogCanvas');
         var fullPingCanvas = document.getElementById('fullPingCanvas');
         var fullHighCanvas = document.getElementById('fullHighCanvas');
         var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas'); // Main view
         var zoomObjectCanvas = document.getElementById('zoomObjectCanvas');
-        var zoomFogCanvas = document.getElementById('zoomFogCanvas');
         var zoomHighCanvas = document.getElementById('zoomHighCanvas');
         var fullTerrainContext = fullTerrainCanvas.getContext ? fullTerrainCanvas.getContext('2d') : null;
         var fullObjectContext = fullObjectCanvas.getContext ? fullObjectCanvas.getContext('2d') : null;
-        var fullFogContext = fullFogCanvas.getContext ? fullFogCanvas.getContext('2d') : null;
         var fullPingContext = fullPingCanvas.getContext ? fullPingCanvas.getContext('2d') : null;
         var fullHighContext = fullHighCanvas.getContext ? fullHighCanvas.getContext('2d') : null;
         var zoomTerrainContext = zoomTerrainCanvas.getContext ? zoomTerrainCanvas.getContext('2d') : null;
         var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
-        var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
 
         // Disable interpolation on zoom canvases
-        zoomTerrainContext.mozImageSmoothingEnabled = zoomFogContext.mozImageSmoothingEnabled = false;
-        zoomTerrainContext.webkitImageSmoothingEnabled = zoomFogContext.webkitImageSmoothingEnabled = false;
-        zoomTerrainContext.msImageSmoothingEnabled = zoomFogContext.msImageSmoothingEnabled = false;
-        zoomTerrainContext.imageSmoothingEnabled = zoomFogContext.imageSmoothingEnabled = false;
+        zoomTerrainContext.mozImageSmoothingEnabled = false;
+        zoomTerrainContext.webkitImageSmoothingEnabled = false;
+        zoomTerrainContext.msImageSmoothingEnabled = false;
+        zoomTerrainContext.imageSmoothingEnabled = false;
 
         // Prevent right-click on high canvases
         jQuery('body').on('contextmenu', '#fullHighCanvas', function(e){ return false; })
@@ -126,15 +122,14 @@ angular.module('Geographr.controllerServer', [])
             if($scope.authStatus != 'logged') { return; } // If not authed
             $timeout(function(){
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
+                    var grid = $scope.overPixel.x + ':' + $scope.overPixel.y;
                     $scope.selectedGrid = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
+                    $scope.selectedGrid.grid = grid;
                     $scope.overPixel.objects = $scope.selectedGrid;
-                    if($scope.selectedGrid.length == 1) {
-                        $scope.selectedObject = $scope.selectedGrid[0];
-                        var grid = $scope.selectedObject.grid;
-                        if($scope.selectedObject.type == 'camp') {
-                            $scope.selectedObject = gameUtility.expandCamp(grid);
-                            $scope.selectedObject.visited = true;
-                        }
+                    if($scope.selectedGrid.camp && jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
+                        $scope.selectedGrid.camp = gameUtility.expandCamp(grid);
+                        $scope.selectedGrid.camp.type = 'camp';
+                        $scope.selectedGrid.camp.visited = true;
                     }
                 } else { $scope.selectedGrid = null; }
                 objectInfoPanel.show(); objectInfoPanel.css('visibility', 'hidden'); drawZoomCanvas();
@@ -261,11 +256,11 @@ angular.module('Geographr.controllerServer', [])
             // Make stuff happen when user clicks on map
             if(localObjects.hasOwnProperty(x+':'+y)) { selectGrid(e); return false; } // If selecting an object
             // If an object is selected, but is not clicked, clear the selected object
-            if($scope.selectedGrid && $scope.selectedGrid[0]) { if($scope.selectedGrid[0].grid != x + ':' + y) { 
-                $timeout(function() { 
-                    $scope.selectedGrid = null; dimPixel(); 
-                    delete $scope.overPixel.objects; delete $scope.selectedGrid; delete $scope.selectedObject;
-                }); return false; }}
+            if($scope.selectedGrid) { if($scope.selectedGrid.grid != x + ':' + y) {
+                $timeout(function() {
+                    $scope.selectedGrid = null; dimPixel();
+                    delete $scope.overPixel.objects; delete $scope.selectedGrid;
+                }); return false; }} else { selectGrid(e); }
             return false;
         };
     
@@ -315,8 +310,8 @@ angular.module('Geographr.controllerServer', [])
         // Dim the pixel after leaving it
         var dimPixel = function() {
             canvasUtility.fillCanvas(zoomHighContext,'erase');
-            if($scope.selectedGrid && $scope.selectedGrid[0].grid) { // Draw selection box around selected cell
-                var coords = $scope.selectedGrid[0].grid.split(':');
+            if($scope.selectedGrid && $scope.selectedGrid.grid) { // Draw selection box around selected cell
+                var coords = $scope.selectedGrid.grid.split(':');
                 coords = [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]];
                 canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'object');
             }
@@ -338,7 +333,7 @@ angular.module('Geographr.controllerServer', [])
             if(!$scope.mapElements.objects) { return; }
             if(!value) { 
                 delete localObjects[coords.join(':')];
-                if($scope.selectedGrid[0].grid == coords.join(':')) { 
+                if($scope.selectedGrid.grid == coords.join(':')) { 
                     delete $scope.selectedGrid; delete $scope.selectedObject; }
                 canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
             }
@@ -426,6 +421,9 @@ angular.module('Geographr.controllerServer', [])
             });
         };
         var initTerrain = function() {
+            var terrainImg = new Image;
+            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0); };
+            terrainImg.src = 'img/world-map.png';
             if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
                 fireRef.child('lastTerrainUpdate').once('value',function(snap) {
                     var needUpdate = true;
@@ -450,12 +448,12 @@ angular.module('Geographr.controllerServer', [])
                     Math.seedrandom(campList[i]);
                     var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
                     var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
-                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
-                    else { localObjects[campList[i]] = [camp]; }
+                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].camp = camp; } 
+                    else { localObjects[campList[i]] = {camp:camp}; }
                 }
                 changeZoomPosition($scope.zoomPosition[0],$scope.zoomPosition[1]);
             });
-            canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
+//            canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,false);
             console.log('Server ready!');
             var updateUsers = function(snap) {
                 for(var key in snap.val()) {
@@ -486,6 +484,8 @@ angular.module('Geographr.controllerServer', [])
                         fireRef.child('scoreBoard/'+snap.val().user+'/score').set(0);
                         fireRef.child('scoreBoard/'+snap.val().user+'/nick').set(
                             localUsers[snap.val().user].nick);
+                        fireRef.child('scoreBoard/'+snap.val().user+'/color').set(
+                            localUsers[snap.val().user].camp.color);
                         break;
                     case 'move':
                         var movePath = snap.val().path, baseMoveSpeed = 5000; // 5 seconds
@@ -611,8 +611,6 @@ angular.module('Geographr.controllerServer', [])
                 });
             };
             setInterval(passTime,300000); passTime(); // Every 5 min
-            canvasUtility.fillCanvas(fullFogContext,'erase');
-            zoomFogCanvas.style.visibility="hidden";
         };
         
         fireRef.child('labels').once('value',function(snap) {

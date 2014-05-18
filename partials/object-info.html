@@ -1,19 +1,12 @@
-<h2>{{ selectedObject | itemDisplay }}</h2>
-<p><span class="text-muted">({{ selectedObject.grid | grid }})</span>
-    <em ng-show="selectedObject.visited">&emsp;Visited</em>
+<h2>{{ selectedGrid.camp | itemDisplay }}</h2>
+<p><span class="text-muted">({{ selectedGrid.grid | grid }})</span>
+    <em ng-show="selectedGrid.camp.visited">&emsp;Visited</em>
 </p>
-<h3 ng-show="selectedObject.visited && selectedObject.economy.blacksmith">Camp Services</h3>
-<p ng-show="selectedObject.visited">
-    <span ng-show="selectedObject.economy.blacksmith" style="background-color: #3C3C3C;"
+<h3 ng-show="selectedGrid.camp.visited && selectedGrid.camp.economy.blacksmith.markup">Camp Services</h3>
+<p ng-show="selectedGrid.camp.visited">
+    <span ng-show="selectedGrid.camp.economy.blacksmith.markup" style="background-color: #3C3C3C;"
         class="label bigger-label">Blacksmith</span>
 </p>
-<div ng-show="selectedObject.contents.length > 0 && selectedObject.owner == user.id" class="well">
-    <h3>Contents</h3>
-    <ul class="list-unstyled">
-        <li ng-repeat="item in selectedObject.contents">
-            <button type="button" ng-click="harvestItem($index,item)" class="btn btn-xs btn-default">
-                <span class="glyphicon glyphicon-arrow-left"></span>{{ item | itemDisplay }}
-            </button>
-        </li>
-    </ul>
-</div>
+<p ng-show="selectedGrid.camp.blacksmithing">
+    <strong>{{ selectedGrid.camp.blacksmithing }}</strong> items refined/being refined here
+</p>

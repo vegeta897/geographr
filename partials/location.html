@@ -20,7 +20,7 @@
             <td style="width: 130px;" class="text-right">
                 <select class="form-control num-select" ng-model="cookAmount" 
                     ng-init="cookAmount = cookable.amount || 1">
-                    <option ng-repeat="count in countTo(cookable.amount)">{{ count }}</option>
+                    <option ng-repeat="count in countTo(cookable.amount)" ng-value="count">{{ count }}</option>
                 </select>
                 <span class="btn-group btn-group-xs">
                     <button class="btn btn-default" ng-click="cookAmount = 1">1</button>
@@ -31,8 +31,7 @@
     </table>
 </div>
 <div class="well camp-ui" ng-show="onPixel.camp">
-    <h3 ng-hide="onPixel.camp === true" class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
-    <h3 ng-show="onPixel.camp === true" class="pull-left">Camp</h3>
+    <h3 class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
     <button class="btn btn-default btn-market pull-right" ng-click="showMarket = !showMarket">Market</button>
     <div class="checkbox-inline text-muted pull-right" ng-show="showMarket"><label>
         <input type="checkbox" ng-model="uiOptions.plainStalls" 
@@ -47,37 +46,39 @@
          ng-show="showMarket && onPixel.camp.economy.market">
         <h4>Market</h4>
         <div ng-show="onPixel.camp.economy.market.selectedStall" class="stall stall-open" id="selectedStall"
-             ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.rightSide}">
+            ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.rightSide,
+            'stall-setup':onPixel.camp.economy.market.selectedStall.id == 'su'+user.id}">
             <div class="canvas" ng-class="{'no-stripes':uiOptions.plainStalls}"
                 ng-style="{'background-color': '#'+onPixel.camp.economy.market.selectedStall.canvas}"
                 ng-click="changeStall(onPixel.camp.economy.market.selectedStall.id)"></div>
-            <div class="stall-content" 
-                ng-style="{'background-color': uiOptions.plainStalls ? 
-                     '#393c3f' : '#' + onPixel.camp.economy.market.selectedStall.bg}">
-                <div ng-show="onPixel.camp.economy.market.selectedStall.selectedGood" 
-                     class="good good-open" id="selectedGood" 
-                     ng-style="{background: '#'+onPixel.camp.economy.market.selectedStall.selectedGood.color}"
-                     ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.selectedGood.rightSide,
-                     'has-error':onPixel.camp.economy.market.selectedStall.selectedGood.value * 
-                     onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount * 
+            <div class="stall-content" ng-style="{'background-color': uiOptions.plainStalls ? 
+                    '#393c3f' : '#' + onPixel.camp.economy.market.selectedStall.bg}">
+                <div ng-show="onPixel.camp.economy.market.selectedStall.selectedGood && 
+                    onPixel.camp.economy.market.selectedStall.selectedGood.id != 'newGood'" 
+                    class="good good-open" id="selectedGood"
+                    ng-style="{background: '#'+onPixel.camp.economy.market.selectedStall.selectedGood.color}"
+                    ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.selectedGood.rightSide,
+                    'has-error':onPixel.camp.economy.market.selectedStall.selectedGood.value * 
+                    onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount * 
                         onPixel.camp.economy.market.selectedStall.markup > user.money,
                         'pelt':onPixel.camp.economy.market.selectedStall.selectedGood.status == 'pelt',
                         'meat':onPixel.camp.economy.market.selectedStall.selectedGood.status == 'meat',
                         'out-of-stock':onPixel.camp.economy.market.selectedStall.selectedGood.amount < 1}">
                     <h4>{{ onPixel.camp.economy.market.selectedStall.selectedGood.name | capitalize }}
                         <small ng-show="onPixel.camp.economy.market.selectedStall.selectedGood.status">
-                             {{ onPixel.camp.economy.market.selectedStall.selectedGood.status }}</small></h4>
+                            {{ onPixel.camp.economy.market.selectedStall.selectedGood.status }}</small></h4>
                     <p><strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood.value * 
                         onPixel.camp.economy.market.selectedStall.markup | number:1 }} </strong>gold</p>
                     <p ng-hide="onPixel.camp.economy.market.selectedStall.selectedGood.amount < 1"><strong>
                         {{ onPixel.camp.economy.market.selectedStall.selectedGood.amount }} </strong>in stock</p>
                     <p ng-show="onPixel.camp.economy.market.selectedStall.selectedGood.amount < 1">
                         <strong class="text-danger">out of stock</strong></p>
-                    <select class="form-control num-select" 
+                    <select class="form-control num-select"
                         ng-disabled="onPixel.camp.economy.market.selectedStall.selectedGood.amount < 1"
                         ng-model="onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount">
-                        <option 
-                            ng-selected="onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount == count"                               ng-repeat="count in countTo(onPixel.camp.economy.market.selectedStall.selectedGood.amount)">{{ count }}</option>
+                        <option ng-selected="onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount==count" 
+                            ng-value="count" ng-repeat="count in countTo(
+                            onPixel.camp.economy.market.selectedStall.selectedGood.amount)">{{ count }}</option>
                     </select>
                     <p ng-hide="onPixel.camp.economy.market.selectedStall.selectedGood.amount < 1">Cost: <strong
                         ng-class="{'text-danger':onPixel.camp.economy.market.selectedStall.selectedGood.value *
@@ -96,12 +97,60 @@
                         onPixel.camp.economy.market.selectedStall.selectedGood.amount < 1">
                         Buy</button>
                 </div>
+                <div class="good good-open good-setup" ng-show="onPixel.camp.economy.market.selectedStall.selectedGood
+                    && onPixel.camp.economy.market.selectedStall.selectedGood.id == 'newGood'" id="newGood"
+                    ng-style="{background: 
+                    '#'+(onPixel.camp.economy.market.selectedStall.selectedGood.invItem.color||'2f3133')}"
+                    ng-class="{'pelt':onPixel.camp.economy.market.selectedStall.selectedGood.invItem.status == 'pelt',
+                    'meat':onPixel.camp.economy.market.selectedStall.selectedGood.invItem.status == 'meat'}">
+                    <h4>{{ onPixel.camp.economy.market.selectedStall.selectedGood.editing | 
+                        iif:'Edit Good':'New Good' }}</h4>
+                    <select class="form-control num-select" 
+                        ng-change="onPixel.camp.economy.market.selectedStall.selectedGood.invItem = 
+                        onPixel.camp.economy.market
+                        .inventory[onPixel.camp.economy.market.selectedStall.selectedGood.invKey]; 
+                        onPixel.camp.economy.market.selectedStall.selectedGood.addAmount = 
+                        onPixel.camp.economy.market.selectedStall.selectedGood.invItem.amount;
+                        onPixel.camp.economy.market.selectedStall.selectedGood.addPrice = 
+                        onPixel.camp.economy.market.selectedStall.selectedGood.invItem.value;
+                        onPixel.camp.economy.market.selectedStall.tooManyCats = false"
+                        ng-model="onPixel.camp.economy.market.selectedStall.selectedGood.invKey">
+                        <option value="none" class="ng-scope" disabled>Select a good</option>
+                        <option ng-value="invItem.key" ng-repeat="invItem in onPixel.camp.economy.market.inventory | 
+                            typeFilter:['sellable']:onPixel.camp.economy.market.selectedStall.goods:
+                            onPixel.camp.economy.market.selectedStall.selectedGood.prevGood.key"
+                            ng-selected="onPixel.camp.economy.market.selectedStall.selectedGood.invKey == invItem.key">
+                            {{ invItem.type | capitalize }} - {{ invItem.name | capitalize }}
+                            {{ invItem.status | iif:' '+invItem.status:'' }}</option>
+                    </select>
+                    <div ng-hide="onPixel.camp.economy.market.selectedStall.selectedGood.invKey == 'none'">
+                        <h5>Quantity</h5>
+                        <select class="form-control num-select"
+                        ng-model="onPixel.camp.economy.market.selectedStall.selectedGood.addAmount">
+                        <option ng-selected="onPixel.camp.economy.market.selectedStall.selectedGood.addAmount==count"
+                            ng-value="count" ng-repeat="count in countTo(
+                            onPixel.camp.economy.market.selectedStall.selectedGood.invItem.amount)">{{ count }}</option>
+                    </select></div>
+                    <div ng-hide="onPixel.camp.economy.market.selectedStall.selectedGood.invKey == 'none'">
+                        <h5>Sell Price</h5>
+                        <input class="form-control input-sm" type="text" id="inputAddGoodPrice"
+                            ng-change="onPixel.camp.economy.market.selectedStall.selectedGood.addPrice = 
+                            restrictNumber(onPixel.camp.economy.market.selectedStall.selectedGood.addPrice,1)"
+                            ng-model="onPixel.camp.economy.market.selectedStall.selectedGood.addPrice"></div>
+                    <button class="delete" ng-click="deleteGoodFromStall()" 
+                        ng-show="onPixel.camp.economy.market.selectedStall.selectedGood.editing">
+                        <i class="glyphicon glyphicon-remove"></i></button>
+                    <button ng-click="addGoodToStall()" 
+                        ng-hide="onPixel.camp.economy.market.selectedStall.selectedGood.invKey == 'none'">
+                        {{ onPixel.camp.economy.market.selectedStall.selectedGood.editing | iif:'Save':'Add Good' }}
+                    </button>
+                </div>
                 <div ng-class="{'goods-min':onPixel.camp.economy.market.selectedStall.selectedGood}">
                     <div class="good" ng-style="{background:'#'+good.color}"
-                        ng-click="changeGood(good.key,$index)"
+                        ng-click="changeGood(good.key,$index)" ng-hide="good.id == 'newGood'"
                         ng-repeat="good in onPixel.camp.economy.market.selectedStall.goods | typeFilter:['all']"
                         ng-class="{'good-min':onPixel.camp.economy.market.selectedStall.selectedGood,
-                        'good-selected':onPixel.camp.economy.market.selectedStall.selectedGood.id == good.key,
+                        'good-selected':onPixel.camp.economy.market.selectedStall.selectedGood.key == good.key,
                         'pelt':good.status == 'pelt', 'meat':good.status == 'meat', 'out-of-stock':good.amount < 1}">
                         <h4>{{ good.name | capitalize }}</h4>
                         <p><strong ng-show="onPixel.camp.economy.market.selectedStall.selectedGood">
@@ -111,7 +160,16 @@
                             gold</p>
                         <p><strong ng-class="{'text-danger':good.amount < 1}">
                             {{ good.amount }} </strong>{{ onPixel.camp.economy.market.selectedStall.selectedGood 
-                                | iif : 'qty' : 'in stock' }}</p>
+                                | iif:'qty':'in stock' }}</p>
+                    </div>
+                    <div class="good good-new" ng-click="changeGood('newGood',-1)" 
+                        ng-show="onPixel.camp.economy.market.selectedStall.id == 'su'+user.id && 
+                        onPixel.camp.economy.market.selectedStall.goodCount < 8 && 
+                        onPixel.camp.economy.market.selectedStall.selectedGood.id != 'newGood'"
+                        ng-class="{'good-min':onPixel.camp.economy.market.selectedStall.selectedGood,
+                        'good-selected':onPixel.camp.economy.market.selectedStall.selectedGood.id == good.key}">
+                        <h4>Add Good</h4>
+                        <p><i class="glyphicon glyphicon-plus"></i></p>
                     </div>
                 </div>
             </div>
@@ -136,8 +194,7 @@
                                 <div ng-repeat="good in stallData.goods | typeFilter:['all']" class="color-square"
                                     ng-class="{ 'pelt':good.status == 'pelt', 'meat':good.status == 'meat',
                                     'out-of-stock': good.amount < 1 }" 
-                                    ng-hide="good.type != catName && good.name != catName && 
-                                    good.type +' '+ good.status != catName"
+                                    ng-hide="good.type != catName && good.name != catName && good.status != catName"
                                     ng-style="{'background-color':'#'+good.color}">
                                     <!--<span ng-show="stallData.categoryCount == 1">-->
                                         <!--{{ good.name | left:2 | capitalize }}</span>-->
@@ -148,12 +205,22 @@
                 </ul>
                 <div ng-show="onPixel.camp.economy.market.selectedStall">
                     <div ng-repeat="good in stallData.goods | typeFilter:['all']" class="color-square"
-                         ng-class="good.status" ng-style="{'background-color':'#'+good.color}">
-                    </div>
+                         ng-show="good.color"
+                         ng-class="{ 'pelt':good.status == 'pelt', 'meat':good.status == 'meat',
+                         'out-of-stock': good.amount < 1 }" ng-style="{'background-color':'#'+good.color}"></div>
                 </div>
             </div>
+            <div class="stall stall-new" ng-click="changeStall('su'+user.id,-1)"
+                ng-class="{'stall-min':onPixel.camp.economy.market.selectedStall}"
+                ng-hide="onPixel.camp.economy.market.stalls['su'+user.id]">
+                <div class="canvas" ng-class="{'no-stripes':uiOptions.plainStalls}"
+                    ng-style="{'background-color':'#'+user.camp.color}"></div>
+                <p><i class="glyphicon glyphicon-plus"></i>
+                    <span ng-hide="onPixel.camp.economy.market.selectedStall">Set up a stall!</span></p>
+            </div>
         </div>
-        <div class="clearfix"></div>
+        <div class="clearfix"><p class="market-message" ng-class="onPixel.camp.economy.market.message.type"
+            ng-show="onPixel.camp.economy.market.message">{{ onPixel.camp.economy.market.message.text }}</p></div>
     </div>
     <div ng-show="showBS" class="blacksmith" ng-class="{'last-section':showBS}" >
         <h4>Blacksmith</h4>
@@ -165,8 +232,7 @@
             <div ng-show="onPixel.camp.economy.blacksmith.selectedMineral"
                 class="mineral mineral-open" id="selectedMineral"
                 ng-style="{background:'#'+onPixel.camp.economy.blacksmith.selectedMineral.color}"
-                ng-class="{'pull-right':onPixel.camp.economy.blacksmith.selectedMineral.rightSide,
-                    'has-error':onPixel.camp.economy.blacksmith.selectedMineral.value * 
+                ng-class="{'has-error':onPixel.camp.economy.blacksmith.selectedMineral.value * 
                     onPixel.camp.economy.blacksmith.selectedMineral.refineAmount *
                     onPixel.camp.economy.blacksmith.markup > user.money}">
                 <h4>Unrefined {{ onPixel.camp.economy.blacksmith.selectedMineral.name | capitalize }}</h4>
@@ -176,7 +242,8 @@
                     <select class="form-control num-select"
                         ng-model="onPixel.camp.economy.blacksmith.selectedMineral.refineAmount">
                         <option ng-selected="onPixel.camp.economy.blacksmith.selectedMineral.refineAmount == count"
-                            ng-repeat="count in countTo(onPixel.camp.economy.blacksmith.selectedMineral.amount)">{{ count }}</option>
+                            ng-repeat="count in countTo(onPixel.camp.economy.blacksmith.selectedMineral.amount)"
+                            ng-value="count">{{ count }}</option>
                     </select>
                     <p>Cost: <strong ng-class="{'text-danger':onPixel.camp.economy.blacksmith.selectedMineral.value * 
                         onPixel.camp.economy.blacksmith.selectedMineral.refineAmount *
@@ -198,7 +265,8 @@
                     <select class="form-control num-select no-error"
                         ng-model="onPixel.camp.economy.blacksmith.selectedMineral.sellAmount">
                         <option ng-selected="onPixel.camp.economy.blacksmith.selectedMineral.sellAmount == count"
-                            ng-repeat="count in countTo(onPixel.camp.economy.blacksmith.selectedMineral.amount)">{{ count }}</option>
+                            ng-repeat="count in countTo(onPixel.camp.economy.blacksmith.selectedMineral.amount)"
+                            ng-value="count">{{ count }}</option>
                     </select>
                     <p>Sell: <strong>{{ onPixel.camp.economy.blacksmith.selectedMineral.value *
                         onPixel.camp.economy.blacksmith.selectedMineral.sellAmount / 2 / 
@@ -211,7 +279,7 @@
             </div>
             <div ng-class="{'minerals-min':onPixel.camp.economy.blacksmith.selectedMineral}">
                 <div class="mineral" ng-style="{background:'#'+bsItem.color}"
-                    ng-click="changeMineral(bsItem.key,$index)"
+                    ng-click="changeMineral(bsItem.key)"
                     ng-repeat="bsItem in inventory | typeFilter:['blacksmith']"
                     ng-class="{'mineral-min':onPixel.camp.economy.blacksmith.selectedMineral,
                     'mineral-selected':onPixel.camp.economy.blacksmith.selectedMineral.id == bsItem.key}">
@@ -250,8 +318,4 @@
             </div><div class="clearfix"></div>
         </div>
     </div>
-</div>
-<div class="well camp-ui" ng-repeat="object in onPixel.objects"
-    ng-show="onPixel.objects && object.type != 'camp' && object.type != 'campfire' && !object.activity">
-    {{ object | itemDisplay }}
 </div>

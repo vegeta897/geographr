@@ -286,59 +286,61 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         while(productPool.list.length > 0) {
             msTypeKey = pickProperty(productPool.stallTypes); var stall; var num = 1; var chosen = false;
             while(!chosen) { if(!chosenStallTypes.hasOwnProperty(msTypeKey+num)) {
-                chosenStallTypes[msTypeKey+num] = { goods: {}, weight: 0, totalGoods: 0 };
+                chosenStallTypes[msTypeKey+num] = { goods: {}, weight: 0 };
                 stall = chosenStallTypes[msTypeKey+num];
                 Math.seedrandom('stalls'+grid+msTypeKey+num); chosen = true;
             } num++; }
             stall.stallType = msTypeKey;
             for(var p = 0; p < productPool.list.length; p++) { // Find matching products
                 var status = productPool.list[p].status ? ':' + productPool.list[p].status : '';
-                var catStat = productPool.list[p].status ? ' ' + productPool.list[p].status : '';
+                var catName = jQuery.inArray(productPool.list[p].status,['pelt','meat']) < 0 ?
+                    productPool.list[p].type == 'other' ? productPool.list[p].name : 
+                        productPool.list[p].type : productPool.list[p].status;
                 if(jQuery.inArray(productPool.list[p].type+status,marketStallTypes[msTypeKey].goods) +
                     jQuery.inArray(productPool.list[p].type+':'+productPool.list[p].name+status,
                         marketStallTypes[msTypeKey].goods) < -1) { continue; }
                 // TODO: If exotic product picked, have stall owner comment on it
                 var product = productPool.list.splice(p,1)[0]; p--; // Don't skip next product
-                var goodType = product.type == 'other' ? product.name : product.type;
+                var goodKey = product.status ? [product.type,product.name,product.status].join(':') :
+                    [product.type,product.name].join(':');
                 product.amount = product.amount || 1; product.exotic = product.exotic || 1;
                 if(stall.hasOwnProperty('categories')) { // If stall has categories
-                    if(stall.categories.hasOwnProperty(goodType+catStat)) { // If category match
-                        if(stall.goods.hasOwnProperty(product.name+status)) { // If good already here
-                            stall.categories[goodType+catStat][0] += product.amount; // Add cat item count
-                            stall.goods[product.name+status].amount += product.amount; // Add good amount
+                    if(stall.categories.hasOwnProperty(catName)) { // If category match
+                        if(stall.goods.hasOwnProperty(goodKey)) { // If good already here
+                            stall.categories[catName][0] += product.amount; // Add cat item count
+                            stall.goods[goodKey].amount += product.amount; // Add good amount
                         } else { // If good not already here
-                            stall.categories[goodType+catStat][0] += product.amount; // Add item count
-                            stall.goods[product.name+status] = // Add good
+                            stall.categories[catName][0] += product.amount; // Add item count
+                            stall.goods[goodKey] = // Add good
                             { color: product.color, type: product.type, weight: product.weight,
                                 value: Math.max(1,Math.round((Math.random()*0.4+0.8)*
                                     product.value*product.exotic*100)/100),
                                 amount: product.amount, name: product.name, status: product.status,
-                                key: product.name+status, exotic: product.exotic };
-                            stall.categories[goodType+catStat].push(product.name+status); // Add name
+                                key: goodKey, exotic: product.exotic };
+                            stall.categories[catName].push(goodKey); // Add name
                         }
                     } else { // No matching category, add as new
-                        stall.categories[goodType+catStat] = [product.amount,product.name+status]; // Init
-                        stall.goods[product.name+status] = // Add good
+                        stall.categories[catName] = [product.amount,goodKey]; // Init
+                        stall.goods[goodKey] = // Add good
                         { color: product.color, type: product.type, weight: product.weight,
                             value: Math.max(1,Math.round((Math.random()*0.4+0.8)*
                                 product.value*product.exotic*100)/100),
                             amount: product.amount, name: product.name, status: product.status,
-                            key: product.name+status, exotic: product.exotic };
+                            key: goodKey, exotic: product.exotic };
                     }
                 } else { // Stall has no categories
                     stall.categories = {}; 
                     stall.canvas = colorUtility.generate('stallCanvas').hex;
                     stall.bg = colorUtility.generate('stallBG').hex;
-                    stall.categories[goodType+catStat] = [product.amount,product.name+status]; // Init
-                    stall.goods[product.name+status] = // Add good
+                    stall.categories[catName] = [product.amount,goodKey]; // Init
+                    stall.goods[goodKey] = // Add good
                     { color: product.color, type: product.type, weight: product.weight,
                         value: Math.max(1,Math.round((Math.random()*0.4+0.8)*
                             product.value*product.exotic*100)/100),
                         amount: product.amount, name: product.name, status: product.status,
-                        key: product.name+status, exotic: product.exotic };
+                        key: goodKey, exotic: product.exotic };
                 }
                 stall.weight += product.weight*product.amount; // Add product weight to total stall weight
-                stall.totalGoods++; // Increment total stall good count
                 productPool.stallTypes[msTypeKey].count -= product.amount;
                 if(productPool.stallTypes[msTypeKey].count <= 0) { // If no goods left in this stall type
                     delete productPool.stallTypes[msTypeKey]; break; // Don't try this stall type again
@@ -354,11 +356,11 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             }
             stall.categoryCount = countProperties(stall.categories); // Store number of categories
             stall.goodCount = countProperties(stall.goods); // Store number of goods
-            stall.markup = 1 + Math.random()*0.4 + countProperties(stall.goods) / 12;
+            stall.markup = 1 + Math.random()*0.4 + stall.weight / marketStallTypes[msTypeKey].capacity;
         }
         // Remove empty stall types
         for(var stKey in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(stKey)) { continue; }
-            if(chosenStallTypes[stKey].totalGoods < 1) { delete chosenStallTypes[stKey]; } }
+            if(chosenStallTypes[stKey].goodCount < 1) { delete chosenStallTypes[stKey]; } }
 //        console.log('pre-combine:',angular.copy(chosenStallTypes));
         // Combine similar under-capacity stalls
         for(var cs1Key in chosenStallTypes) { if(!chosenStallTypes.hasOwnProperty(cs1Key)) { continue; }
@@ -389,22 +391,22 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 for(s2GoodKey in stall2.goods) {
                     if(!stall2.goods.hasOwnProperty(s2GoodKey)) { continue; }
                     var s2Good = stall2.goods[s2GoodKey];
-                    var s2gStatus = s2Good.status ? ' ' + s2Good.status : '';
-                    var s2gType = s2Good.type == 'other' ? s2Good.name : s2Good.type;
-                    if(stall1.categories.hasOwnProperty(s2gType+s2gStatus)) { // Category exists
+                    var s2gCat = jQuery.inArray(s2Good.status,['pelt','meat']) < 0 ? 
+                        s2Good.type == 'other' ? s2Good.name : s2Good.type : s2Good.status;
+                    if(stall1.categories.hasOwnProperty(s2gCat)) { // Category exists
                         if(stall1.goods.hasOwnProperty(s2GoodKey)) { // Good exists
                             stall1.goods[s2GoodKey].amount += s2Good.amount; // Combine amounts
 //                            console.log('    combining',s2GoodKey,'with existing');
                         } else { // Good doesn't exist
 //                            console.log('    adding',s2GoodKey,'to existing cat');
                             stall1.goods[s2GoodKey] = s2Good;
-                            stall1.categories[s2gType+s2gStatus].push(s2GoodKey); // Add good to cat goods
+                            stall1.categories[s2gCat].push(s2GoodKey); // Add good to cat goods
                             stall1.goodCount++; // Increment good count
                         }
-                        stall1.categories[s2gType+s2gStatus][0] += s2Good.amount; // Add to good count
+                        stall1.categories[s2gCat][0] += s2Good.amount; // Add to good count
                     } else { // Category doesn't exist
 //                        console.log('    adding',s2GoodKey,'with new cat',s2Good.type);
-                        stall1.categories[s2gType+s2gStatus] = [s2Good.amount,s2GoodKey];
+                        stall1.categories[s2gCat] = [s2Good.amount,s2GoodKey];
                         stall1.goods[s2GoodKey] = s2Good;
                         stall1.categoryCount++; // Increment category count
                         stall1.goodCount++; // Increment good count
@@ -1030,7 +1032,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         attachFireUser: function(user) { fireUser = user; },
         attachFireInventory: function(fireInv) { fireInventory = fireInv; },
         addToInventory: addToInventory, cleanInventory: cleanInventory, dressItem: dressItem,
-        getItemActions: getItemActions, getSlope: getSlope,
+        getItemActions: getItemActions, getSlope: getSlope, countProperties: countProperties,
         itemsMaster: itemsMaster, event: event,
         edibles: edibles, equipment: equipment
     }

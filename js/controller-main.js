@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.281; $scope.versionName = 'Holy Calculation'; $scope.needUpdate = false;
+        $scope.version = 0.29; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -13,11 +13,12 @@ angular.module('Geographr.controllerMain', [])
         $scope.movePath = []; $scope.lookCount = 0;
         $scope.showItemTypes = {'animal':true,'fish':true,'fruit':true,'gem':true,'metal':true,'plant':true,
             'tool':true,'weapon':true,'vegetable':true,'other':true};
+        setInterval(function(){$timeout(function(){});},60000); // Refresh scope every minute
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
             keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
             pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
-            localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
+            localUsers = {}, localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
             tutorialStep = 0, visiblePixels = {}, waitTimer, campList = [], 
             availableActivities = [], abundances = {}, controlsDIV, progressBar, objectInfoPanel;
     
@@ -46,9 +47,10 @@ angular.module('Geographr.controllerMain', [])
                     visiblePixels = snap.val().hasOwnProperty('visiblePixels') ? snap.val().visiblePixels : {};
                     fireRef.child('scoreBoard').on('value', function(snap) {
                         $scope.scoreBoard= []; var scoreSnap = snap.val();
+                        localUsers = scoreSnap;
                         for(var key in snap.val()) { if(!scoreSnap.hasOwnProperty(key)) { continue; }
                             $scope.scoreBoard.push({ nick: scoreSnap[key].nick, score: scoreSnap[key].score,
-                                online: scoreSnap[key].online });
+                                online: scoreSnap[key].online, color: scoreSnap[key].color });
                         }
                         $timeout(function() { 
                             $scope.scoreBoard = sortArrayByProperty($scope.scoreBoard,'score',true); });
@@ -68,8 +70,9 @@ angular.module('Geographr.controllerMain', [])
                         if(!snap.val()) { return; }
                         var userCamp = { type: 'userCamp', owner: userID,
                             ownerNick: $scope.user.nick, grid: snap.val().grid, color: snap.val().color };
-                        localObjects[snap.val().grid] ? localObjects[snap.val().grid].push(userCamp) :
-                            localObjects[snap.val().grid] = [userCamp];
+                        if(localObjects.hasOwnProperty(snap.val().grid)) {
+                            localObjects[snap.val().grid].userCamp = userCamp;
+                        } else { localObjects[snap.val().grid] = { userCamp: userCamp } }
                         drawObject(snap.val().grid.split(':'),localObjects[snap.val().grid]);
                         $scope.user.camp = snap.val();
                     });
@@ -141,7 +144,7 @@ angular.module('Geographr.controllerMain', [])
         var fullFogCanvas = document.getElementById('fullFogCanvas');
         var fullPingCanvas = document.getElementById('fullPingCanvas');
         var fullHighCanvas = document.getElementById('fullHighCanvas');
-        var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas'); // Main view
+//        var zoomTerrainCanvas = document.getElementById('zoomTerrainCanvas'); // Main view
         var zoomObjectCanvas = document.getElementById('zoomObjectCanvas');
         var zoomFogCanvas = document.getElementById('zoomFogCanvas');
         var zoomHighCanvas = document.getElementById('zoomHighCanvas');
@@ -150,7 +153,7 @@ angular.module('Geographr.controllerMain', [])
         var fullFogContext = fullFogCanvas.getContext ? fullFogCanvas.getContext('2d') : null;
         var fullPingContext = fullPingCanvas.getContext ? fullPingCanvas.getContext('2d') : null;
         var fullHighContext = fullHighCanvas.getContext ? fullHighCanvas.getContext('2d') : null;
-        var zoomTerrainContext = zoomTerrainCanvas.getContext ? zoomTerrainCanvas.getContext('2d') : null;
+//        var zoomTerrainContext = zoomTerrainCanvas.getContext ? zoomTerrainCanvas.getContext('2d') : null;
         var zoomObjectContext = zoomObjectCanvas.getContext ? zoomObjectCanvas.getContext('2d') : null;
         var zoomFogContext = zoomFogCanvas.getContext ? zoomFogCanvas.getContext('2d') : null;
         var zoomHighContext = zoomHighCanvas.getContext ? zoomHighCanvas.getContext('2d') : null;
@@ -158,10 +161,10 @@ angular.module('Geographr.controllerMain', [])
         canvasUtility.fillCanvas(zoomFogContext,'2a2f33');
 
         // Disable interpolation on zoom canvases
-        zoomTerrainContext.mozImageSmoothingEnabled = zoomFogContext.mozImageSmoothingEnabled = false;
-        zoomTerrainContext.webkitImageSmoothingEnabled = zoomFogContext.webkitImageSmoothingEnabled = false;
-        zoomTerrainContext.msImageSmoothingEnabled = zoomFogContext.msImageSmoothingEnabled = false;
-        zoomTerrainContext.imageSmoothingEnabled = zoomFogContext.imageSmoothingEnabled = false;
+        /*zoomTerrainContext.mozImageSmoothingEnabled = */zoomFogContext.mozImageSmoothingEnabled = false;
+        /*zoomTerrainContext.webkitImageSmoothingEnabled = */zoomFogContext.webkitImageSmoothingEnabled = false;
+        /*zoomTerrainContext.msImageSmoothingEnabled = */zoomFogContext.msImageSmoothingEnabled = false;
+        /*zoomTerrainContext.imageSmoothingEnabled = */zoomFogContext.imageSmoothingEnabled = false;
 
         // Prevent right-click on high canvases
         jQuery('body').on('contextmenu', '#fullHighCanvas', function(e){ return false; })
@@ -196,6 +199,10 @@ angular.module('Geographr.controllerMain', [])
         $scope.countTo = function(n) { 
             var counted = []; for(var i = 0; i < n; i++) { counted.push(i+1); } return counted; };
         $scope.isNumber = function(input) { return parseInt(input) === input; };
+        $scope.restrictNumber = function(input,dec) {
+            input = input.replace(/[^\d.-]/g, '').replace('..','.').replace('..','.').replace('-','');
+            return input;
+        };
         $scope.refresh = function() { drawZoomCanvas(); }; // Redraw zoom canvas
         $scope.changeZoom = function(val) {
             $scope.zoomLevel = parseInt(val);
@@ -272,13 +279,12 @@ angular.module('Geographr.controllerMain', [])
             var skills = $scope.user.skills ? $scope.user.skills : {};
             gameUtility.setupActivity($scope.event.type,skills[$scope.event.type]);
         };
-        $scope.activateObject = function(objectIndex) {
+        $scope.doActivity = function(actIndex) {
             // TODO: Move event stuff into gameUtility so events can end without clicks
-            if(!$scope.onPixel.objects || objectIndex > $scope.onPixel.objects.length - 1 
-                || !$scope.onPixel.objects[objectIndex].activity
-                || $scope.onPixel.objects[objectIndex].abundance < 0.006) { return; }
+            if(!$scope.onPixel.activities || actIndex > $scope.onPixel.activities.length - 1 
+                || $scope.onPixel.activities[actIndex].abundance < 0.006) { return; }
             $timeout(function() {
-                var object = $scope.onPixel.objects[objectIndex];
+                var object = $scope.onPixel.activities[actIndex];
                 $scope.event = { type: object.type, abundance: object.abundance }; // Get event type and abundance
                 var abundance = abundances.hasOwnProperty(object.type) ? abundances[object.type].amount : 0;
                 fireRef.child('abundances/'+$scope.user.location+'/'+object.type).set({
@@ -401,118 +407,231 @@ angular.module('Geographr.controllerMain', [])
             });
         };
         $scope.changeStall = function(stallID,index) {
-            var stall = jQuery(document.getElementById('selectedStall')).finish();
-            if($scope.onPixel.camp.economy.market.hasOwnProperty('selectedStall')) {
-                if($scope.onPixel.camp.economy.market.selectedStall.id == stallID) {
+            delete $scope.onPixel.camp.economy.market.message;
+            var stall = jQuery(document.getElementById('selectedStall')).finish(), 
+                market = $scope.onPixel.camp.economy.market;
+            var checkNewStall = function() {
+                if(!market.selectedStall.hasOwnProperty('goods')) { // If new, empty stall
+                    market.stalls[stallID] = { id: stallID, type: 'user', canvas: $scope.user.camp.color, goods: {},
+                        goodCount: 0, categoryCount: 0, markup: 1 };
+                    market.selectedStall = market.stalls[stallID];
+                    $scope.onPixel.camp.economy.market.message = {
+                        type: '', text: 'Choose goods from your inventory to sell. Check other stalls in the market ' +
+                            'to ensure your prices are competitive. Goods you add to your stall will be immediately ' +
+                            'available for sale.' };
+                }
+            };
+            if(market.hasOwnProperty('selectedStall')) {
+                if(market.selectedStall.id == stallID) {
                     stall.animate({'opacity':0},200)
                         .children('.stall-content').animate({'height':'1px'},200,function() {
-                            delete $scope.onPixel.camp.economy.market.selectedStall.rightSide;
-                            delete $scope.onPixel.camp.economy.market.selectedStall;
+                            delete market.selectedStall.rightSide; delete market.selectedStall;
+                            if(market.stalls['su'+userID] && 
+                                !market.stalls['su'+userID].hasOwnProperty('categories')) {
+                                delete market.stalls['su'+userID];
+                            }
                             $timeout(function(){});
                         });
                 } else {
-                    var keptSide = $scope.onPixel.camp.economy.market.selectedStall.rightSide;
-                    delete $scope.onPixel.camp.economy.market.selectedStall.rightSide;
-                    var offset = $scope.onPixel.camp.economy.market.selectedStall.id > stallID ? '22px' : '-22px';
-                    $scope.onPixel.camp.economy.market.selectedStall = 
-                        $scope.onPixel.camp.economy.market.stalls[stallID];
-                    $scope.onPixel.camp.economy.market.selectedStall.id = stallID;
-                    if(keptSide) { $scope.onPixel.camp.economy.market.selectedStall.rightSide = keptSide; }
+                    var keptSide = market.selectedStall.rightSide;
+                    delete market.selectedStall.rightSide;
+                    var offset = market.selectedStall.id > stallID ? '22px' : '-22px';
+                    market.selectedStall = market.stalls[stallID] || {}; market.selectedStall.id = stallID;
+                    if(keptSide) { market.selectedStall.rightSide = keptSide; }
                     stall.children('.canvas').animate({'background-position-x':offset},300,
-                        function(){ jQuery(this).css({'background-position-x':0}); })
+                        function(){ jQuery(this).css({'background-position-x':0}); });
+                    checkNewStall();
                 }
             } else {
-                $scope.onPixel.camp.economy.market.selectedStall = $scope.onPixel.camp.economy.market.stalls[stallID];
-                $scope.onPixel.camp.economy.market.selectedStall.id = stallID;
+                market.selectedStall = market.stalls[stallID] || {};
+                market.selectedStall.id = stallID;
+                index = index == -1 ? market.stallCount : index; // User stall is last
                 if(jQuery.inArray(index,[2,3,6,7,10,11,14,15,18,19]) >= 0) {
-                    $scope.onPixel.camp.economy.market.selectedStall.rightSide = true;
-                }
+                    market.selectedStall.rightSide = true; }
                 stall.animate({'opacity':1},200).children('.stall-content').animate({'height':'206px'},300);
+                checkNewStall();
             }
-            
         };
         $scope.changeGood = function(goodID,index) {
-            var good = jQuery(document.getElementById('selectedGood')).finish();
-            if($scope.onPixel.camp.economy.market.selectedStall.hasOwnProperty('selectedGood')) {
-                if($scope.onPixel.camp.economy.market.selectedStall.selectedGood.id == goodID) {
+            delete $scope.onPixel.camp.economy.market.message;
+            var good = $scope.onPixel.camp.economy.market.selectedStall.id == 'su'+userID ? 
+                    jQuery(document.getElementById('newGood')).finish() : 
+                    jQuery(document.getElementById('selectedGood')).finish(),
+                market = $scope.onPixel.camp.economy.market;
+            var checkNewGood = function() {
+                if(!market.selectedStall.selectedGood.hasOwnProperty('name')) {
+                    market.selectedStall.goods[goodID] = { id: goodID, invKey: 'none' };
+                    market.selectedStall.selectedGood = market.selectedStall.goods[goodID];
+                } else if(market.selectedStall.id == 'su'+userID) {
+                    market.selectedStall.selectedGood = market.selectedStall.goods['newGood'] = { 
+                        editing: true, key: market.selectedStall.selectedGood.key,
+                        invItem: $scope.onPixel.camp.economy.market.inventory[market.selectedStall.selectedGood.key],
+                        addAmount: market.selectedStall.selectedGood.amount,
+                        addPrice: market.selectedStall.selectedGood.value, 
+                        prevGood: market.selectedStall.selectedGood.prevGood,
+                        prevAmount: market.selectedStall.selectedGood.prevAmount,
+                        id: 'newGood', invKey: market.selectedStall.selectedGood.key };
+                }
+            };
+            if(market.selectedStall.hasOwnProperty('selectedGood') && 
+                market.selectedStall.selectedGood.id != 'newGood') {
+                if(market.selectedStall.selectedGood.id == goodID) {
                     good.animate({'opacity':0,'height':'1px'},100,function() {
-                        delete $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide;
-                        delete $scope.onPixel.camp.economy.market.selectedStall.selectedGood;
+                        delete market.selectedStall.selectedGood.rightSide; delete market.selectedStall.selectedGood;
                         $timeout(function(){});
                     });
                 } else {
-                    var keptSide = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide;
-                    delete $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide;
-                    $scope.onPixel.camp.economy.market.selectedStall.selectedGood = 
-                        $scope.onPixel.camp.economy.market.selectedStall.goods[goodID];
-                    $scope.onPixel.camp.economy.market.selectedStall.selectedGood.id = goodID;
-                    if(keptSide) { 
-                        $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = keptSide; }
+                    var keptSide = market.selectedStall.selectedGood.rightSide;
+                    delete market.selectedStall.selectedGood.rightSide;
+                    market.selectedStall.selectedGood = market.selectedStall.goods[goodID] || {};
+                    market.selectedStall.selectedGood.id = goodID;
+                    if(keptSide) { market.selectedStall.selectedGood.rightSide = keptSide; }
+                    checkNewGood();
                 }
             } else {
-                $scope.onPixel.camp.economy.market.selectedStall.selectedGood = 
-                    $scope.onPixel.camp.economy.market.selectedStall.goods[goodID];
-                $scope.onPixel.camp.economy.market.selectedStall.selectedGood.id = goodID;
-                if(jQuery.inArray(index,[2,3,6,7]) >= 0) {
-                    $scope.onPixel.camp.economy.market.selectedStall.selectedGood.rightSide = true;
-                }
+                market.selectedStall.selectedGood = market.selectedStall.goods[goodID] || {};
+                market.selectedStall.selectedGood.id = goodID;
+                index = index == -1 ? market.selectedStall.goodCount : index; // New good is last
+                if(jQuery.inArray(index,[2,3,6,7]) >= 0) { market.selectedStall.selectedGood.rightSide = true; }
                 good.animate({'opacity':1,'height':'184px'},150);
+                checkNewGood();
             }
-            if($scope.onPixel.camp.economy.market.selectedStall.hasOwnProperty('selectedGood')) {
-                var buyAmount = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount;
-                $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount = buyAmount ? buyAmount : 1;
+            if(market.selectedStall.hasOwnProperty('selectedGood')) {
+                var buyAmount = market.selectedStall.selectedGood.buyAmount;
+                market.selectedStall.selectedGood.buyAmount = buyAmount ? buyAmount : 1;
             }
         };
-        $scope.changeMineral = function(goodID,index) {
-            var mineral = jQuery(document.getElementById('selectedMineral')).finish();
-            if($scope.onPixel.camp.economy.blacksmith.hasOwnProperty('selectedMineral')) {
-                if($scope.onPixel.camp.economy.blacksmith.selectedMineral.id == goodID) {
+        $scope.changeMineral = function(goodID) {
+            var mineral = jQuery(document.getElementById('selectedMineral')).finish(),
+                blacksmith = $scope.onPixel.camp.economy.blacksmith;
+            if(blacksmith.hasOwnProperty('selectedMineral')) {
+                if(blacksmith.selectedMineral.id == goodID) {
                     mineral.animate({'opacity':0,'height':'1px'},100,function() {
-                        delete $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide;
-                        delete $scope.onPixel.camp.economy.blacksmith.selectedMineral;
+                        delete blacksmith.selectedMineral;
                         $timeout(function(){});
                     });
                 } else {
-                    var keptSide = $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide;
-                    delete $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide;
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral = $scope.inventory[goodID];
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.id = goodID;
-                    if(keptSide) {
-                        $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide = keptSide; }
-                }
+                    blacksmith.selectedMineral = $scope.inventory[goodID]; blacksmith.selectedMineral.id = goodID; }
             } else {
-                $scope.onPixel.camp.economy.blacksmith.selectedMineral = $scope.inventory[goodID];
-                $scope.onPixel.camp.economy.blacksmith.selectedMineral.id = goodID;
-                if(jQuery.inArray(index,[2,3,6,7,10,11,14,15,18,19]) >= 0) {
-                    $scope.onPixel.camp.economy.blacksmith.selectedMineral.rightSide = true;
-                }
+                blacksmith.selectedMineral = $scope.inventory[goodID]; blacksmith.selectedMineral.id = goodID;
                 mineral.animate({'opacity':1,'height':'184px'},150);
             }
-            if($scope.onPixel.camp.economy.blacksmith.hasOwnProperty('selectedMineral')) {
-                var sellAmount = $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount;
-                var refineAmount = $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount;
-                $scope.onPixel.camp.economy.blacksmith.selectedMineral.sellAmount = sellAmount ? 
-                    sellAmount : $scope.inventory[goodID].amount;
-                $scope.onPixel.camp.economy.blacksmith.selectedMineral.refineAmount = refineAmount ? 
-                    refineAmount : $scope.inventory[goodID].amount;
+            if(blacksmith.hasOwnProperty('selectedMineral')) {
+                var sellAmount = blacksmith.selectedMineral.sellAmount;
+                var refineAmount = blacksmith.selectedMineral.refineAmount;
+                blacksmith.selectedMineral.sellAmount = sellAmount ? sellAmount : $scope.inventory[goodID].amount;
+                blacksmith.selectedMineral.refineAmount = 
+                    refineAmount ? refineAmount : $scope.inventory[goodID].amount;
             }
         };
+        $scope.addGoodToStall = function() {
+            delete $scope.onPixel.camp.economy.market.message;
+            var theStall = $scope.onPixel.camp.economy.market.selectedStall;
+            var theItem = theStall.selectedGood.invItem;
+            var status = theItem.status ? ':' + theItem.status : '';
+            var catName = jQuery.inArray(theItem.status,['meat','pelt']) < 0 ? theItem.type == 'other' ? theItem.name :
+                theItem.type : theItem.status;
+            if(theStall.selectedGood.editing) {
+                if(theStall.goods.hasOwnProperty(theItem.key)) { // Good type didn't change
+                    fireInventory.child(theItem.key).transaction(function(invAmount) {
+                        if(invAmount) { return parseInt(invAmount) +
+                            parseInt(theStall.selectedGood.prevAmount) - theStall.selectedGood.addAmount == 0 ? null :
+                            parseInt(invAmount) + parseInt(theStall.selectedGood.prevAmount) - 
+                                theStall.selectedGood.addAmount;
+                        } else { return theStall.selectedGood.prevAmount - theStall.selectedGood.addAmount == 0 ?
+                            null : theStall.selectedGood.prevAmount - theStall.selectedGood.addAmount; }
+                    });
+                } else { // Good type changed, delete old good
+                    var prevCatName = jQuery.inArray(theStall.selectedGood.prevGood.status,['meat','pelt']) < 0 ?
+                        theStall.selectedGood.prevGood.type == 'other' ? theStall.selectedGood.prevGood.name :
+                            theStall.selectedGood.prevGood.type : theStall.selectedGood.prevGood.status;
+                    theStall.categories[prevCatName][0] -= 
+                        theStall.goods[theStall.selectedGood.prevGood.key].amount;
+                    theStall.categories[prevCatName].splice(
+                        jQuery.inArray(theStall.selectedGood.prevGood.key,theStall.categories[prevCatName]),1);
+                    delete theStall.goods[theStall.selectedGood.prevGood.key];
+                    if(theStall.categories[prevCatName][0] < 1) { delete theStall.categories[prevCatName]; }
+                    fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/userStalls/su'+userID+'/'+
+                        theStall.selectedGood.prevGood.key).set(null);
+                    fireInventory.child(theStall.selectedGood.prevGood.key).transaction(function(invAmount) {
+                        return parseInt(invAmount)+parseInt(theStall.selectedGood.prevAmount) || 
+                            theStall.selectedGood.prevAmount; });
+                    fireInventory.child(theItem.key).transaction(function(invAmount) {
+                        return invAmount-theStall.selectedGood.addAmount == 0 ? null :
+                            invAmount-theStall.selectedGood.addAmount; });
+                }
+            } else { // New good, not editing existing
+
+            fireInventory.child(theItem.type+':'+theItem.name+status).transaction(function(invAmount) {
+                return invAmount-theStall.selectedGood.addAmount == 0 ? null : 
+                    invAmount-theStall.selectedGood.addAmount; });
+            }
+            if(theStall.hasOwnProperty('categories')) {
+                if(theStall.categories.hasOwnProperty(catName)) {
+                    theStall.categories[catName][0] += theStall.selectedGood.addAmount;
+                    theStall.categories[catName].push(theItem.name+status);
+                } else {
+                    if(theStall.categoryCount > 5) {
+                        $scope.onPixel.camp.economy.market.message = { 
+                            type: 'error', text: 'Your stall cannot have more than 6 categories of items.' };
+                        return;}
+                    theStall.categories[catName] = [theStall.selectedGood.addAmount,theItem.name+status];
+                }
+            } else {
+                theStall.categories = {};
+                theStall.categories[catName] = [theStall.selectedGood.addAmount,theItem.name+status];
+            }
+            theStall.goods[theItem.key] = { color: theItem.color, type: theItem.type, name: theItem.name, 
+                weight: theItem.weight, value: theStall.selectedGood.addPrice, amount: theStall.selectedGood.addAmount,
+                status: theItem.status, key: theItem.key, exotic: 1, prevGood: angular.copy(theItem), 
+                prevAmount: theStall.selectedGood.addAmount };
+            theStall.categoryCount = gameUtility.countProperties(theStall.categories);
+            theStall.goodCount = gameUtility.countProperties(theStall.goods);
+            if(theStall.goodCount > 8) { delete theStall.selectedGood; } else {
+                theStall.selectedGood = theStall.goods['newGood'] = { id: 'newGood', invKey: 'none' }; }
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/userStalls/su'+userID+'/'+theItem.key).set(
+                { amount: parseInt(theStall.goods[theItem.key].amount), value: theStall.goods[theItem.key].value }
+            );
+        };
+        $scope.deleteGoodFromStall = function() {
+            var theStall = $scope.onPixel.camp.economy.market.selectedStall;
+            var prevGood = theStall.selectedGood.prevGood;
+            var prevCatName = jQuery.inArray(prevGood.status,['meat','pelt']) < 0 ?
+                theStall.selectedGood.prevGood.type == 'other' ? prevGood.name :
+                    prevGood.type : prevGood.status;
+            var invItem = { type: prevGood.type, name: prevGood.name,
+                amount: parseInt(theStall.selectedGood.prevAmount), status: prevGood.status };
+            gameUtility.addToInventory(invItem);
+            theStall.categories[prevCatName][0] -= theStall.goods[prevGood.key].amount;
+            theStall.categories[prevCatName].splice(
+                jQuery.inArray(prevGood.key,theStall.categories[prevCatName]),1);
+            if(theStall.categories[prevCatName][0] < 1) { delete theStall.categories[prevCatName]; }
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/userStalls/su'+userID+'/'+
+                prevGood.key).set(null);
+            delete theStall.goods[prevGood.key]; delete theStall.selectedGood;
+        };
         $scope.buyGood = function() {
-            var good = $scope.onPixel.camp.economy.market.selectedStall.selectedGood,
-                amount = $scope.onPixel.camp.economy.market.selectedStall.selectedGood.buyAmount;
+            var stall = $scope.onPixel.camp.economy.market.selectedStall,
+                good = stall.selectedGood, amount = stall.selectedGood.buyAmount;
             if(amount < 1 || amount > good.amount || !parseInt(amount)) { return; }
-            if($scope.user.money -
-                Math.round(amount * good.value * $scope.onPixel.camp.economy.market.selectedStall.markup) < 0) {
-                return; }
+            if($scope.user.money - Math.round(amount * good.value * stall.markup) < 0) { return; }
             amount = parseInt(amount);
-            console.log('buying',amount,good.name,'at',
-                good.value * $scope.onPixel.camp.economy.market.selectedStall.markup,'gold per unit');
+            console.log('buying',amount,good.name,'at', good.value * stall.markup,'gold per unit');
             var invItem = { type: good.type, name: good.name, amount: parseInt(amount), status: good.status }; 
             gameUtility.addToInventory(invItem);
-            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/stock/'+
-                $scope.onPixel.camp.economy.market.selectedStall.id+'/goods/'+good.key).set(good.amount-amount);
-            $scope.user.money = Math.round($scope.user.money -
-                    Math.round(amount * good.value * $scope.onPixel.camp.economy.market.selectedStall.markup));
+            var stockPath = stall.id.substr(0,2) == 'su' ? 
+                '/userStalls/'+stall.id+'/'+good.key+'/amount' : '/stock/'+stall.id+'/goods/'+good.key;
+            console.log('key:',good.key);
+            if(stall.id.substr(0,2) == 'su') { // If this is a user stall, pay the man
+                fireRef.child('users/'+stall.id.substring(2,stall.id.length)+'/money').transaction(function(money) {
+                    return Math.round(parseInt(money) + amount * good.value * stall.markup) ||
+                        Math.round(amount * good.value * stall.markup); });
+                if(good.amount-amount == 0) { // If user stall stock is depleted
+                    fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/userStalls/'+
+                        stall.id+'/'+good.key).set(null);
+                } else { fireRef.child('camps/list/'+$scope.onPixel.camp.grid+stockPath).set(good.amount-amount); }
+            } else { fireRef.child('camps/list/'+$scope.onPixel.camp.grid+stockPath).set(good.amount-amount); }
+            $scope.user.money = Math.round($scope.user.money - Math.round(amount * good.value * stall.markup));
             fireUser.child('money').set($scope.user.money);
         };
         $scope.sellItem = function(item,amount,value) {
@@ -521,15 +640,14 @@ angular.module('Geographr.controllerMain', [])
             console.log('selling',amount,item.name,'at',value,'gold per unit');
             var status = item.status ? ':' + item.status : '';
             if(item.amount - amount > 0) {
-                fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
-                    item.amount -= amount; item.refineAmount = item = item.amount;
-                }
+                    item.amount -= amount; item.refineAmount = item = item.amount; }
             } else {
-                fireInventory.child(item.type+':'+item.name+status).remove();
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
                     delete $scope.onPixel.camp.economy.blacksmith.selectedMineral; }
             }
+            fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
+                return invAmount-amount == 0 ? null : invAmount-amount; });
             $scope.user.money = Math.round($scope.user.money + amount * value); 
             fireUser.child('money').set($scope.user.money);
         };
@@ -540,17 +658,18 @@ angular.module('Geographr.controllerMain', [])
             console.log('refining',amount,item.name,'at',cost,'gold per unit');
             var status = item.status ? ':' + item.status : '';
             if(item.amount - amount > 0) {
-                fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
-                    item.amount -= amount; item.refineAmount = item = item.amount;
-                }
+                    item.amount -= amount; item.refineAmount = item.sellAmount = item.amount; }
             } else {
                 if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
                     delete $scope.onPixel.camp.economy.blacksmith.selectedMineral; }
-                fireInventory.child(item.type+':'+item.name+status).remove();
             }
+            fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
+                return invAmount-amount == 0 ? null : invAmount-amount; });
             $scope.user.money = Math.round($scope.user.money - amount * cost);
             fireUser.child('money').set($scope.user.money);
+            fireUser.child('camps/'+$scope.onPixel.camp.grid+'/blacksmithing').transaction(function(bsAmount) {
+                return bsAmount+1 || amount; }); // Add or set refine amount
             var uniqueID = fireRef.push().name(); uniqueID = uniqueID.substr(uniqueID.length - 6,5);
             fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refining/'+userID+':-:'+item.type+':'+
                 item.name+status+':-:'+amount+':-:'+uniqueID).set(Firebase.ServerValue.TIMESTAMP);
@@ -559,6 +678,8 @@ angular.module('Geographr.controllerMain', [])
             var invItem = { type: refined.type, name: refined.name, amount: refined.amount, status: refined.status };
             gameUtility.addToInventory(invItem);
             fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refined/'+refined.key).remove();
+            fireUser.child('camps/'+$scope.onPixel.camp.grid+'/blacksmithing').transaction(function(bsAmount) {
+                return bsAmount-1 == 0 ? null : bsAmount-1; }); // Subtract/set refine amt
         };
         $scope.cookFood = function(item,amount) {
             if(amount < 1 || amount > item.amount) { return; }
@@ -587,17 +708,17 @@ angular.module('Geographr.controllerMain', [])
             for(var actKey in activities) { if(!activities.hasOwnProperty(actKey)) { return; }
                 var abundance = abundances.hasOwnProperty(actKey) ? abundances[actKey].amount : 0;
                 if(jQuery.inArray(actKey,availableActivities) < 0) { // Activity not already present
-                    var newActivity = { type: actKey, activity: true, 
+                    var newActivity = { type: actKey,
                         abundance: Math.max(0,activities[actKey]+abundance*0.25), 
                         maxAbundance: Math.max(0,activities[actKey]) };
-                    if($scope.onPixel.objects) {
-                        $scope.onPixel.objects.push(newActivity); availableActivities.push(actKey);
-                    } else { $scope.onPixel.objects = [newActivity]; availableActivities = [actKey]; }
+                    if($scope.onPixel.activities) {
+                        $scope.onPixel.activities.push(newActivity); availableActivities.push(actKey);
+                    } else { $scope.onPixel.activities = [newActivity]; availableActivities = [actKey]; }
                 } else { // Activity already present
                     var activity;
-                    for(var i = 0; i < $scope.onPixel.objects.length; i++) {
-                        if($scope.onPixel.objects[i].type == actKey && $scope.onPixel.objects[i].activity) {
-                            activity = $scope.onPixel.objects[i]; break; }}
+                    for(var i = 0; i < $scope.onPixel.activities.length; i++) {
+                        if($scope.onPixel.activities[i].type == actKey) {
+                            activity = $scope.onPixel.activities[i]; break; }}
                     activity.abundance = activity.maxAbundance + abundance*0.25;
                 }
             }
@@ -660,10 +781,10 @@ angular.module('Geographr.controllerMain', [])
             $timeout(function(){
                 if(!$scope.inventory) {  $scope.noEdibles = true; return; }
                 $scope.noEdibles = true;
-                for(var key in $scope.inventory) {
-                    if(!$scope.inventory.hasOwnProperty(key)) { continue; }
+                for(var key in $scope.inventory) { if(!$scope.inventory.hasOwnProperty(key)) { continue; }
                     if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) &&
-                        !gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')) {
+                        (!gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')
+                            || $scope.inventory[key].status == 'cooked')) {
                         $scope.noEdibles = false; if($scope.user.hunger < 100) { changeHunger(userID,0); }
                         return;
                     }
@@ -718,16 +839,16 @@ angular.module('Geographr.controllerMain', [])
             if($scope.authStatus != 'logged') { return; } // If not authed
             $timeout(function(){
                 if(localObjects.hasOwnProperty($scope.overPixel.x + ':' + $scope.overPixel.y)) {
+                    var grid = $scope.overPixel.x + ':' + $scope.overPixel.y;
                     $scope.selectedGrid = localObjects[$scope.overPixel.x + ':' + $scope.overPixel.y];
+                    $scope.selectedGrid.grid = grid;
                     $scope.overPixel.objects = $scope.selectedGrid;
-                    if($scope.selectedGrid.length == 1) {
-                        $scope.selectedObject = $scope.selectedGrid[0];
-                        var grid = $scope.selectedObject.grid;
-                        if($scope.selectedObject.type == 'camp' && 
-                            jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
-                            $scope.selectedObject = gameUtility.expandCamp(grid);
-                            $scope.selectedObject.visited = true;
-                        }
+                    if($scope.selectedGrid.camp && jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
+                        var bsAmount = $scope.selectedGrid.camp.blacksmithing;
+                        $scope.selectedGrid.camp = gameUtility.expandCamp(grid);
+                        $scope.selectedGrid.camp.blacksmithing = bsAmount;
+                        $scope.selectedGrid.camp.type = 'camp';
+                        $scope.selectedGrid.camp.visited = true;
                     }
                 } else { $scope.selectedGrid = null; }
                 objectInfoPanel.show(); objectInfoPanel.css('visibility', 'hidden'); drawZoomCanvas();
@@ -759,8 +880,8 @@ angular.module('Geographr.controllerMain', [])
 
         var drawZoomCanvas = function() {
             if(!$scope.terrainReady) { return; }
-            zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
-                $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
+//            zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
+//                $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
             
             var coords = [];
             
@@ -776,12 +897,14 @@ angular.module('Geographr.controllerMain', [])
             }
             $timeout(function(){
                 objectInfoPanel.css('visibility', 'visible');
-                if($scope.selectedObject) { // Show/hide object info panel
-                    var top = ($scope.selectedObject.grid.split(':')[1] - $scope.zoomPosition[1])
+                if($scope.selectedGrid && $scope.selectedGrid.camp) { // Show/hide object info panel
+                    var top = ($scope.selectedGrid.grid.split(':')[1] - $scope.zoomPosition[1])
                         * zoomPixSize + zoomPixSize;
-                    var left = ($scope.selectedObject.grid.split(':')[0] - $scope.zoomPosition[0])
+                    var left = ($scope.selectedGrid.grid.split(':')[0] - $scope.zoomPosition[0])
                         * zoomPixSize + zoomPixSize;
-                    if(top < 0 || left < 0 || left >= 900 || top >= 600) { objectInfoPanel.hide(); } else {
+                    if(top < 0 || left < 0 || left >= 900 || top >= 600) { 
+                        objectInfoPanel.css('visibility', 'hidden'); 
+                    } else {
                         if(top + objectInfoPanel.children('div').outerHeight() >= 600) {
                             objectInfoPanel.offset({ top: jQuery(zoomHighCanvas).offset().top + top
                                 - objectInfoPanel.children('div').outerHeight() - zoomPixSize });
@@ -801,8 +924,9 @@ angular.module('Geographr.controllerMain', [])
             if(!$scope.user) { return; }
             canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
-            canvasUtility.drawFog(
-                zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize,localTerrain);
+//            canvasUtility.drawFog(
+//                zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize,localTerrain);
+            
             zoomFogContext.drawImage(fullFogCanvas, $scope.zoomPosition[0]*mainPixSize,
                 $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
             canvasUtility.drawPlayer(zoomObjectContext,$scope.user.location.split(':'),
@@ -886,13 +1010,12 @@ angular.module('Geographr.controllerMain', [])
             // Make stuff happen when user clicks on map
             if(addingLabel) { fireRef.child('labels/' + x + ':' + y).set($scope.labelText); 
                 $scope.labelText = ''; addingLabel = false; return false; }
-            if(localObjects.hasOwnProperty(x+':'+y)) { selectGrid(e); return false; } // If selecting an object
             // If an object is selected, but is not clicked, clear the selected object
-            if($scope.selectedGrid && $scope.selectedGrid[0]) { if($scope.selectedGrid[0].grid != x + ':' + y) { 
+            if($scope.selectedGrid) { if($scope.selectedGrid.grid != x + ':' + y) { 
                 $timeout(function() { 
                     $scope.selectedGrid = null; dimPixel(); 
-                    delete $scope.overPixel.objects; delete $scope.selectedGrid; delete $scope.selectedObject;
-                }); return false; }}
+                    delete $scope.overPixel.objects; delete $scope.selectedGrid;
+                }); return false; }} else { selectGrid(e); }
             if(!$scope.editTerrain) { return false; } // If terrain hidden or edit mode is off, we're done here
             if(e.which == 3) { // If right clicking (erase)
                 for(var i = -1; i < 2; i++) {
@@ -990,7 +1113,7 @@ angular.module('Geographr.controllerMain', [])
             }
         };
         // When scrolling on the zoom canvas
-        var zoomScroll = function(event, delta, deltaX, deltaY){
+        var zoomScroll = function(event, delta, deltaX, deltaY) {
             var doZoom = function() {
                 if(deltaY < 0 && $scope.zoomLevel > 0) { $scope.changeZoom($scope.zoomLevel - 1); } 
                 else if(deltaY > 0 && $scope.zoomLevel < zoomLevels.length-1) {
@@ -1010,8 +1133,8 @@ angular.module('Geographr.controllerMain', [])
                 canvasUtility.drawPath(zoomHighContext,$scope.user.location,
                     $scope.movePath,$scope.zoomPosition,zoomPixSize,$scope.moving);
             }
-            if($scope.selectedGrid && $scope.selectedGrid[0].grid) { // Draw selection box around selected cell
-                var coords = $scope.selectedGrid[0].grid.split(':');
+            if($scope.selectedGrid && $scope.selectedGrid.grid) { // Draw selection box around selected cell
+                var coords = $scope.selectedGrid.grid.split(':');
                 coords = [coords[0]-$scope.zoomPosition[0],coords[1]-$scope.zoomPosition[1]];
                 canvasUtility.drawSelect(zoomHighContext,coords,zoomPixSize,'object');
             }
@@ -1043,8 +1166,8 @@ angular.module('Geographr.controllerMain', [])
         var drawTerrain = function(coords,value) {
             if(value) { localTerrain[coords.join(':')] = value; } else
                 { delete localTerrain[coords.join(':')]; }
-            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
-                $scope.zoomPosition,zoomPixSize);
+//            canvasUtility.drawTerrain(zoomTerrainContext,localTerrain,coords,
+//                $scope.zoomPosition,zoomPixSize);
             canvasUtility.fillCanvas(fullTerrainContext,'2c3d4b');
             canvasUtility.drawTerrain(fullTerrainContext,localTerrain,coords,0,0);
         };
@@ -1055,7 +1178,7 @@ angular.module('Geographr.controllerMain', [])
             if(!value) { 
                 delete localObjects[coords.join(':')];
                 if($scope.selectedGrid[0].grid == coords.join(':')) { 
-                    delete $scope.selectedGrid; delete $scope.selectedObject; }
+                    delete $scope.selectedGrid; }
                 canvasUtility.fillMainArea(fullObjectContext,'erase',coords,[1,1]);
             }
             canvasUtility.drawObject(zoomObjectContext,value,coords,
@@ -1119,12 +1242,14 @@ angular.module('Geographr.controllerMain', [])
             $scope.onPixel = { 
                 terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', 
                 slope: Math.round(gameUtility.getSlope(snap.val().location)/2), 
-                elevation: (localTerrain[snap.val().location] || 0), objects: localObjects[snap.val().location]
+                elevation: (localTerrain[snap.val().location] || 0), objects: localObjects[snap.val().location],
+                activities: []
             };
             availableActivities = [];
             $scope.cantLook = false; $scope.lookCount = 0;
-            if(jQuery.inArray(snap.val().location,campList) >= 0) { // If there is a camp here
-                $scope.onPixel.camp = true;
+            // If there is a camp here
+            if(localObjects[snap.val().location] && localObjects[snap.val().location].hasOwnProperty('camp')) { 
+                $scope.onPixel.camp = localObjects[snap.val().location].camp;
                 if(!$scope.user.hasOwnProperty('visitedCamps')) {
                     $scope.user.visitedCamps = [snap.val().location];
                     fireUser.child('visitedCamps').set($scope.user.visitedCamps);
@@ -1136,11 +1261,73 @@ angular.module('Geographr.controllerMain', [])
                 fireRef.child('camps/list/' + snap.val().location).on('value',function(campSnap) {
                     campSnap = campSnap.val();
                     campData.economy.blacksmith.refining = {}; campData.economy.blacksmith.refined = {};
-                    if(!campSnap) {
+                    campData.economy.market.inventory = angular.copy($scope.inventory) || {};
+                    for(var removeStall in campData.economy.market.stalls) {
+                        if(!campData.economy.market.stalls.hasOwnProperty(removeStall)) { continue; }
+                        if(removeStall.substr(0,2) == 'su') { 
+                            delete campData.economy.market.stalls[removeStall]; }
+                    }
+                    if(!campSnap) { // If no snap data
                         campData.economy.blacksmith.refining = campData.economy.blacksmith.refined = null;
-                        $timeout(function(){ $scope.onPixel.camp = campData; }); 
+                        $timeout(function(){ $scope.onPixel.camp = campData;
+                            if(campData.economy.market.selectedStall &&
+                                !campData.economy.market.stalls[campData.economy.market.selectedStall.id]) {
+                                $scope.changeStall(removeStall,0); } // Un-select stall if deleted
+                        }); 
                         return; 
                     }
+                    // Add user stalls
+                    if(campSnap.hasOwnProperty('userStalls')) {
+                        for(var userStall in campSnap.userStalls) {
+                            if(!campSnap.userStalls.hasOwnProperty(userStall)) { continue; }
+                            var theStall = campData.economy.market.stalls[userStall] = {
+                                id: userStall, canvas: localUsers[userStall.substring(2,userStall.length)].color,
+                                goods: {}, goodCount: 0, categoryCount: 0, markup: 1, type: 'user' };
+                            for(var good in campSnap.userStalls[userStall]) {
+                                if(!campSnap.userStalls[userStall].hasOwnProperty(good)) { continue; }
+                                var theGood = campSnap.userStalls[userStall][good];
+                                var modelGood = gameUtility.dressItem({
+                                    type: good.split(':')[0], name: good.split(':')[1],
+                                    status: good.split(':')[2] });
+                                var status = modelGood.status ? ':' + modelGood.status : '';
+                                var catName = jQuery.inArray(modelGood.status,['meat','pelt']) < 0 ?
+                                    modelGood.type == 'other' ? modelGood.name : modelGood.type : modelGood.status;
+                                if(theStall.hasOwnProperty('categories')) {
+                                    if(theStall.categories.hasOwnProperty(catName)) {
+                                        theStall.categories[catName][0] += theGood.amount;
+                                        theStall.categories[catName].push(modelGood.name+status);
+                                    } else { theStall.categories[catName] =
+                                        [theGood.amount,modelGood.name+status]; }
+                                } else { theStall.categories = {}; theStall.categories[catName] =
+                                    [theGood.amount,modelGood.name+status]; }
+                                theStall.goods[good] = {
+                                    color: modelGood.color, type: modelGood.type, name: modelGood.name,
+                                    weight: modelGood.weight, value: theGood.value,
+                                    amount: theGood.amount, status: modelGood.status, key: good, exotic: 1 };
+                                theStall.goods[good].prevGood = angular.copy(theStall.goods[good]);
+                                theStall.goods[good].prevAmount = theStall.goods[good].amount;
+                            }
+                            Math.seedrandom(userStall);
+                            theStall.bg = colorUtility.generate('stallBG').hex;
+                            theStall.categoryCount = gameUtility.countProperties(theStall.categories);
+                            theStall.goodCount = gameUtility.countProperties(theStall.goods);
+                            campData.economy.market.stallCount++;
+                            if(userStall.substring(2,userStall.length) == userID) {
+                                var myStall = campSnap.userStalls[userStall];
+                                for(var myGood in myStall) { if(!myStall.hasOwnProperty(myGood)) { continue; }
+                                    if(campData.economy.market.inventory.hasOwnProperty(myGood)) {
+                                        campData.economy.market.inventory[myGood].amount +=
+                                            parseInt(myStall[myGood].amount);
+                                    } else {
+                                        campData.economy.market.inventory[myGood] = gameUtility.dressItem({
+                                            type: myGood.split(':')[0], name: myGood.split(':')[1], key: myGood,
+                                            status: myGood.split(':')[2], amount: myStall[myGood].amount });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Apply modified stocks
                     if(campSnap.hasOwnProperty('stock')) {
                         for(var stallKey in campSnap.stock) { 
                             if(!campSnap.stock.hasOwnProperty(stallKey)) { continue; }
@@ -1149,17 +1336,25 @@ angular.module('Geographr.controllerMain', [])
                                 if(!campData.economy.market.stalls.hasOwnProperty(stallKey) ||
                                     !campData.economy.market.stalls[stallKey].goods.hasOwnProperty(goodKey)) { 
                                     continue; }
+                                var stockGood = { type: goodKey.split(':')[0], name: goodKey.split(':')[1], 
+                                    status: goodKey.split(':')[2] };
+                                var stockCatName = jQuery.inArray(stockGood.status,['meat','pelt']) < 0 ?
+                                    stockGood.type == 'other' ? stockGood.name : stockGood.type : stockGood.status;
+                                campData.economy.market.stalls[stallKey].categories[stockCatName][0] -=
+                                    campData.economy.market.stalls[stallKey].goods[goodKey].amount - 
+                                        stall.goods[goodKey];
                                 campData.economy.market.stalls[stallKey].goods[goodKey].amount = stall.goods[goodKey];
-                                console.log('applying stock',stall.goods[goodKey],'to',goodKey,'in stall',stallKey);
                             }
                         }
                     }
+                    // Add refining minerals to blacksmith
                     if(campSnap.hasOwnProperty('refining')) {
+                        var notOwnRefining = true;
                         for(var refiningKey in campSnap.refining) {
                             if(!campSnap.refining.hasOwnProperty(refiningKey)) { continue; }
                             var refining = campSnap.refining[refiningKey];
                             if(refiningKey.split(':-:')[0] == userID) {
-                                refining = {
+                                notOwnRefining = false; refining = {
                                     amount: refiningKey.split(':-:')[2], 
                                     type: refiningKey.split(':-:')[1].split(':')[0],
                                     name: refiningKey.split(':-:')[1].split(':')[1],
@@ -1169,13 +1364,16 @@ angular.module('Geographr.controllerMain', [])
                                     refiningKey.split(':-:')[3]] = gameUtility.dressItem(refining);
                             }
                         }
+                        if(notOwnRefining) { campData.economy.blacksmith.refining = null; }
                     } else { campData.economy.blacksmith.refining = null; }
+                    // Add refined minerals to blacksmith
                     if(campSnap.hasOwnProperty('refined')) {
+                        var notOwnRefined = true;
                         for(var refinedKey in campSnap.refined) {
                             if(!campSnap.refined.hasOwnProperty(refinedKey)) { continue; }
                             var refined = campSnap.refined[refinedKey];
                             if(refinedKey.split(':-:')[0] == userID) {
-                                refined = {
+                                notOwnRefined = false; refined = {
                                     amount: refinedKey.split(':-:')[2], type: refinedKey.split(':-:')[1].split(':')[0],
                                     name: refinedKey.split(':-:')[1].split(':')[1], key: refinedKey
                                 };
@@ -1183,18 +1381,52 @@ angular.module('Geographr.controllerMain', [])
                                     refinedKey.split(':-:')[3]] = gameUtility.dressItem(refined);
                             }
                         }
+                        if(notOwnRefined) { campData.economy.blacksmith.refined = null; }
                     } else { campData.economy.blacksmith.refined = null; }
-                    $timeout(function(){ $scope.onPixel.camp = campData; });
-                    
-                    // TODO: Add player stalls
+                    // Reselect or delete selected stall/good
+                    $timeout(function() { 
+                        $scope.onPixel.camp = campData;
+                        var market = $scope.onPixel.camp.economy.market;
+                        if(market.selectedStall) { // If stall selected
+                            if(!market.stalls[market.selectedStall.id]) { delete market.selectedStall; // Gone, delete
+                            } else { // Selected stall still exists
+                                var keptSide;
+                                if(market.selectedStall.selectedGood) { // If good selected
+                                    if(!market.selectedStall.goods[market.selectedStall.selectedGood.key]) {
+                                        delete market.selectedStall.selectedGood; // Gone, delete
+                                    } else { // Selected good still exists
+                                        keptSide = market.selectedStall.rightSide;
+                                        var gKey = market.selectedStall.selectedGood.key;
+                                        var bAmount = Math.min(market.selectedStall.selectedGood.buyAmount,
+                                            market.stalls[market.selectedStall.id].goods[gKey].amount);
+                                        market.selectedStall = market.stalls[market.selectedStall.id];
+                                        market.selectedStall.rightSide = keptSide;
+                                        market.selectedStall.selectedGood = market.selectedStall.goods[gKey];
+                                        market.selectedStall.selectedGood.buyAmount = bAmount
+                                    }
+                                } else { // Stall selected, no good selected
+                                    keptSide = market.selectedStall.rightSide;
+                                    market.selectedStall = market.stalls[market.selectedStall.id];
+                                    market.selectedStall.rightSide = keptSide;
+                                }
+                            }
+                        }
+                    });
                 });
             } else { // If no camp
                 fireRef.child('abundances/'+$scope.user.location).on('value',function(snap) {
-                    abundances = snap.val() || {}; createActivities();
-                });
+                    abundances = snap.val() || {}; createActivities(); });
             }
+            var previousPixels = angular.copy(visiblePixels), drawPixels = {};
             visiblePixels = gameUtility.getVisibility(visiblePixels,snap.val().location);
-            canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
+            for(var visKey in visiblePixels) { if(!visiblePixels.hasOwnProperty(visKey)) { continue; } 
+                if(previousPixels.hasOwnProperty(visKey)) { 
+                    if(previousPixels[visKey] != visiblePixels[visKey]) { drawPixels[visKey]=visiblePixels[visKey]; }
+                } else { drawPixels[visKey] = visiblePixels[visKey]; }
+            }
+            canvasUtility.drawFog(fullFogContext,fullTerrainContext,drawPixels,localTerrain);
+            
+            //canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
             var firstWater; $scope.movePath = snap.val().movePath || [];
             for(var i = 0; i < $scope.movePath.length; i++) {
                 if(visiblePixels.hasOwnProperty($scope.movePath[i]) &&
@@ -1206,8 +1438,7 @@ angular.module('Geographr.controllerMain', [])
             if($scope.movePath.length == 0) { $scope.moving = false; }
             else { var moveTime = 5 * (1 + localTerrain[$scope.movePath[0]] / 60); playWaitingBar(moveTime); }
             fireUser.child('visiblePixels').set(visiblePixels);
-            $timeout(function(){
-                canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,0,0,localTerrain);
+            $timeout(function() {
                 var x = snap.val().location.split(':')[0], y = snap.val().location.split(':')[1];
                 var offX = x > 277 ? 277 - x : x < 22 ? 22 - x : 0; // Keep zoom view in-bounds
                 var offY = y > 284 ? 284 - y : y < 14 ? 14 - y : 0;
@@ -1254,6 +1485,9 @@ angular.module('Geographr.controllerMain', [])
             });
         };
         var initTerrain = function() {
+            var terrainImg = new Image;
+            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0); };
+            terrainImg.src = 'img/world-map.png';
             if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
                 fireRef.child('lastTerrainUpdate').once('value',function(snap) {
                     var needUpdate = true;
@@ -1274,19 +1508,34 @@ angular.module('Geographr.controllerMain', [])
         var prepareTerrain = function() {
             $scope.terrainReady = true;
             gameUtility.attachTerrain(localTerrain);
+            canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,localTerrain);
             fireRef.child('campList').once('value',function(snap) {
-               if(!snap.val() && userID < 3) { // Generate camps if none on firebase
-                   var nativeLocations = gameUtility.genNativeCamps();
-                   fireRef.child('campList').set(nativeLocations); return;
-               } 
-               campList = snap.val();
-               for(var i = 0; i < campList.length; i++) { // Generate camp details from locations
-                   Math.seedrandom(campList[i]);
-                   var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
-                   var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
-                   if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].push(camp); } 
-                   else { localObjects[campList[i]] = [camp]; }
-               }
+                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
+                    var nativeLocations = gameUtility.genNativeCamps();
+                    fireRef.child('campList').set(nativeLocations); return;
+                } 
+                campList = snap.val();
+                for(var i = 0; i < campList.length; i++) { // Store camps in localObjects
+                    Math.seedrandom(campList[i]);
+                    var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
+                    var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
+                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].camp = camp; }
+                    else { localObjects[campList[i]] = { camp: camp }; }
+                }
+                fireUser.child('camps').on('value', function(snap) {
+                    var camps = snap.val();
+                    for(var campKey in camps) { if(!camps.hasOwnProperty(campKey)) { continue; }
+                        for(var infoKey in camps[campKey]) { 
+                            if(!camps[campKey].hasOwnProperty(infoKey)) { continue; }
+                            localObjects[campKey].camp[infoKey] = camps[campKey][infoKey];
+                        }
+                    }
+                    if(!camps) { for(var v = 0; v < $scope.user.visitedCamps.length; v++) {
+                        if(localObjects[$scope.user.visitedCamps[v]].blacksmithing) {
+                            delete localObjects[$scope.user.visitedCamps[v]].blacksmithing; }
+                    }}
+                    drawZoomCanvas();
+                });
             });
             fireUser.child('movement').on('value', movePlayer);
             fireUser.child('stats/hunger').on('value', function(snap) {

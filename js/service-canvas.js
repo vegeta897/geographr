@@ -241,15 +241,15 @@ angular.module('Geographr.canvas', [])
                 context.shadowColor = 'rgba(0,0,0,0.6)';
                 context.shadowOffsetX = context.shadowOffsetY = zoomPixSize/16;
                 context.shadowBlur = zoomPixSize/12;
-                for(var i = 0; i < object.length; i++) {
-                    switch(object[i].type) {
-                        case 'userCamp': 
-                            context.strokeStyle = 'rgba(73,68,39,1)'; context.fillStyle = '#'+object[i].color;
+                for(var objKey in object) { if(!object.hasOwnProperty(objKey)) { continue; }
+                    switch(objKey) {
+                        case 'userCamp': context.fillStyle = '#' + object[objKey].color;
+                            context.strokeStyle = 'rgba(73,68,39,1)'; 
                             if(canvasType == 'full') {
                                 context.shadowColor = 'rgba(0,0,0,0)';
                                 context.fillRect((x - offset[0]),(y - offset[1]),1,1); break;
                             }
-                            context.fillStyle = '#' + object[i].color;
+                            context.fillStyle = '#' + object[objKey].color;
                             context.lineWidth = zoomPixSize / 6;
                             x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
                             context.beginPath();
@@ -262,10 +262,16 @@ angular.module('Geographr.canvas', [])
                         case 'camp': context.fillStyle = 'rgb(140,140,140)';
                             if(canvasType == 'full') { 
                                 context.fillRect((x - offset[0]),(y - offset[1]), 1,1); break; }
-                            var pix = zoomPixSize % 4 ? 1 : 0; // Keep sharp pixels
+                            var pix = zoomPixSize % 4 ? zoomPixSize % 4 : 0; // Keep sharp pixels
                             x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
                             context.fillRect(Math.floor(x+zoomPixSize/4), Math.floor(y+zoomPixSize/4), 
                                 canvasPixSize-zoomPixSize/2+pix,canvasPixSize-zoomPixSize/2+pix);
+                            if(object[objKey].blacksmithing) { // If blacksmithing
+                                context.fillStyle = 'rgb(200,80,80)';
+                                context.fillRect(Math.ceil(x+zoomPixSize/4-(zoomPixSize+pix)/8), 
+                                    Math.ceil(y+zoomPixSize/4-(zoomPixSize+pix)/8),
+                                    Math.ceil((zoomPixSize+pix)/4),Math.ceil((zoomPixSize+pix)/4));
+                            }
                             break;
                         case 'campfire': context.fillStyle = 'rgba(166,95,44,0.8)';
                             if(canvasType == 'full') { break; }
@@ -313,7 +319,7 @@ angular.module('Geographr.canvas', [])
                 waterGradient.addColorStop(0,'rgb(62,71,77)');
                 waterGradient.addColorStop(0.13,'rgb(62,71,77)');
                 waterGradient.addColorStop(0.4,'rgb(44,61,75)');
-                waterGradient.addColorStop(0.6,'rgb(42,71,65)');
+                waterGradient.addColorStop(0.6,'rgb(44,61,75)');
                 waterGradient.addColorStop(1,'rgb(42,71,65)');
                 context.fillStyle = waterGradient;
                 context.fillRect(0,0,300,300);
@@ -355,20 +361,14 @@ angular.module('Geographr.canvas', [])
                     }
                 }
             },
-            drawFog: function(context,terrainContext,pixels,zoomPosition,zoomPixSize,terrain) {
-                var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
-                var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
-                var offset = canvasType == 'full' ? [0,0] : zoomPosition;
+            drawFog: function(context,terrainContext,pixels,terrain) {
                 context.fillStyle = 'rgb(42,47,51)';
-                if(canvasType == 'full') { context.fillRect(0,0,900,600); }
-                for(var key in pixels) {
-                    if(!pixels.hasOwnProperty(key)) { continue; }
+                for(var key in pixels) { if(!pixels.hasOwnProperty(key)) { continue; }
                     var thisCoord = key.split(':');
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
-                    context.clearRect((thisX - offset[0])*canvasPixSize,
-                        (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
-                    if(pixels[key] > 1 && canvasType == 'full') { // If semi-visible/explored pixel
-                        var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
+                    context.clearRect(thisX,thisY, 1,1);
+                    var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
+                    if(pixels[key] > 1) { // If semi-visible/explored pixel
                         var isWater = !terrain.hasOwnProperty(key);
                         var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114)-15;
                         var greyAmount = pixels[key] == 1.5 ? 0.8 : pixels[key] == 2 ? 0.4 : 0.25;
@@ -380,9 +380,10 @@ angular.module('Geographr.canvas', [])
                             {r:(42-greyed.r)*fogAmount,g:(47-greyed.g)*fogAmount, b:(51-greyed.b)*fogAmount};
                         context.fillStyle = 'rgb('+parseInt(greyed.r+fogDiff.r)+','
                             +parseInt(greyed.g+fogDiff.g)+','+parseInt(greyed.b+fogDiff.b)+')';
-                        context.fillRect((thisX - offset[0])*canvasPixSize,
-                            (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                    } else {
+                        context.fillStyle = 'rgb('+p[0]+','+p[1]+','+p[2]+')';
                     }
+                    context.fillRect(thisX,thisY, 1,1);
                 }
             },
             drawSelect: function(context,coords,zoomPixSize,type) {

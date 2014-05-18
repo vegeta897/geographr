@@ -131,9 +131,9 @@ angular.module('Geographr.directives', [])
     return function(input) { if(!input) { return input; } return Math.floor(input / 10) + 1; }
 })
 .filter('typeFilter', function(gameUtility) {
-    return function(input,types) {
+    return function(input,types,blackList,exception) {
         if(!input) { return input; }
-        var list = [], inputCopy = angular.copy(input);
+        var list = [];
         switch(types[0]) {
             case 'edible':
                 for(var edKey in input) { if(!input.hasOwnProperty(edKey)) { continue; }
@@ -152,6 +152,14 @@ angular.module('Geographr.directives', [])
                     if(gameUtility.edibles[input[coKey].name].hasOwnProperty('cookedEnergy')) {
                         list.push(input[coKey]);
                     }
+                }
+                break;
+            case 'sellable':
+                for(var seKey in input) { if(!input.hasOwnProperty(seKey)) { continue; }
+                    if(input[seKey].status == 'unrefined' || input[seKey].status == 'cooked' ||
+                        input[seKey].type == 'plant' || 
+                        (blackList && blackList[seKey] && exception != seKey)) { continue; }
+                    input[seKey].key = seKey; list.push(input[seKey]);
                 }
                 break;
             case 'blacksmith':
