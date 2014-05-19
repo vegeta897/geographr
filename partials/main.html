@@ -55,19 +55,22 @@
         </div>
         <!-- TODO: Show mini-stats view (hunger) above camp UI when at a camp -->
         <div class="col-xs-6" ng-hide="user.camp"></div>
-        <!-- Inventory -->
+        <!-- Location/Camp -->
         <div id="location" ng-class="{'col-xs-3':!onPixel.camp, 'col-xs-6':onPixel.camp}"
-             ng-include="'partials/location.html'" ng-show="user.camp"></div>
+             ng-include="'partials/location.html'" ng-show="user.camp && !event.story"></div>
+        <!-- Story Event HUD -->
+        <div id="eventStory" class="col-xs-6" ng-show="event.story"></div>
         <!-- Inventory -->
         <div id="inventory" class="col-xs-3" ng-include="'partials/inventory.html'" 
-             ng-show="user.camp && !onPixel.camp"></div>
+             ng-show="user.camp && !onPixel.camp && !event.story"></div>
         <div class="col-xs-3">
             <!-- Object Info -->
             <div id="objectInfo">
                 <div ng-show="selectedGrid.camp" onLoad="attachObjInfo()" ng-include="'partials/object-info.html'"></div>
             </div>
             <!-- Inventory -->
-            <div id="inventory" ng-include="'partials/inventory.html'" ng-show="user.camp && onPixel.camp"></div>
+            <div id="inventory" ng-include="'partials/inventory.html'" 
+                 ng-show="user.camp && (onPixel.camp || event.story)"></div>
             <!-- Misc Stuff - Right Side -->
             <div ng-hide="onPixel.camp" ng-include="'partials/misc.html'"></div>
         </div>

@@ -206,10 +206,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var campNodes = {}, productPool = { list: [], categories: {}, stallTypes: {} };
         var today = new Date();
         for(var nodeKey in economyNodes) { if(!economyNodes.hasOwnProperty(nodeKey)) { continue; }
-            Math.seedrandom(today.getYear()+'/'+today.getMonth()+'/'+Math.round(today.getDay()/7)+
-                nodeKey+grid); // ~Weekly
+            Math.seedrandom(nodeKey+grid);
             var node = economyNodes[nodeKey], amount = node.occurrence.split(':')[1], occurred = 0;
-            var distance = node.nativeY ? Math.abs(scope.user.location.split(':')[1] - node.nativeY) : 0;
+            var distance = node.nativeY ? Math.abs(grid.split(':')[1] - node.nativeY) : 0;
             var maxDistance = node.nativeY ?
                 node.range + Math.random() * (node.range/2) - (node.range/4) : 1;
             if(distance > maxDistance) { continue; }
@@ -232,7 +231,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 occurred * (Math.random() * amount - (amount/2)) * 0.8);
             if(campNode.amount <= 0) { delete campNodes[nodeKey]; continue; }
             var outputAmount = node.output[0].split(':')[node.output[0].split(':').length-1];
-            Math.seedrandom(today.getYear()+'/'+today.getMonth()+'/'+today.getDay()+nodeKey+grid); // Daily
+            Math.seedrandom(today.getYear()+'/'+today.getMonth()+'/'+today.getDate()+nodeKey+grid); // Daily
             campNode.output = Math.ceil(outputAmount * campNode.amount +
                 outputAmount * (Math.random() * campNode.amount - (campNode.amount/2)) * 0.8);
             // TODO: If high variance, have market people comment on it
@@ -244,7 +243,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         angular.copy(itemsMaster[node.output[0].split(':')[0]][node.output[0].split(':')[1]]);
                     pushProduct.type = node.output[0].split(':')[0]; 
                     pushProduct.name = node.output[0].split(':')[1];
-                } else { pushProduct = pickProduct(node.output[0]); }
+                } else { pushProduct = pickProduct(node.output[0],grid); }
                 pushProduct.value = Math.max(0.1,pushProduct.value * (campNode.variance - 2) * -1 
                     * (1+Math.random()*0.05));
                 var pushProducts = [pushProduct];
@@ -345,9 +344,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 if(productPool.stallTypes[msTypeKey].count <= 0) { // If no goods left in this stall type
                     delete productPool.stallTypes[msTypeKey]; break; // Don't try this stall type again
                 }
-                if(productPool.stallTypes[msTypeKey].count <= 0 ||
-                    stall.weight >= marketStallTypes[msTypeKey].capacity ||
-                    countProperties(stall.goods) > 7) {
+                if(productPool.stallTypes[msTypeKey].count <= 0 || countProperties(stall.goods) > 7 ||
+                    stall.weight >= marketStallTypes[msTypeKey].capacity) {
                     break; // All applicable products added, or stall over weight capacity/good variety
                 }
             }
@@ -420,7 +418,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
 //        console.log('post-combine:',angular.copy(chosenStallTypes));
         
 //        console.log('remaining stall types:',angular.copy(chosenStallTypes),'remaining products:',productPool.list);
-
+        var allGoods = {};
         var stalls = { sa: { goods: {} }, sb: { goods: {} }, sc: { goods: {} }, sd: { goods: {} },
             se: { goods: {} }, sf: { goods: {} }, sg: { goods: {} }, sh: { goods: {} }, si: { goods: {} }, 
             sj: { goods: {} }, sk: { goods: {} }, sl: { goods: {} }, sm: { goods: {} }, sn: { goods: {} } };
@@ -428,6 +426,17 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         for(var stallKey in stalls) { if(!stalls.hasOwnProperty(stallKey)) { continue; }
             var chosenStallKey = pickProperty(chosenStallTypes);
             stalls[stallKey] = chosenStallTypes[chosenStallKey];
+            for(var fsGoodKey in stalls[stallKey].goods) { // Average prices
+                if(!stalls[stallKey].goods.hasOwnProperty(fsGoodKey)) { continue; }
+                if(allGoods.hasOwnProperty(fsGoodKey)) {
+                    allGoods[fsGoodKey].averagePrice = (allGoods[fsGoodKey].averagePrice + 
+                        stalls[stallKey].goods[fsGoodKey].value * stalls[stallKey].markup)/2;
+                    allGoods[fsGoodKey].total += stalls[stallKey].goods[fsGoodKey].amount;
+                    allGoods[fsGoodKey].stallCount++; allGoods[fsGoodKey].stallList.push(stallKey);
+                } else { allGoods[fsGoodKey] = { averagePrice: 
+                    stalls[stallKey].goods[fsGoodKey].value * stalls[stallKey].markup,
+                    total: stalls[stallKey].goods[fsGoodKey].amount, stallCount: 1, stallList: [stallKey] }; }
+            }
 //            console.log(stallKey,'is a',stalls[stallKey].type,'stall - markup:',stalls[stallKey].markup);
             delete chosenStallTypes[chosenStallKey];
             if(countProperties(chosenStallTypes) < 1) { break; }
@@ -439,13 +448,15 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         
         // Redistribute goods between like-stalls?
         
-//        console.log('final stalls',angular.copy(stalls));
-        return { economyNodes: campNodes, market: { stalls: stalls, stallCount: countProperties(stalls) },
-            blacksmith: { markup: campNodes.hasOwnProperty('mining camp') ? 
+        var finalEconomy = { economyNodes: campNodes, 
+            market: { stalls: stalls, allGoods: allGoods, stallCount: countProperties(stalls) },
+            blacksmith: { markup: campNodes.hasOwnProperty('mining camp') ?
                 1 + 1 / campNodes['mining camp'].amount : null } };
+//        console.log('final economy',angular.copy(finalEconomy));
+        return finalEconomy;
     };
 
-    var pickProduct = function(type) { // Pick an event product based on rarity property
+    var pickProduct = function(type,grid) { // Pick an event product based on rarity property
         var poolObject = type.split(':')[0] == 'event' ? angular.copy(eventProducts[type.split(':')[1]]) :
             angular.copy(itemsMaster[type.split(':')[0]]);
         var minRarity = 1;
@@ -462,7 +473,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         picked = dressItem(picked);
         var rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
             1 + picked.abundance / minRarity;
-        var distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
+        var distance = picked.nativeY ? Math.abs(grid.split(':')[1] - picked.nativeY) : 0;
         var maxDistance = picked.nativeY ?
             picked.range + Math.random() * (picked.range) - (picked.range/2) : 1;
         var count = 0;
@@ -476,7 +487,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             picked = dressItem(picked);
             rarity = picked.hasOwnProperty('rarity') ? (picked.rarity - minRarity) / (1-minRarity) :
                 1 + picked.abundance / minRarity;
-            distance = picked.nativeY ? Math.abs(scope.user.location.split(':')[1] - picked.nativeY) : 0;
+            distance = picked.nativeY ? Math.abs(grid.split(':')[1] - picked.nativeY) : 0;
             maxDistance = picked.nativeY ?
                 picked.range + Math.random() * (picked.range) - (picked.range/2) + count : 1;
         }
@@ -735,7 +746,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'forage':
                 number = Math.max(Math.round(event.abundance * 3 + Math.random()*2*event.abundance),1);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct('event:'+event.type);
+                    product = pickProduct('event:'+event.type,scope.user.location);
                     while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
                         product = pickProduct('event:'+event.type);
                     }
@@ -750,7 +761,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'hunt':
                 number = Math.max(Math.round(event.abundance * 2 + Math.random()*event.abundance),1);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct('event:'+event.type);
+                    product = pickProduct('event:'+event.type,scope.user.location);
                     item = { product: product,
                         targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                     pool.push(item);
@@ -759,7 +770,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             case 'mine':
                 number = Math.round(1 + event.abundance * 8 + Math.random()*8*event.abundance);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct('event:'+event.type);
+                    product = pickProduct('event:'+event.type,scope.user.location);
                     product.status = 'unrefined';
                     item = { product: product,
                         targetX: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)], 
@@ -1033,6 +1044,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         attachFireInventory: function(fireInv) { fireInventory = fireInv; },
         addToInventory: addToInventory, cleanInventory: cleanInventory, dressItem: dressItem,
         getItemActions: getItemActions, getSlope: getSlope, countProperties: countProperties,
+        randomIntRange: randomIntRange,
         itemsMaster: itemsMaster, event: event,
         edibles: edibles, equipment: equipment
     }

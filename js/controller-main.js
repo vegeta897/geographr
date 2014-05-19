@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.29; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.291; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -621,7 +621,6 @@ angular.module('Geographr.controllerMain', [])
             gameUtility.addToInventory(invItem);
             var stockPath = stall.id.substr(0,2) == 'su' ? 
                 '/userStalls/'+stall.id+'/'+good.key+'/amount' : '/stock/'+stall.id+'/goods/'+good.key;
-            console.log('key:',good.key);
             if(stall.id.substr(0,2) == 'su') { // If this is a user stall, pay the man
                 fireRef.child('users/'+stall.id.substring(2,stall.id.length)+'/money').transaction(function(money) {
                     return Math.round(parseInt(money) + amount * good.value * stall.markup) ||

@@ -524,46 +524,16 @@ angular.module('Geographr.controllerServer', [])
                 auth.login('password', {email: loginEmail, password: loginPassword, rememberMe: true});
             }, 3600000); // Re-authenticate every hour
             fireRef.child('status').onDisconnect().set('offline');
-            
             var passTime = function() {
                 fireRef.child('camps').once('value',function(snap) { if(!snap.val()) { return; }
                     var theTime = new Date(), camps = snap.val(), campList = camps.list, restocking = false;
                     var message = '';
                     if(!camps.hasOwnProperty('lastMarketStock') || 
-                        camps.lastMarketStock != theTime.getMonth()+'/'+theTime.getDay()) { 
+                        camps.lastMarketStock != theTime.getMonth()+'/'+theTime.getDate()) { 
                         restocking = true; message = 'markets restocked' }
                     if(!campList) { return; }
-//                    for(var camp in camps.list) { if(!camps.list.hasOwnProperty(camp)) { continue; }
-//                        var deltas = camps.list[camp].deltas; if(!deltas) { continue; }
-//                        // var campInfo = gameUtility.expandCamp(camp);
-//                        for(var resource in deltas) { if(!deltas.hasOwnProperty(resource)) { continue; }
-//                            resource = { type: resource.split(':')[0], name: resource.split(':')[1] };
-//                            var demand = 50 /*campInfo.economy.resources[resource].demand*/;
-//                            var abundance = gameUtility.itemsMaster[resource.type][resource.name].abundance;
-//                            // Understocked: % demand of 4hr + ( 50-abundance ) * 2min
-//                            // Overstocked: 1hr - % demand of 30min - ( abundance * 1min )
-//                            var interval = camps.list[camp].deltas[resource].amount < 0 ? 
-//                                demand/100 * 14400000 + (50-abundance) * 80000
-//                                : 3600000 - demand/100 * 1800000 - abundance * 60000;
-//                            var multiplier = interval < 0 ? Math.ceil(interval / -120000) : 1;
-//                            interval = Math.max(1,interval);
-//                            if(theTime < camps.list[camp].deltas[resource].time + interval) { continue; }
-//                            var difference = theTime - (parseInt(camps.list[camp].deltas[resource].time) + interval);
-//                            multiplier += multiplier * Math.floor(difference / interval);
-//                            difference -= interval * Math.floor(difference / interval);
-//                            message += camps.list[camp].deltas[resource].amount < 0 ?
-//                                camp + '-' + resource + ' replenished by ' + multiplier + ' | ' :
-//                                camp + '-' + resource + ' depleted by ' + multiplier + ' | ' ;
-//                            newCamps.list[camp].deltas[resource].amount = camps.list[camp].deltas[resource].amount<0 ? 
-//                                Math.min(camps.list[camp].deltas[resource].amount + multiplier,0) : 
-//                                Math.max(camps.list[camp].deltas[resource].amount - multiplier,0);
-//                            newCamps.list[camp].deltas[resource].time = theTime - difference;
-//                            newCamps.list[camp].deltas[resource] = newCamps.list[camp].deltas[resource].amount == 0 ?
-//                                null : newCamps.list[camp].deltas[resource];
-//                        }
-//                    }
                     camps.lastMarketStock = 
-                        restocking ? theTime.getMonth()+'/'+theTime.getDay() : camps.lastMarketStock;
+                        restocking ? theTime.getMonth()+'/'+theTime.getDate() : camps.lastMarketStock;
                     for(var campKey in campList) { if(!campList.hasOwnProperty(campKey)) { continue; }
                         var camp = campList[campKey];
                         if(camp.hasOwnProperty('stock') && restocking) { delete camp.stock; }
@@ -581,6 +551,48 @@ angular.module('Geographr.controllerServer', [])
                                     var refinedKey = split[0] + ':-:' + split[1] + ':-:' + newAmount + ':-:' + split[3];
                                     camp.refined[refinedKey] = refining;
                                     delete camp.refining[refiningKey];
+                                }
+                            }
+                        }
+                        if(camp.hasOwnProperty('userStalls')) {
+                            var campInfo = gameUtility.expandCamp(campKey);
+                            Math.seedrandom();
+                            for(var uStall in camp.userStalls) { 
+                                if(!camp.userStalls.hasOwnProperty(uStall)) { continue; }
+                                for(var uGoodKey in camp.userStalls[uStall]) {
+                                    if(!camp.userStalls[uStall].hasOwnProperty(uGoodKey)) { continue; }
+                                    var uGood = gameUtility.dressItem({type: uGoodKey.split(':')[0],
+                                        name: uGoodKey.split(':')[1], status: uGoodKey.split(':')[2]});
+                                    uGood.amount = camp.userStalls[uStall][uGoodKey].amount;
+                                    uGood.value = camp.userStalls[uStall][uGoodKey].value;
+                                    var expectedPrice;
+                                    if(campInfo.economy.market.allGoods[uGoodKey]) {
+                                        var stallGood = campInfo.economy.market.allGoods[uGoodKey];
+                                        console.log('stall(s)',stallGood.stallList,'selling',stallGood.total,uGoodKey,
+                                            'for',stallGood.averagePrice,'average price');
+                                        expectedPrice = stallGood.averagePrice;
+                                    } else {
+                                        console.log(uGoodKey,'not being sold here');
+                                        var distance = uGood.nativeY ? Math.max(0,
+                                            (Math.abs(campKey.split(':')[1] - uGood.nativeY)) - uGood.range) : 0;
+                                        var exotic = 1 + distance/(uGood.range/2) || 1;
+                                        expectedPrice = uGood.value * exotic * 1.6;
+                                    }
+                                    console.log('buy factor:',(expectedPrice / uGood.value)/2);
+                                    if((expectedPrice / uGood.value)/2 > Math.random()*2+0.3) {
+                                        var buyAmount = Math.min(uGood.amount,
+                                            gameUtility.randomIntRange(1,Math.ceil(uGood.value/expectedPrice)));
+                                        console.log('buying',buyAmount,uGood.name);
+                                        (function(ba,ug) { // Enclosure to avoid async reference problem
+                                            fireRef.child('users/'+uStall.substring(2,uStall.length)+'/money')
+                                                .transaction(function(money) {
+                                                    return money + ba * ug.value || ba * ug.value; });
+                                        })(buyAmount,uGood);
+                                        camp.userStalls[uStall][uGoodKey].amount -= buyAmount;
+                                        if(camp.userStalls[uStall][uGoodKey].amount < 1) {
+                                            delete camp.userStalls[uStall][uGoodKey]; }
+                                    }
+                                    console.log('------------------');
                                 }
                             }
                         }

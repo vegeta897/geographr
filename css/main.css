@@ -417,7 +417,7 @@ strong { color: #ccc; }
 
 .attach-top { position: relative; top: -6px; }
 
-#objectInfo>div { position: absolute; background: #232527; opacity: 0.95; width: 240px; padding: 4px 12px;
+#objectInfo>div { position: absolute; background: #232527; opacity: 0.95; width: 260px; padding: 4px 12px;
     border: 1px solid black; }
 #objectInfo.wider>div { width: 380px; }
 #objectInfo>div h2+p { font-size: 0.9em; }
