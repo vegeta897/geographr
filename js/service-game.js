@@ -138,9 +138,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     };
     var marketStallTypes = {
         fish: { goods: ['fish'], capacity: 50 }, 
-        'animal pelt': { goods: ['animal:pelt'], capacity: 50 },
-        'animal meat': { goods: ['animal:meat'], capacity: 70 },
-        meat: { goods: ['fish','animal:meat'], capacity: 75 },
+        'animal pelt': { goods: ['animal:pelt'], capacity: 12 },
+        'animal meat': { goods: ['animal:meat'], capacity: 50 },
+        meat: { goods: ['fish','animal:meat'], capacity: 65 },
         animal: { goods: ['animal'], capacity: 400 },
         'small animal': { 
             goods: ['animal:rabbit','animal:mole','animal:pheasant','animal:duck'], capacity: 50 },
@@ -200,6 +200,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var array = []; for(var key in object) { if(object.hasOwnProperty(key)) { array.push(key); } }
         return pickInArray(array);
     };
+    var escapeRegExp = function(string) { return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); };
+    var replaceAll = function(find, replace, str) {
+        return str.replace(new RegExp(escapeRegExp(find), 'g'), replace); };
 
     var genCampEconomy = function(grid) {
         // First create economic nodes
@@ -436,6 +439,11 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 } else { allGoods[fsGoodKey] = { averagePrice: 
                     stalls[stallKey].goods[fsGoodKey].value * stalls[stallKey].markup,
                     total: stalls[stallKey].goods[fsGoodKey].amount, stallCount: 1, stallList: [stallKey] }; }
+                if(stalls[stallKey].goods[fsGoodKey].exotic > 1.5) {
+                    var direction = itemsMaster[fsGoodKey.split(':')[0]][fsGoodKey.split(':')[1]].nativeY - 
+                        grid.split(':')[1] < 0 ? 'north' : 'south';
+                    stalls[stallKey].exoticGood = fsGoodKey.split(':')[1]+':'+direction;
+                }
             }
 //            console.log(stallKey,'is a',stalls[stallKey].type,'stall - markup:',stalls[stallKey].markup);
             delete chosenStallTypes[chosenStallKey];
@@ -448,7 +456,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         
         // Redistribute goods between like-stalls?
         
-        var finalEconomy = { economyNodes: campNodes, 
+        var finalEconomy = { economyNodes: campNodes, message: '',
             market: { stalls: stalls, allGoods: allGoods, stallCount: countProperties(stalls) },
             blacksmith: { markup: campNodes.hasOwnProperty('mining camp') ?
                 1 + 1 / campNodes['mining camp'].amount : null } };
@@ -1015,6 +1023,15 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             }
             return { newInv: newQuantities, newNeeded: neededHunger };
         },
+        marketMessage: {
+            clear: function() { scope.onPixel.camp.economy.market.message = ''; },
+            add: function(message,type) {
+                scope.onPixel.camp.economy.market.message += '<p class="'+type+'">'+
+                    replaceAll('b>','strong>',message)+'</p>'; },
+            set: function(message,type) {
+                scope.onPixel.camp.economy.market.message = '<p class="'+type+'">'+
+                    replaceAll('b>','strong>',message)+'</p>'; }
+        },
         tutorial: function(step) {
             var text = '';
             switch(parseInt(step)) {
@@ -1044,7 +1061,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         attachFireInventory: function(fireInv) { fireInventory = fireInv; },
         addToInventory: addToInventory, cleanInventory: cleanInventory, dressItem: dressItem,
         getItemActions: getItemActions, getSlope: getSlope, countProperties: countProperties,
-        randomIntRange: randomIntRange,
+        randomIntRange: randomIntRange, replaceAll: replaceAll,
         itemsMaster: itemsMaster, event: event,
         edibles: edibles, equipment: equipment
     }

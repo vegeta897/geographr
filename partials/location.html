@@ -173,6 +173,8 @@
                     </div>
                 </div>
             </div>
+            <div class="market-message" ng-bind-html="onPixel.camp.economy.market.message"
+               ng-show="onPixel.camp.economy.market.message"></div>
         </div>
         <div ng-class="{'stalls-min':onPixel.camp.economy.market.selectedStall}">
             <div class="stall" ng-repeat="(stall, stallData) in onPixel.camp.economy.market.stalls"
@@ -219,8 +221,8 @@
                     <span ng-hide="onPixel.camp.economy.market.selectedStall">Set up a stall!</span></p>
             </div>
         </div>
-        <div class="clearfix"><p class="market-message" ng-class="onPixel.camp.economy.market.message.type"
-            ng-show="onPixel.camp.economy.market.message">{{ onPixel.camp.economy.market.message.text }}</p></div>
+        <div class="clearfix">
+        </div>
     </div>
     <div ng-show="showBS" class="blacksmith" ng-class="{'last-section':showBS}" >
         <h4>Blacksmith</h4>

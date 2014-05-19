@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.291; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.292; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -407,7 +407,7 @@ angular.module('Geographr.controllerMain', [])
             });
         };
         $scope.changeStall = function(stallID,index) {
-            delete $scope.onPixel.camp.economy.market.message;
+            gameUtility.marketMessage.clear();
             var stall = jQuery(document.getElementById('selectedStall')).finish(), 
                 market = $scope.onPixel.camp.economy.market;
             var checkNewStall = function() {
@@ -415,10 +415,10 @@ angular.module('Geographr.controllerMain', [])
                     market.stalls[stallID] = { id: stallID, type: 'user', canvas: $scope.user.camp.color, goods: {},
                         goodCount: 0, categoryCount: 0, markup: 1 };
                     market.selectedStall = market.stalls[stallID];
-                    $scope.onPixel.camp.economy.market.message = {
-                        type: '', text: 'Choose goods from your inventory to sell. Check other stalls in the market ' +
-                            'to ensure your prices are competitive. Goods you add to your stall will be immediately ' +
-                            'available for sale.' };
+                    gameUtility.marketMessage.set('Choose goods from your inventory to <b>sell</b>. Check other' +
+                        ' stalls in the market to ensure your prices are <b>competitive</b>.' +
+                        ' Goods you add to your stall will be <b>immediately ' +
+                        'available for sale</b>.','');
                 }
             };
             if(market.hasOwnProperty('selectedStall')) {
@@ -451,9 +451,14 @@ angular.module('Geographr.controllerMain', [])
                 stall.animate({'opacity':1},200).children('.stall-content').animate({'height':'206px'},300);
                 checkNewStall();
             }
+            if(market.selectedStall.markup < 1.4 && market.selectedStall.id.substr(0,2) != 'su') {
+                gameUtility.marketMessage.add('All our goods are <b>on sale</b> today!','promotion'); }
+            if(market.selectedStall.exoticGood) { 
+                gameUtility.marketMessage.add('Today we have a <b>rare item</b> for sale! It\'s a <b>' +
+                    market.selectedStall.exoticGood.split(':')[0]+'</b> from the '+
+                    market.selectedStall.exoticGood.split(':')[1]+'!','promotion'); }
         };
         $scope.changeGood = function(goodID,index) {
-            delete $scope.onPixel.camp.economy.market.message;
             var good = $scope.onPixel.camp.economy.market.selectedStall.id == 'su'+userID ? 
                     jQuery(document.getElementById('newGood')).finish() : 
                     jQuery(document.getElementById('selectedGood')).finish(),
@@ -525,7 +530,7 @@ angular.module('Geographr.controllerMain', [])
             }
         };
         $scope.addGoodToStall = function() {
-            delete $scope.onPixel.camp.economy.market.message;
+            gameUtility.marketMessage.clear();
             var theStall = $scope.onPixel.camp.economy.market.selectedStall;
             var theItem = theStall.selectedGood.invItem;
             var status = theItem.status ? ':' + theItem.status : '';
@@ -572,9 +577,8 @@ angular.module('Geographr.controllerMain', [])
                     theStall.categories[catName].push(theItem.name+status);
                 } else {
                     if(theStall.categoryCount > 5) {
-                        $scope.onPixel.camp.economy.market.message = { 
-                            type: 'error', text: 'Your stall cannot have more than 6 categories of items.' };
-                        return;}
+                        gameUtility.marketMessage.set('Your stall <b>cannot have more than 6 categories' +
+                            '</b> of items.','error'); return; }
                     theStall.categories[catName] = [theStall.selectedGood.addAmount,theItem.name+status];
                 }
             } else {

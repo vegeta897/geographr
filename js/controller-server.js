@@ -568,21 +568,18 @@ angular.module('Geographr.controllerServer', [])
                                     var expectedPrice;
                                     if(campInfo.economy.market.allGoods[uGoodKey]) {
                                         var stallGood = campInfo.economy.market.allGoods[uGoodKey];
-                                        console.log('stall(s)',stallGood.stallList,'selling',stallGood.total,uGoodKey,
-                                            'for',stallGood.averagePrice,'average price');
                                         expectedPrice = stallGood.averagePrice;
                                     } else {
-                                        console.log(uGoodKey,'not being sold here');
                                         var distance = uGood.nativeY ? Math.max(0,
                                             (Math.abs(campKey.split(':')[1] - uGood.nativeY)) - uGood.range) : 0;
                                         var exotic = 1 + distance/(uGood.range/2) || 1;
                                         expectedPrice = uGood.value * exotic * 1.6;
                                     }
-                                    console.log('buy factor:',(expectedPrice / uGood.value)/2);
                                     if((expectedPrice / uGood.value)/2 > Math.random()*2+0.3) {
                                         var buyAmount = Math.min(uGood.amount,
-                                            gameUtility.randomIntRange(1,Math.ceil(uGood.value/expectedPrice)));
-                                        console.log('buying',buyAmount,uGood.name);
+                                            gameUtility.randomIntRange(1,Math.ceil(expectedPrice/uGood.value)));
+                                        message += ', ' + 'buying'+' '+buyAmount+' '+uGood.name+' - max buy:'+
+                                            ' '+expectedPrice/uGood.value;
                                         (function(ba,ug) { // Enclosure to avoid async reference problem
                                             fireRef.child('users/'+uStall.substring(2,uStall.length)+'/money')
                                                 .transaction(function(money) {
@@ -592,7 +589,6 @@ angular.module('Geographr.controllerServer', [])
                                         if(camp.userStalls[uStall][uGoodKey].amount < 1) {
                                             delete camp.userStalls[uStall][uGoodKey]; }
                                     }
-                                    console.log('------------------');
                                 }
                             }
                         }
