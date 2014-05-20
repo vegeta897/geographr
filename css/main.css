@@ -336,7 +336,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall.stall-setup .good.good-setup h5 { color: #f8f8f8;
     font-size: 1.3em; text-shadow: 0 1px 1px rgba(0,0,0,0.9), 1px 0 1px rgba(0,0,0,0.9),
     1px 1px 1px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.9); margin-top: 0; }
-.market .market-message { width: 452px; padding: 8px 4px 0; margin-bottom: 4px; font-size: 1.1em; }
+.market .market-message { width: 451px; padding: 8px 4px 0; margin-bottom: 4px; font-size: 1.1em; }
 .market .market-message .error { color:#F66;} .market .market-message .error strong { color:#FBB; }
 .market .market-message .promotion { color:#8D8; } .market .market-message .promotion strong { color:#DFD; }
 

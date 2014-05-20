@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.293; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.294; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -228,8 +228,7 @@ angular.module('Geographr.controllerMain', [])
             canvasUtility.fillCanvas(fullHighContext,'erase'); // Draw new zoom highlight area
             canvasUtility.fillMainArea(fullHighContext,'rgba(255, 255, 255, 0.06)',
                 lastZoomPosition,zoomSize);
-            drawZoomCanvas();
-            dimPixel();
+            drawZoomCanvas(); dimPixel();
         };
         // Grab a specific item from user's inventory (find by property(s), like name or type)
         $scope.hasItem = function(checkObject) {
@@ -252,9 +251,7 @@ angular.module('Geographr.controllerMain', [])
         };
         // Create player camp, newbie's first step
         $scope.createCamp = function() {
-            tutorial('next');
-            $scope.user.new = false;
-            fireUser.child('new').set(false);
+            tutorial('next'); $scope.user.new = false; fireUser.child('new').set(false);
             fireServer.push({ user: userID, action: 'createCamp' });
         };
         // Adding an object to the canvas
@@ -263,10 +260,7 @@ angular.module('Geographr.controllerMain', [])
             jQuery(zoomHighCanvas).unbind('mousedown').mousedown(placeObject);
         };
         $scope.cancelAddObject = function() {
-            $timeout(function() {
-                dimPixel();
-                $scope.placingObject.adding = false;
-                $scope.placingObject = {};
+            $timeout(function() { dimPixel(); $scope.placingObject.adding = false; $scope.placingObject = {};
                 jQuery(zoomHighCanvas).unbind('mousedown').mousedown(zoomOnMouseDown);
             });
         };
@@ -387,19 +381,12 @@ angular.module('Geographr.controllerMain', [])
             changeHunger(userID,3); // Use 3 hunger
         };
         $scope.changeBrush = function(val) {
-            $timeout(function(){ 
-                $scope.brushSize = val;
-                $scope.lockElevation = $scope.lockElevation || val > 0; // Lock elevation if brush size bigger than 1
-            });
+            $timeout(function(){  $scope.brushSize = val; $scope.lockElevation = $scope.lockElevation || val > 0; });
         };
         $scope.addLabel = function(text) { $scope.labelText = text; addingLabel = true; };
         $scope.saveTerrain = function() { // Save terrain to firebase, notify clients to update terrain
             $timeout(function() {
-                $scope.eventLog.unshift({
-                    time: new Date().getTime(), user: 'You',
-                    type: 'updated the terrain'
-                });
-            });
+                $scope.eventLog.unshift({ time: new Date().getTime(), user: 'You', type: 'updated the terrain' }); });
             fireRef.child('terrain').update(updatedTerrain, function() {
                 updatedTerrain = {}; // Clear updated terrain object
                 $scope.lastTerrainUpdate = new Date().getTime();
