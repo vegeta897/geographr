@@ -172,18 +172,23 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         construction: ['lumber','metal','industrial metal'],
         lumber: ['construction','metal','industrial metal']
     };
+
     var edibles = {
         'red berries': { energy: 2 }, 'blueberries': { energy: 3 },
         'green berries': { energy: 2, effects: ['poison','nasty'], cookedEnergy: 3 },
         'brown mushroom': { energy: 4, cookedEnergy: 5 },
         'white mushroom': { energy: 4, cookedEnergy: 5 },
         'spices': { energy: 1, effects: ['nasty'] },
-        'onion': { energy: 4, effects: ['nasty'], cookedEnergy: 5 },
         'apple': { energy: 6 }, 'pear': { energy: 8 }, 'banana': { energy: 8 },
         'orange': { energy: 9 }, 'peach': { energy: 7 },
         'potato': { energy: 5, effects: ['nasty'], cookedEnergy: 10 },
-        'fish': { energy: 20, effects: ['nasty','bacterial'], cookedEnergy: 25 },
-        'meat': { energy: 60, effects: ['nasty','bacterial'], cookedEnergy: 65 }
+        'onion': { energy: 4, effects: ['nasty'], cookedEnergy: 5 },
+        'carrot': { energy: 5, cookedEnergy: 7 },
+        'lettuce': { energy: 12 }, 'tomato': { energy: 6 },
+        'broccoli': { energy: 4, cookedEnergy: 6 },
+        'cabbage': { energy: 6, cookedEnergy: 13 },
+        'corn': { energy: 2, effects: ['nasty'], cookedEnergy: 6 },
+        'animal': { energy: 30, effects: ['nasty','bacterial'], cookedEnergy: 40 }
     };
     var equipment = {
         'small dagger': { weight: 4, color: '757270', classes: ['blade'] }
@@ -200,9 +205,6 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var array = []; for(var key in object) { if(object.hasOwnProperty(key)) { array.push(key); } }
         return pickInArray(array);
     };
-    var escapeRegExp = function(string) { return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); };
-    var replaceAll = function(find, replace, str) {
-        return str.replace(new RegExp(escapeRegExp(find), 'g'), replace); };
 
     var genCampEconomy = function(grid) {
         // First create economic nodes
@@ -997,19 +999,6 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             var economy = genCampEconomy(grid);
             return { economy: economy, type: 'camp', name: Chance(x*1000 + y).word(), grid: grid }
         },
-        expandObjects: function(objects,grid) { // Generate traits and properties of objects
-            if(!objects || objects.length < 1) { return undefined; }
-            var expanded = [];
-            for(var i = 0; i < objects.length; i++) {
-                Math.seedrandom(grid); // Deterministic based on grid
-                var newObject = objects[i];
-                switch(objects[i].type) {
-                    case 'animal': newObject.name = 'fox'; break;
-                }
-                expanded.push(newObject);
-            }
-            return expanded;
-        },
         autoEat: function(user,neededHunger) {
             var newQuantities = {};
             for(var a = 0; a < user.autoEat.length; a++) {
@@ -1018,10 +1007,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                         var invItem = { type: invKey.split(':')[0], name: invKey.split(':')[1],
                             status: invKey.split(':')[2], amount: user.inventory[invKey] };
                         var cooked = invItem.status == 'cooked' ? ':cooked' : '';
-                        if(edibles.hasOwnProperty(invItem.name) && 
-                            invItem.name+cooked == user.autoEat[a] && neededHunger > 0 && 
-                            (!edibles[invItem.name].effects || invItem.status == 'cooked')) {
-                            var foodItem = edibles[invItem.name];
+                        var edibleKey = edibles[invItem.name] ? invItem.name : invItem.type;
+                        if(edibleKey && invItem.name+cooked == user.autoEat[a] && neededHunger > 0 && 
+                            (!edibles[edibleKey].effects || invItem.status == 'cooked')) {
+                            var foodItem = edibles[edibleKey];
                             var energy = cooked ? foodItem.cookedEnergy : foodItem.energy;
                             var eatAmount = Math.floor(neededHunger/energy);
                             eatAmount = Math.min(eatAmount,invItem.amount);
@@ -1037,10 +1026,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             clear: function() { scope.onPixel.camp.economy.market.message = ''; },
             add: function(message,type) {
                 scope.onPixel.camp.economy.market.message += '<p class="'+type+'">'+
-                    replaceAll('b>','strong>',message)+'</p>'; },
+                    message.split('b>').join('strong>')+'</p>'; },
             set: function(message,type) {
                 scope.onPixel.camp.economy.market.message = '<p class="'+type+'">'+
-                    replaceAll('b>','strong>',message)+'</p>'; }
+                    message.split('b>').join('strong>')+'</p>'; }
         },
         tutorial: function(step) {
             var text = '';
@@ -1071,7 +1060,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         attachFireInventory: function(fireInv) { fireInventory = fireInv; },
         addToInventory: addToInventory, cleanInventory: cleanInventory, dressItem: dressItem,
         getItemActions: getItemActions, getSlope: getSlope, countProperties: countProperties,
-        randomIntRange: randomIntRange, replaceAll: replaceAll,
+        randomIntRange: randomIntRange,
         itemsMaster: itemsMaster, event: event,
         edibles: edibles, equipment: equipment
     }

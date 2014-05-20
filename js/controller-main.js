@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.294; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.295; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -240,6 +240,17 @@ angular.module('Geographr.controllerMain', [])
                 if(passed) { return $scope.inventory[invKey]; }
             }
             return false;
+        };
+        // Count items in user's inventory that match criteria
+        $scope.countItems = function(checkObject) {
+            var qualified = [];
+            for(var invKey in $scope.inventory) { if(!$scope.inventory.hasOwnProperty(invKey)) { continue; }
+                for(var checkKey in checkObject) { if(!checkObject.hasOwnProperty(checkKey)) { continue; }
+                    if($scope.inventory[invKey][checkKey] == checkObject[checkKey]) { 
+                        qualified.push($scope.inventory[invKey][checkKey]) }
+                }
+            }
+            return qualified;
         };
         $scope.toggleItemType = function(type) {
             $scope.showItemTypes[type] = !$scope.showItemTypes[type];
@@ -676,20 +687,26 @@ angular.module('Geographr.controllerMain', [])
             console.log('cooking',amount,item.name);
             var invItem = { type: item.type, name: item.name, amount: parseInt(amount), status: 'cooked' };
             gameUtility.addToInventory(invItem);
+            var status = item.status ? ':' + item.status : '';
             if(item.amount - amount > 0) {
-                fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
-                $scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
-            } else { fireInventory.child(item.type+':'+item.name).remove();
-                delete $scope.inventory[item.type+':'+item.name]; }
+                fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
+                $scope.inventory[item.type+':'+item.name+status].amount = item.amount - amount;
+            } else { fireInventory.child(item.type+':'+item.name+status).remove();
+                delete $scope.inventory[item.type+':'+item.name+status]; }
             changeHunger(userID,0);
         };
         $scope.cookAll = function() {
             for(var coKey in $scope.inventory) {
-                if(!$scope.inventory.hasOwnProperty(coKey)) { continue; }
-                if(!gameUtility.edibles.hasOwnProperty($scope.inventory[coKey].name) ||
-                    $scope.inventory[coKey].status == 'cooked') { continue; }
-                if(gameUtility.edibles[$scope.inventory[coKey].name].hasOwnProperty('cookedEnergy')) {
-                    $scope.cookFood($scope.inventory[coKey],$scope.inventory[coKey].amount);
+                if(!$scope.inventory.hasOwnProperty(coKey) || $scope.inventory[coKey].status == 'cooked') { continue; }
+                if(gameUtility.edibles.hasOwnProperty($scope.inventory[coKey].name)) {
+                    if(gameUtility.edibles[$scope.inventory[coKey].name].hasOwnProperty('cookedEnergy')) {
+                        $scope.cookFood($scope.inventory[coKey],$scope.inventory[coKey].amount);
+                    }
+                }
+                if(gameUtility.edibles.hasOwnProperty($scope.inventory[coKey].type)) {
+                    if(gameUtility.edibles[$scope.inventory[coKey].type].hasOwnProperty('cookedEnergy')) {
+                        $scope.cookFood($scope.inventory[coKey],$scope.inventory[coKey].amount);
+                    }
                 }
             }
         };
@@ -1542,7 +1559,7 @@ angular.module('Geographr.controllerMain', [])
             fireUser.child('movement').on('value', movePlayer);
             fireUser.child('stats/hunger').on('value', function(snap) {
                 $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
-                $scope.user.stats.hunger = snap.val();
+                $timeout(function(){$scope.user.stats.hunger = snap.val();});
             });
             var myConnectionsRef = fireUser.child('connections');
             var lastOnlineRef = fireUser.child('lastOnline');

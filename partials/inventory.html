@@ -2,7 +2,7 @@
     <strong data-model="user.money" class="change-effect">{{ user.money | number }}</strong></small></h2>
 <p ng-hide="inventory" class="text-muted">No items</p>
 <div ng-repeat="(key,val) in showItemTypes" ng-show="hasItem({type:key})">
-    <h3 ng-hide="val">{{ key | capitalize }}</h3>
+    <h3 ng-hide="val">{{ key | capitalize }}<small>({{ countItems({type:key}).length }})</small></h3>
     <button class="btn btn-default btn-xs" ng-click="toggleItemType(key)">
         <i ng-show="val" class="glyphicon glyphicon-minus"></i><i ng-hide="val" class="glyphicon glyphicon-plus"></i>
     </button>
@@ -24,9 +24,9 @@
                 <span ng-show="item.status == 'cooked'">cooked</span>
                 <a href="#" data-toggle-panel>{{ item.name }}</a>
                 <span ng-show="item.unit.post && item.status != 'unrefined'">{{ item.unit.post }}</span>
-                <span ng-show="item.type == 'animal' && item.status != 'pelt' && item.status != 'meat'"> carcass</span>
+                <span ng-show="item.type == 'animal' && !item.status"> carcass</span>
                 <span ng-show="item.status == 'pelt'"> pelt</span>
-                <span ng-show="item.status == 'meat'"> meat</span>
+                <span ng-show="item.status == 'meat' || (item.type == 'animal' && item.status == 'cooked')"> meat</span>
             </td>
         </tr>
         <tr ng-repeat-end class="actions" ng-hide="!val">

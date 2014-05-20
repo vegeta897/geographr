@@ -15,8 +15,8 @@
                 class="btn btn-primary btn-xs">Cook All</button></th></tr>
         <tr class="show-if-last"><td colspan="3">Nothing to cook.</td></tr>
         <tr ng-repeat="cookable in inventory | typeFilter:['cookable']">
-            <td><span ng-style="{'background-color': '#'+cookable.color}" class="label">
-                {{ cookable.name | capitalize }}</span></td>
+            <td><span ng-style="{'background-color': '#'+cookable.color}" class="label" ng-class="cookable.status">
+                {{ cookable.status | iif:cookable.name+' '+cookable.status:cookable.name | capitalize }}</span></td>
             <td style="width: 130px;" class="text-right">
                 <select class="form-control num-select" ng-model="cookAmount" 
                     ng-init="cookAmount = cookable.amount || 1">
