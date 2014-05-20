@@ -34,4 +34,4 @@ ability to trash items in inventory, as well as stash
     - stashes will be stored on firebase, with a chance to discover by another player
         - discovery chance based on observation skill (or other relevant skill, tbd)
         
-sharpen weapons/tools mini-game where you click off-colour our out-of-place pixels 
+sharpen weapons/tools mini-game where you click off-colour our out-of-place pixels

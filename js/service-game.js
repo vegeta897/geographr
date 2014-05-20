@@ -62,9 +62,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 profession: 'blacksmith' },
             'copper': { color: '924c36', value: 28, weight: 8, abundance: 20, unit: {post:'ingots'},
                 profession: 'blacksmith' },
-            'silver': { color: 'b0b0b0', value: 200, weight: 3, abundance: 0.5, unit: {post:'ingots'},
+            'silver': { color: 'b0b0b0', value: 200, weight: 3, abundance: 0.5, unit: {post:'bars'},
                 profession: 'blacksmith' },
-            'gold': { color: 'cab349', value: 500, weight: 2, abundance: 0.1, unit: {post:'ingots'},
+            'gold': { color: 'cab349', value: 500, weight: 2, abundance: 0.1, unit: {post:'bars'},
                 profession: 'blacksmith' }
         },
         plant: {

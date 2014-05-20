@@ -272,6 +272,12 @@ angular.module('Geographr.canvas', [])
                                     Math.ceil(y+zoomPixSize/4-(zoomPixSize+pix)/8),
                                     Math.ceil((zoomPixSize+pix)/4),Math.ceil((zoomPixSize+pix)/4));
                             }
+                            if(object[objKey].selling) { // If selling
+                                context.fillStyle = 'rgb(80,200,80)';
+                                context.fillRect(Math.ceil(x+zoomPixSize/4+(zoomPixSize+pix)/3),
+                                    Math.ceil(y+zoomPixSize/4-(zoomPixSize+pix)/8),
+                                    Math.ceil((zoomPixSize+pix)/4),Math.ceil((zoomPixSize+pix)/4));
+                            }
                             break;
                         case 'campfire': context.fillStyle = 'rgba(166,95,44,0.8)';
                             if(canvasType == 'full') { break; }

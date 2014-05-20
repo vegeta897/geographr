@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.292; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.293; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -412,8 +412,9 @@ angular.module('Geographr.controllerMain', [])
                 market = $scope.onPixel.camp.economy.market;
             var checkNewStall = function() {
                 if(!market.selectedStall.hasOwnProperty('goods')) { // If new, empty stall
+                    Math.seedrandom(stallID);
                     market.stalls[stallID] = { id: stallID, type: 'user', canvas: $scope.user.camp.color, goods: {},
-                        goodCount: 0, categoryCount: 0, markup: 1 };
+                        goodCount: 0, categoryCount: 0, markup: 1, bg: colorUtility.generate('stallBG').hex };
                     market.selectedStall = market.stalls[stallID];
                     gameUtility.marketMessage.set('Choose goods from your inventory to <b>sell</b>. Check other' +
                         ' stalls in the market to ensure your prices are <b>competitive</b>.' +
@@ -566,10 +567,9 @@ angular.module('Geographr.controllerMain', [])
                             invAmount-theStall.selectedGood.addAmount; });
                 }
             } else { // New good, not editing existing
-
-            fireInventory.child(theItem.type+':'+theItem.name+status).transaction(function(invAmount) {
-                return invAmount-theStall.selectedGood.addAmount == 0 ? null : 
-                    invAmount-theStall.selectedGood.addAmount; });
+                fireInventory.child(theItem.type+':'+theItem.name+status).transaction(function(invAmount) {
+                    return invAmount-theStall.selectedGood.addAmount == 0 ? null : 
+                        invAmount-theStall.selectedGood.addAmount; });
             }
             if(theStall.hasOwnProperty('categories')) {
                 if(theStall.categories.hasOwnProperty(catName)) {
@@ -848,8 +848,10 @@ angular.module('Geographr.controllerMain', [])
                     $scope.overPixel.objects = $scope.selectedGrid;
                     if($scope.selectedGrid.camp && jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
                         var bsAmount = $scope.selectedGrid.camp.blacksmithing;
+                        var sellAmount = $scope.selectedGrid.camp.selling;
                         $scope.selectedGrid.camp = gameUtility.expandCamp(grid);
                         $scope.selectedGrid.camp.blacksmithing = bsAmount;
+                        $scope.selectedGrid.camp.selling = sellAmount;
                         $scope.selectedGrid.camp.type = 'camp';
                         $scope.selectedGrid.camp.visited = true;
                     }
@@ -1244,12 +1246,10 @@ angular.module('Geographr.controllerMain', [])
             $scope.user.location = snap.val().location;
             $scope.onPixel = { 
                 terrain: localTerrain[snap.val().location] ? 'Land' : 'Water', 
-                slope: Math.round(gameUtility.getSlope(snap.val().location)/2), 
-                elevation: (localTerrain[snap.val().location] || 0), objects: localObjects[snap.val().location],
-                activities: []
+                slope: Math.round(gameUtility.getSlope(snap.val().location)/2), activities: [],
+                elevation: (localTerrain[snap.val().location] || 0), objects: localObjects[snap.val().location]
             };
-            availableActivities = [];
-            $scope.cantLook = false; $scope.lookCount = 0;
+            availableActivities = []; $scope.cantLook = false; $scope.lookCount = 0;
             // If there is a camp here
             if(localObjects[snap.val().location] && localObjects[snap.val().location].hasOwnProperty('camp')) { 
                 $scope.onPixel.camp = localObjects[snap.val().location].camp;
@@ -1272,6 +1272,8 @@ angular.module('Geographr.controllerMain', [])
                     }
                     if(!campSnap) { // If no snap data
                         campData.economy.blacksmith.refining = campData.economy.blacksmith.refined = null;
+                        delete localObjects[snap.val().location].camp.selling;
+                        fireUser.child('camps/'+snap.val().location+'/selling').remove();
                         $timeout(function(){ $scope.onPixel.camp = campData;
                             if(campData.economy.market.selectedStall &&
                                 !campData.economy.market.stalls[campData.economy.market.selectedStall.id]) {
@@ -1386,6 +1388,16 @@ angular.module('Geographr.controllerMain', [])
                         }
                         if(notOwnRefined) { campData.economy.blacksmith.refined = null; }
                     } else { campData.economy.blacksmith.refined = null; }
+                    // Update "selling" amount in user/camps to reflect any sold goods
+                    if(campData.economy.market.stalls.hasOwnProperty('su1')) {
+                        localObjects[snap.val().location].camp.selling = 
+                            gameUtility.countProperties(campData.economy.market.stalls.su1.goods);
+                        fireUser.child('camps/'+snap.val().location+'/selling').set(
+                            localObjects[snap.val().location].camp.selling);
+                    } else { 
+                        delete localObjects[snap.val().location].camp.selling;
+                        fireUser.child('camps/'+snap.val().location+'/selling').remove(); 
+                    }
                     // Reselect or delete selected stall/good
                     $timeout(function() { 
                         $scope.onPixel.camp = campData;
@@ -1527,16 +1539,16 @@ angular.module('Geographr.controllerMain', [])
                 }
                 fireUser.child('camps').on('value', function(snap) {
                     var camps = snap.val();
+                    for(var v = 0, vc = $scope.user.visitedCamps.length; v < vc; v++) {
+                        delete localObjects[$scope.user.visitedCamps[v]].camp.blacksmithing;
+                        delete localObjects[$scope.user.visitedCamps[v]].camp.selling;
+                    }
                     for(var campKey in camps) { if(!camps.hasOwnProperty(campKey)) { continue; }
                         for(var infoKey in camps[campKey]) { 
                             if(!camps[campKey].hasOwnProperty(infoKey)) { continue; }
                             localObjects[campKey].camp[infoKey] = camps[campKey][infoKey];
                         }
                     }
-                    if(!camps) { for(var v = 0; v < $scope.user.visitedCamps.length; v++) {
-                        if(localObjects[$scope.user.visitedCamps[v]].blacksmithing) {
-                            delete localObjects[$scope.user.visitedCamps[v]].blacksmithing; }
-                    }}
                     drawZoomCanvas();
                 });
             });

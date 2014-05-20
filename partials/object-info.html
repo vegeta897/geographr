@@ -2,11 +2,14 @@
 <p><span class="text-muted">({{ selectedGrid.grid | grid }})</span>
     <em ng-show="selectedGrid.camp.visited">&emsp;Visited</em>
 </p>
+<p ng-show="selectedGrid.camp.selling">
+    You are selling <strong>{{ selectedGrid.camp.selling }}</strong> different goods here
+</p>
 <h3 ng-show="selectedGrid.camp.visited && selectedGrid.camp.economy.blacksmith.markup">Camp Services</h3>
 <p ng-show="selectedGrid.camp.visited">
     <span ng-show="selectedGrid.camp.economy.blacksmith.markup" style="background-color: #3C3C3C;"
         class="label bigger-label">Blacksmith</span>
 </p>
 <p ng-show="selectedGrid.camp.blacksmithing">
-    <strong>{{ selectedGrid.camp.blacksmithing }}</strong> items refined/being refined here
+    The blacksmith has <strong>{{ selectedGrid.camp.blacksmithing }}</strong> of your items
 </p>
