@@ -149,16 +149,14 @@ angular.module('Geographr.directives', [])
                 break;
             case 'cookable':
                 for(var coKey in input) { if(!input.hasOwnProperty(coKey)) { continue; }
-                    if(input[coKey].status == 'cooked') { continue; }
+                    if(jQuery.inArray(input[coKey].status,['cooked','pelt']) >= 0) { continue; }
                     if(gameUtility.edibles.hasOwnProperty(input[coKey].name)) {
                         if(gameUtility.edibles[input[coKey].name].hasOwnProperty('cookedEnergy')) {
-                            list.push(input[coKey]); continue;
-                        }
+                            list.push(input[coKey]); continue; }
                     }
                     if(gameUtility.edibles.hasOwnProperty(input[coKey].type)) {
                         if(gameUtility.edibles[input[coKey].type].hasOwnProperty('cookedEnergy')) {
-                            list.push(input[coKey]);
-                        }
+                            list.push(input[coKey]); }
                     }
                 }
                 break;

@@ -30,7 +30,8 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
     -khtml-user-select: none; user-select: none; }
 
 #gridView td { border: 1px solid #50575c; width: 98px; height: 98px; cursor: pointer; }
-#gridView td:hover { border: 2px solid #666f75; background-color: #383e45; color: #fff; }
+#gridView td:hover { border: 2px solid #666f75; 
+    background-color: #383e45; color: #fff; }
 #gridView td.forage { border: 2px solid #7aa87d; background-color: #2f3d30; }
 #gridView td.forage:hover { background-color: #273227; }
 #gridView td.hunt { border: 2px solid #a88986; background-color: #3d2d2c; }
@@ -282,7 +283,8 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall.stall-open .good.good-open p+p { font-size: 1em; }
 .market .stall.stall-open .good.good-min p { margin-bottom: 0; font-size: 1em; }
 .market .stall.stall-open .good strong, .blacksmith .mineral strong { 
-    color: #f3f3f3; font-size: 1.2em; text-shadow: 0 1px 1px rgba(0,0,0,0.9), 1px 0 1px rgba(0,0,0,0.9), 
+    color: #f3f3f3; font-size: 1.2em; 
+    text-shadow: 0 1px 1px rgba(0,0,0,0.9), 1px 0 1px rgba(0,0,0,0.9), 
     1px 1px 1px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.9); }
 .market .stall.stall-open .good.good-open strong { color: #f8f8f8; font-size: 1.3em; }
 .market .stall.stall-open .good.good-open select.num-select, 

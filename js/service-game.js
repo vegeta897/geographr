@@ -621,16 +621,13 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         switch(item.type) {
             case 'animal':
                 if(item.status || !scope.user.equipment || 
-                    scope.user.equipment['small dagger'].condition <= 0) { return false; }
+                    scope.user.equipment['small dagger'].condition <= 0) { break; }
                 actions.eviscerate = function(item,amount) {
                     if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
                     amount = parseInt(amount);
                     console.log('eviscerating',amount,item.name);
-                    if(item.amount - amount > 0) {
-                        fireInventory.child(item.type+':'+item.name).set(item.amount - amount);
-                        scope.inventory[item.type+':'+item.name].amount = item.amount - amount;
-                    } else { fireInventory.child(item.type+':'+item.name).remove();
-                        delete scope.inventory[item.type+':'+item.name]; }
+                    fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
+                        return invAmount-amount == 0 ? null : invAmount-amount; });
                     Math.seedrandom();
                     scope.user.equipment['small dagger'].condition -= 5;
                     fireUser.child('equipment/small dagger').set(
@@ -638,9 +635,66 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     // TODO: Evisceration skill level
                     addToInventory(eviscerate(amount,item,5));
                 };
-                return actions; break;
+                break;
         }
+        var cooked = item.status == 'cooked' ? ':cooked' : '';
+        var edibleKey = edibles[item.name] ? item.name : item.type;
+        if(edibles[edibleKey] || item.status == 'cooked') {
+            actions.eat = function(item,amount) {
+                if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
+                amount = parseInt(amount);
+                console.log('eating',amount,item.name);
+                var status = item.status ? ':' + item.status : '';
+                fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
+                    return invAmount-amount == 0 ? null : invAmount-amount; });
+                var energy = 
+                    item.status == 'cooked' ? edibles[edibleKey].cookedEnergy : edibles[edibleKey].energy;
+                changeHunger(scope.user.id,-energy);
+            }
+        }
+        for(var actKey in actions) {
+            if(actions.hasOwnProperty(actKey)) { return actions; } }
         return false;
+    };
+
+    var changeHunger = function(hungryUserID,amount) {
+        var user = scope.user;
+        user.inventory = cleanInventory(scope.inventory);
+        user.stats.hunger = Math.min(100,user.stats.hunger-amount);
+        var neededHunger = 100 - user.stats.hunger;
+        if(user.hasOwnProperty('autoEat')) {
+            var result = autoEat(user,neededHunger);
+            for(var nKey in result.newInv) { // Set new item quantities, delete item if 0
+                if(result.newInv.hasOwnProperty(nKey)) {
+                    var newVal = result.newInv[nKey] == 0 ? null : result.newInv[nKey];
+                    fireRef.child('users/'+hungryUserID+'/inventory/'+nKey).set(newVal);
+                }
+            }
+        }
+        fireRef.child('users/'+hungryUserID+'/stats/hunger').set(100 - result.newNeeded);
+    };
+    var autoEat = function(user,neededHunger) {
+        var newQuantities = {};
+        for(var a = 0; a < user.autoEat.length; a++) {
+            for(var invKey in user.inventory) {
+                if(user.inventory.hasOwnProperty(invKey) && neededHunger > 0) {
+                    var invItem = { type: invKey.split(':')[0], name: invKey.split(':')[1],
+                        status: invKey.split(':')[2], amount: user.inventory[invKey] };
+                    var cooked = invItem.status == 'cooked' ? ':cooked' : '';
+                    var edibleKey = edibles[invItem.name] ? invItem.name : invItem.type;
+                    if(edibleKey && invItem.name+cooked == user.autoEat[a] && neededHunger > 0 &&
+                        (!edibles[edibleKey].effects || invItem.status == 'cooked')) {
+                        var foodItem = edibles[edibleKey];
+                        var energy = cooked ? foodItem.cookedEnergy : foodItem.energy;
+                        var eatAmount = Math.floor(neededHunger/energy);
+                        eatAmount = Math.min(eatAmount,invItem.amount);
+                        neededHunger -= energy * eatAmount;
+                        if(eatAmount > 0) { newQuantities[invKey] = invItem.amount - eatAmount; }
+                    }
+                }
+            }
+        }
+        return { newInv: newQuantities, newNeeded: neededHunger };
     };
     var isCampNear = function(camps,loc,dist) { // Check a diamond area around x,y for a camp
         loc = [parseInt(loc[0]),parseInt(loc[1])];
@@ -999,29 +1053,6 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             var economy = genCampEconomy(grid);
             return { economy: economy, type: 'camp', name: Chance(x*1000 + y).word(), grid: grid }
         },
-        autoEat: function(user,neededHunger) {
-            var newQuantities = {};
-            for(var a = 0; a < user.autoEat.length; a++) {
-                for(var invKey in user.inventory) {
-                    if(user.inventory.hasOwnProperty(invKey) && neededHunger > 0) {
-                        var invItem = { type: invKey.split(':')[0], name: invKey.split(':')[1],
-                            status: invKey.split(':')[2], amount: user.inventory[invKey] };
-                        var cooked = invItem.status == 'cooked' ? ':cooked' : '';
-                        var edibleKey = edibles[invItem.name] ? invItem.name : invItem.type;
-                        if(edibleKey && invItem.name+cooked == user.autoEat[a] && neededHunger > 0 && 
-                            (!edibles[edibleKey].effects || invItem.status == 'cooked')) {
-                            var foodItem = edibles[edibleKey];
-                            var energy = cooked ? foodItem.cookedEnergy : foodItem.energy;
-                            var eatAmount = Math.floor(neededHunger/energy);
-                            eatAmount = Math.min(eatAmount,invItem.amount);
-                            neededHunger -= energy * eatAmount;
-                            if(eatAmount > 0) { newQuantities[invKey] = invItem.amount - eatAmount; }
-                        }
-                    }
-                }
-            }
-            return { newInv: newQuantities, newNeeded: neededHunger };
-        },
         marketMessage: {
             clear: function() { scope.onPixel.camp.economy.market.message = ''; },
             add: function(message,type) {
@@ -1060,7 +1091,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         attachFireInventory: function(fireInv) { fireInventory = fireInv; },
         addToInventory: addToInventory, cleanInventory: cleanInventory, dressItem: dressItem,
         getItemActions: getItemActions, getSlope: getSlope, countProperties: countProperties,
-        randomIntRange: randomIntRange,
+        randomIntRange: randomIntRange, changeHunger: changeHunger, autoEat: autoEat,
         itemsMaster: itemsMaster, event: event,
         edibles: edibles, equipment: equipment
     }

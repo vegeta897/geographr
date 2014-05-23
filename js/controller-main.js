@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.295; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.296; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -329,7 +329,7 @@ angular.module('Geographr.controllerMain', [])
                 if($scope.user.hasOwnProperty('autoEat')) {
                     $scope.user.autoEat.push(key);
                 } else { $scope.user.autoEat = [key] }
-                changeHunger(userID,0);
+                gameUtility.changeHunger(userID,0);
             } else { $scope.user.autoEat.splice(jQuery.inArray(key,$scope.user.autoEat),1); }
             if($scope.user.autoEat.length == 0) { // Send to firebase
                 fireUser.child('autoEat').remove(); } else { fireUser.child('autoEat').set($scope.user.autoEat); }
@@ -378,7 +378,7 @@ angular.module('Geographr.controllerMain', [])
             };
             $timeout(function(){});
             setTimeout(look,1500); playWaitingBar(1.5); // Look around for 1.5 seconds
-            changeHunger(userID,2); // Use 2 hunger
+            gameUtility.changeHunger(userID,2); // Use 2 hunger
         };
         $scope.buildCampfire = function() { // Build a campfire on this pixel
             if($scope.onPixel.camp) { return; }
@@ -389,7 +389,7 @@ angular.module('Geographr.controllerMain', [])
             };
             var buildTime = Math.floor(Math.random()*5 + 4)/2; // 2 to 4 seconds
             setTimeout(campfireReady,buildTime*1000); playWaitingBar(buildTime);
-            changeHunger(userID,3); // Use 3 hunger
+            gameUtility.changeHunger(userID,3); // Use 3 hunger
         };
         $scope.changeBrush = function(val) {
             $timeout(function(){  $scope.brushSize = val; $scope.lockElevation = $scope.lockElevation || val > 0; });
@@ -601,9 +601,9 @@ angular.module('Geographr.controllerMain', [])
             var prevCatName = jQuery.inArray(prevGood.status,['meat','pelt']) < 0 ?
                 theStall.selectedGood.prevGood.type == 'other' ? prevGood.name :
                     prevGood.type : prevGood.status;
-            var invItem = { type: prevGood.type, name: prevGood.name,
-                amount: parseInt(theStall.selectedGood.prevAmount), status: prevGood.status };
-            gameUtility.addToInventory(invItem);
+            var status = prevGood.status ? ':'+prevGood.status : '';
+            fireInventory.child(prevGood.type+':'+prevGood.name+status).transaction(function(invAmount) {
+                return invAmount ? +invAmount + +theStall.selectedGood.prevAmount : +theStall.selectedGood.prevAmount; });
             theStall.categories[prevCatName][0] -= theStall.goods[prevGood.key].amount;
             theStall.categories[prevCatName].splice(
                 jQuery.inArray(prevGood.key,theStall.categories[prevCatName]),1);
@@ -614,13 +614,13 @@ angular.module('Geographr.controllerMain', [])
         };
         $scope.buyGood = function() {
             var stall = $scope.onPixel.camp.economy.market.selectedStall,
-                good = stall.selectedGood, amount = stall.selectedGood.buyAmount;
+                good = stall.selectedGood, amount = +stall.selectedGood.buyAmount;
             if(amount < 1 || amount > good.amount || !parseInt(amount)) { return; }
             if($scope.user.money - Math.round(amount * good.value * stall.markup) < 0) { return; }
-            amount = parseInt(amount);
             console.log('buying',amount,good.name,'at', good.value * stall.markup,'gold per unit');
-            var invItem = { type: good.type, name: good.name, amount: parseInt(amount), status: good.status }; 
-            gameUtility.addToInventory(invItem);
+            var status = good.status ? ':' + good.status : '';
+            fireInventory.child(good.type+':'+good.name+status).transaction(function(invAmount) {
+                return invAmount ? +invAmount + amount : +amount; });
             var stockPath = stall.id.substr(0,2) == 'su' ? 
                 '/userStalls/'+stall.id+'/'+good.key+'/amount' : '/stock/'+stall.id+'/goods/'+good.key;
             if(stall.id.substr(0,2) == 'su') { // If this is a user stall, pay the man
@@ -676,8 +676,9 @@ angular.module('Geographr.controllerMain', [])
                 item.name+status+':-:'+amount+':-:'+uniqueID).set(Firebase.ServerValue.TIMESTAMP);
         };
         $scope.claimRefined = function(refined) {
-            var invItem = { type: refined.type, name: refined.name, amount: refined.amount, status: refined.status };
-            gameUtility.addToInventory(invItem);
+            var status = refined.status ? ':' + refined.status : '';
+            fireInventory.child(refined.type+':'+refined.name+status).transaction(function(invAmount) {
+                return invAmount ? +invAmount + refined.amount : refined.amount; });
             fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refined/'+refined.key).remove();
             fireUser.child('camps/'+$scope.onPixel.camp.grid+'/blacksmithing').transaction(function(bsAmount) {
                 return bsAmount-1 == 0 ? null : bsAmount-1; }); // Subtract/set refine amt
@@ -685,15 +686,12 @@ angular.module('Geographr.controllerMain', [])
         $scope.cookFood = function(item,amount) {
             if(amount < 1 || amount > item.amount) { return; }
             console.log('cooking',amount,item.name);
-            var invItem = { type: item.type, name: item.name, amount: parseInt(amount), status: 'cooked' };
-            gameUtility.addToInventory(invItem);
+            fireInventory.child(item.type+':'+item.name+':cooked').transaction(function(invAmount) {
+                return invAmount ? +invAmount + +amount : +amount; });
             var status = item.status ? ':' + item.status : '';
-            if(item.amount - amount > 0) {
-                fireInventory.child(item.type+':'+item.name+status).set(item.amount - amount);
-                $scope.inventory[item.type+':'+item.name+status].amount = item.amount - amount;
-            } else { fireInventory.child(item.type+':'+item.name+status).remove();
-                delete $scope.inventory[item.type+':'+item.name+status]; }
-            changeHunger(userID,0);
+            fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
+                return invAmount - amount < 1 ? null : invAmount - amount; });
+            gameUtility.changeHunger(userID,0);
         };
         $scope.cookAll = function() {
             for(var coKey in $scope.inventory) {
@@ -747,7 +745,7 @@ angular.module('Geographr.controllerMain', [])
                     fireUser.child('skills').set($scope.user.skills);
                 } 
                 if($scope.event.result.ended) { // Event finished
-                    changeHunger(userID,3); // Use 3 hunger
+                    gameUtility.changeHunger(userID,3); // Use 3 hunger
                     $scope.event.result.energy = null;
                     $scope.event.ended = true;
                     $timeout(function() {
@@ -789,10 +787,10 @@ angular.module('Geographr.controllerMain', [])
                 if(!$scope.inventory) {  $scope.noEdibles = true; return; }
                 $scope.noEdibles = true;
                 for(var key in $scope.inventory) { if(!$scope.inventory.hasOwnProperty(key)) { continue; }
-                    if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) &&
-                        (!gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects')
-                            || $scope.inventory[key].status == 'cooked')) {
-                        $scope.noEdibles = false; if($scope.user.hunger < 100) { changeHunger(userID,0); }
+                    if(gameUtility.edibles.hasOwnProperty($scope.inventory[key].name) && 
+                        !gameUtility.edibles[$scope.inventory[key].name].hasOwnProperty('effects') ||
+                        $scope.inventory[key].status == 'cooked') {
+                        $scope.noEdibles = false; if($scope.user.hunger < 100) { gameUtility.changeHunger(userID,0); }
                         return;
                     }
                 }
@@ -1473,23 +1471,6 @@ angular.module('Geographr.controllerMain', [])
             });
         };
         
-        var changeHunger = function(hungryUserID,amount) {
-            var user = $scope.user;
-            user.inventory = gameUtility.cleanInventory($scope.inventory);
-            user.stats.hunger -= amount;
-            var neededHunger = 100 - user.stats.hunger;
-            if(user.hasOwnProperty('autoEat')) {
-                var result = gameUtility.autoEat(user,neededHunger);
-                for(var nKey in result.newInv) { // Set new item quantities, delete item if 0
-                    if(result.newInv.hasOwnProperty(nKey)) {
-                        if(result.newInv[nKey] > 0) {
-                            fireRef.child('users/'+hungryUserID+'/inventory/'+nKey).set(result.newInv[nKey]);
-                        } else { fireRef.child('users/'+hungryUserID+'/inventory/'+nKey).remove(); }
-                    }
-                }
-            }
-            fireRef.child('users/'+hungryUserID+'/stats/hunger').set(100 - result.newNeeded);
-        };
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
             jQuery.ajax({
