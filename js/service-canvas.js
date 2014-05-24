@@ -260,8 +260,7 @@ angular.module('Geographr.canvas', [])
                             context.closePath(); context.fill(); context.stroke();
                             break;
                         case 'camp': context.fillStyle = 'rgb(140,140,140)';
-                            if(canvasType == 'full') { 
-                                context.fillRect((x - offset[0]),(y - offset[1]), 1,1); break; }
+                            if(canvasType == 'full') { context.fillRect(x,y,1,1); break; }
                             var pix = zoomPixSize % 4 ? zoomPixSize % 4 : 0; // Keep sharp pixels
                             x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
                             context.fillRect(Math.floor(x+zoomPixSize/4), Math.floor(y+zoomPixSize/4), 
@@ -352,18 +351,24 @@ angular.module('Geographr.canvas', [])
                     }
                 }
             },
-            drawCamps: function(context,camps,zoomPosition,zoomPixSize) {
-                for(var key in camps) {
-                    if(camps.hasOwnProperty(key)) {
-                        var x = parseInt(key.split(':')[0]), y = parseInt(key.split(':')[1]);
-                        if((x+1 < zoomPosition[0]) || (y+1 < zoomPosition[1]) ||
-                            (x-1 > zoomPosition[0]+(900/zoomPixSize)) ||
-                            (y-1 > zoomPosition[1]+(600/zoomPixSize))) {
-                            continue;
-                        }
-                        context.fillStyle = 'rgb(255,255,255)';
-                        context.fillRect((x - zoomPosition[0])*zoomPixSize,
-                            (y - zoomPosition[1])*zoomPixSize, zoomPixSize,zoomPixSize);
+            drawTerrainFeatures: function(context,features) {
+                for(var fKey in features) { if(!features.hasOwnProperty(fKey)) { continue; }
+                    if(features[fKey].forest) {
+                        var northCoef = Math.min(1,Math.max(0,120-fKey.split(':')[1])/60);
+                        var southCoef = Math.min(1,Math.max(0,fKey.split(':')[1]-180)/120);
+                        var midForest = {r:48,g:65,b:29};
+                        var northForest = {r:65,g:60,b:41};
+                        var southForest = {r:56,g:77,b:30};
+                        var latDiff = northCoef > 0 ? {r:(northForest.r-midForest.r)*northCoef,
+                            g:(northForest.g-midForest.g)*northCoef,b:(northForest.b-midForest.b)*northCoef} :
+                            southCoef > 0 ? {r:(southForest.r-midForest.r)*southCoef,
+                                g:(southForest.g-midForest.g)*southCoef,b:(southForest.b-midForest.b)*southCoef} :
+                            {r:0,g:0,b:0};
+                        var forestColor = {r:parseInt(midForest.r+latDiff.r),g:parseInt(midForest.g+latDiff.g),
+                            b:parseInt(midForest.b+latDiff.b)};
+                        context.fillStyle = 'rgba('+forestColor.r+','+forestColor.g+','+forestColor.b+',' +
+                            (0.2 + features[fKey].forest*0.8) + ')';
+                        context.fillRect(fKey.split(':')[0],fKey.split(':')[1],1,1);
                     }
                 }
             },

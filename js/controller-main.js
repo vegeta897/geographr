@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.296; $scope.versionName = 'Fatal Laughter'; $scope.needUpdate = false;
+        $scope.version = 0.3; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -16,10 +16,10 @@ angular.module('Geographr.controllerMain', [])
         setInterval(function(){$timeout(function(){});},60000); // Refresh scope every minute
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
-            keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false,
-            pinging = false, userID, fireUser, localTerrain = {}, updatedTerrain = {}, localObjects = {}, 
+            keyPressed = false, keyUpped = true, panMouseDown = false,  dragPanning = false, pinging = false, 
+            localTerrain = {}, updatedTerrain = {}, terrainFeatures = {}, localObjects = {}, 
             localUsers = {}, localLabels = {}, addingLabel = false, zoomLevels = [4,6,10,12,20,30,60], fireInventory, 
-            tutorialStep = 0, visiblePixels = {}, waitTimer, campList = [], 
+            tutorialStep = 0, visiblePixels = {}, waitTimer, campList = [], userID, fireUser,
             availableActivities = [], abundances = {}, controlsDIV, progressBar, objectInfoPanel;
     
         // Create a reference to the pixel data for our canvas
@@ -1485,9 +1485,6 @@ angular.module('Geographr.controllerMain', [])
             });
         };
         var initTerrain = function() {
-            var terrainImg = new Image;
-            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0); };
-            terrainImg.src = 'img/world-map.png';
             if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
                 fireRef.child('lastTerrainUpdate').once('value',function(snap) {
                     var needUpdate = true;
@@ -1508,7 +1505,18 @@ angular.module('Geographr.controllerMain', [])
         var prepareTerrain = function() {
             $scope.terrainReady = true;
             gameUtility.attachTerrain(localTerrain);
-            canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,localTerrain);
+            var forestTiles = gameUtility.generateForests();
+            for(var ftKey in forestTiles) { if(!forestTiles.hasOwnProperty(ftKey)) { continue; }
+                if(terrainFeatures.hasOwnProperty(ftKey)) { terrainFeatures[ftKey].forest = forestTiles[ftKey]; }
+                else { terrainFeatures[ftKey] = {forest:forestTiles[ftKey]}; }
+            }
+            gameUtility.attachTerrainFeatures(terrainFeatures);
+            var terrainImg = new Image;
+            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0);
+                canvasUtility.drawTerrainFeatures(fullTerrainContext,terrainFeatures);
+                canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,localTerrain);
+            };
+            terrainImg.src = 'img/world-map.png';
             fireRef.child('campList').once('value',function(snap) {
                 if(!snap.val() && userID < 3) { // Generate camps if none on firebase
                     var nativeLocations = gameUtility.genNativeCamps();

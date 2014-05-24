@@ -3,7 +3,7 @@ need food/water to survive. hunt, forage, etc. full stats skills and inventory s
     
 fog of war - visibility based on elevation.
 
-toggleable map overlays for things like mining/foraging abundance
+toggleable map overlays for elevation/slope/forest
 
 can train proteges/apprentices that you can resume control of when you die
     - they are mortal, so you may want to train more than 1

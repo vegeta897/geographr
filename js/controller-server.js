@@ -8,7 +8,7 @@ angular.module('Geographr.controllerServer', [])
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], 
             viewCenter, panOrigin, panMouseDown = false,  dragPanning = false,
-            userID, fireUser, localTerrain = {}, localObjects = {}, localLabels = {},
+            userID, fireUser, localTerrain = {}, terrainFeatures = {}, localObjects = {}, localLabels = {},
             zoomLevels = [4,6,10,12,20,30,60], moveTimers = {}, campList = [], localUsers = {}, objectInfoPanel;
         // Create a reference to the pixel data for our canvas
         var fireRef = new Firebase('https://geographr.firebaseio.com/map1'); gameUtility.attachFireRef(fireRef);
@@ -421,9 +421,6 @@ angular.module('Geographr.controllerServer', [])
             });
         };
         var initTerrain = function() {
-            var terrainImg = new Image;
-            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0); };
-            terrainImg.src = 'img/world-map.png';
             if($scope.lastTerrainUpdate) { // If terrain was updated before, check for new updates
                 fireRef.child('lastTerrainUpdate').once('value',function(snap) {
                     var needUpdate = true;
@@ -438,6 +435,16 @@ angular.module('Geographr.controllerServer', [])
         var prepareTerrain = function() {
             $scope.terrainReady = true;
             gameUtility.attachTerrain(localTerrain);
+            var forestTiles = gameUtility.generateForests();
+            for(var ftKey in forestTiles) { if(!forestTiles.hasOwnProperty(ftKey)) { continue; }
+                if(terrainFeatures.hasOwnProperty(ftKey)) { terrainFeatures[ftKey].forest = forestTiles[ftKey]; }
+                else { terrainFeatures[ftKey] = {forest:forestTiles[ftKey]}; }
+            }
+            gameUtility.attachTerrainFeatures(terrainFeatures);
+            var terrainImg = new Image;
+            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0);
+                canvasUtility.drawTerrainFeatures(fullTerrainContext,terrainFeatures); };
+            terrainImg.src = 'img/world-map.png';
             fireRef.child('campList').once('value',function(snap) {
 //                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
 //                    var nativeLocations = gameUtility.genNativeCamps();

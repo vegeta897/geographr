@@ -129,12 +129,12 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
     };
     var economyNodes = {
         'hunting post': { 
-            output: ['event:hunt:process:2'], occurrence: 'forest:1', nativeY: 300, range: 250 }, 
+            output: ['event:hunt:process:2'], occurrence: 'forest:0.5', nativeY: 300, range: 250 }, 
         'fishing dock': { output: ['event:fish:15'], occurrence: 'coast:0.6', nativeY: 150, range: 300 },
         'mining camp': { output: ['event:mine:8'], occurrence: 'mountains:1.8', nativeY: 150, range: 300 }, 
         'farm': { output: ['vegetable:10'], occurrence: 'plains:0.5', nativeY: 300, range: 200 },
         'orchard': { output: ['fruit:8'], occurrence: 'plains:0.3', nativeY: 300, range: 180 }, 
-        'lumber camp': { output: ['other:lumber:8'], occurrence: 'forest:1.2', nativeY: 180, range: 110 }
+        'lumber camp': { output: ['other:lumber:8'], occurrence: 'forest:0.8', nativeY: 180, range: 110 }
     };
     var marketStallTypes = {
         fish: { goods: ['fish'], capacity: 50 }, 
@@ -194,7 +194,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         'small dagger': { weight: 4, color: '757270', classes: ['blade'] }
     };
     // References to controller stuff
-    var scope, terrain, userInventory, fireRef, fireUser, fireInventory;
+    var scope, terrain, terrainFeatures, userInventory, fireRef, fireUser, fireInventory;
     var event = {}; // Holds event details
     var randomIntRange = function(min,max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
     var randomRange = function(min,max) { return Math.random() * (max-min) + min; };
@@ -226,10 +226,10 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                     occurred = getNearMiningAbundance(grid,3.5);
                     break;
                 case 'plains':
-                    occurred = Math.max(0,8 - getNearMiningAbundance(grid,3.5));
+                    occurred = Math.max(0,8 - getNearMiningAbundance(grid,3.5) - getNearForests(grid,3.5)/2);
                     break;
                 case 'forest':
-                    occurred = Math.max(0,4 - getNearMiningAbundance(grid,3.5));
+                    occurred = getNearForests(grid,3.5);
                     break;
             }
             campNode.amount = Math.round(occurred * amount +
@@ -550,6 +550,19 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }
         return neighbors;
     };
+    var blurValues = function(grid,area) {
+        var adjacent = 0;
+        for(var i = -1; i <= 1; i++) {
+            for(var ii = -1; ii <= 1; ii++) {
+                var comparedGrid = (+grid.split(':')[0] + i) + ':' + (+grid.split(':')[1] + ii);
+                if(area[comparedGrid]) {
+                    adjacent += Math.abs(i) + Math.abs(ii) > 1 ?
+                        0.7*area[comparedGrid] : area[comparedGrid];
+                }
+            }
+        }
+        return adjacent/7.8;
+    };
     var getCircle = function(loc,dist) { // Check circular area around x,y
         var neighbors = [];
         loc = [parseInt(loc[0]),parseInt(loc[1])];
@@ -769,6 +782,15 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         slope += Math.abs(terrain[grid.x+':'+(grid.y+1)]-terrain[grid.x+':'+grid.y]) || 0;
         slope += Math.abs(terrain[grid.x+':'+(grid.y-1)]-terrain[grid.x+':'+grid.y]) || 0;
         return slope;
+    };
+    var getNearForests = function(grid,distance) {
+        grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+        var inRange = getCircle([grid.x,grid.y],distance), forestAmount = 0;
+        for(var i = 0; i < inRange.length; i++) {
+            if(inRange[i].inBounds && terrainFeatures[inRange[i].grid] && terrainFeatures[inRange[i].grid].forest) { 
+                forestAmount += terrainFeatures[inRange[i].grid].forest; }
+        }
+        return forestAmount;
     };
     var getNearest = function(ox,oy,near,exclude) {
         var nearest = {coords: '', dist: 999};
@@ -998,7 +1020,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             var elevation = terrain[location], slope = getSlope(location);
             var abundance = {
                 forage: Math.min(1,7/elevation) * (Math.random()/2+0.5) * Math.max(0.05,(1-slope/16)), 
-                hunt: Math.min(1,10/elevation) * (Math.random()*3/5+0.6) * Math.max(0.05,(1-slope/10)),
+                hunt: 
+                    Math.min(1,Math.random()/5 + (terrainFeatures[location] && terrainFeatures[location].forest ? 
+                    terrainFeatures[location].forest : 0)),
                 mine: getNearMiningAbundance(location,0)
             };
             // TODO: Abstract these camp and coast proximity factors
@@ -1026,7 +1050,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 var area = parseInt(x/20) * 20 + ':' + parseInt(y/20) * 20;
                 Math.seedrandom(area);
                 var minRange = randomIntRange(8,15);
-                if(Math.random() < 0.06) { minRange = randomIntRange(4,10) }
+                if(Math.random() < 0.08) { minRange = randomIntRange(4,10) }
                 if(isCampNear(camps,tKey.split(':'),minRange)) { continue; } // If camp nearby, veto this grid
                 var nearGrids = getCircle(tKey.split(':'),2.5);
                 var nearStats = { water: 0, avgElevation: 0 };
@@ -1062,6 +1086,22 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 scope.onPixel.camp.economy.market.message = '<p class="'+type+'">'+
                     message.split('b>').join('strong>')+'</p>'; }
         },
+        generateForests: function() {
+            var preBlur = {}, postBlur = {};
+            for(var tKey in terrain) { if(!terrain.hasOwnProperty(tKey)) { continue; }
+                Math.seedrandom('grid'+tKey);
+                var latMod = tKey.split(':')[1] > 220 ? 1-(tKey.split(':')[1]-220)/180 : 
+                    tKey.split(':')[1] < 120 ? 1-Math.min(100,120 - tKey.split(':')[1])/100 : 1;
+                preBlur[tKey] = Math.random() > 0.7 ? Math.min(1,0.5+Math.random() - terrain[tKey]/35)*latMod : 0;
+            }
+            for(var tKey2 in terrain) { if(!terrain.hasOwnProperty(tKey2)) { continue; }
+                var value = blurValues(tKey2,preBlur);
+                value = value < 0.3 ? value * value*1.5 : Math.min(1,value * (1.2+ (-0.3 + value)));
+                postBlur[tKey2] = Math.round(value*20)/20;
+                if(postBlur[tKey2] <= 0) { delete postBlur[tKey2]; }
+            }
+            return postBlur;
+        },
         tutorial: function(step) {
             var text = '';
             switch(parseInt(step)) {
@@ -1085,6 +1125,7 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         },
         attachScope: function(theScope) { scope = theScope; },
         attachTerrain: function(localTerrain) { terrain = localTerrain; },
+        attachTerrainFeatures: function(inputTF) { terrainFeatures = inputTF; },
         attachInventory: function(inv) { userInventory = inv; },
         attachFireRef: function(ref) { fireRef = ref; },
         attachFireUser: function(user) { fireUser = user; },
