@@ -395,6 +395,7 @@ angular.module('Geographr.controllerServer', [])
             var user = localUsers[hungryUserID];
             user.stats.hunger -= amount;
             var neededHunger = 100 - user.stats.hunger;
+            result = { newNeeded: neededHunger };
             if(user.hasOwnProperty('autoEat')) {
                 var result = gameUtility.autoEat(user,neededHunger);
                 for(var nKey in result.newInv) { // Set new item quantities, delete item if 0

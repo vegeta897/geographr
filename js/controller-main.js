@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.302; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
+        $scope.version = 0.303; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -1517,6 +1517,7 @@ angular.module('Geographr.controllerMain', [])
 //                canvasUtility.drawTerrainFeatures(fullTerrainContext,terrainFeatures);
                     canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,
                         localTerrain,terrainFeatures);
+                    fireUser.child('movement').on('value', movePlayer);
                 };
                 terrainImg.src = 'img/world-map.png';
                 fireRef.child('campList').once('value',function(snap) {
@@ -1547,7 +1548,6 @@ angular.module('Geographr.controllerMain', [])
                         drawZoomCanvas();
                     });
                 });
-                fireUser.child('movement').on('value', movePlayer);
                 fireUser.child('stats/hunger').on('value', function(snap) {
                     $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
                     $timeout(function(){$scope.user.stats.hunger = snap.val();});
