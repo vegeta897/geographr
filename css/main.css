@@ -45,8 +45,12 @@ p.navbar-right { margin: 0 -15px 0 0; line-height: 53px; }
 #gridView td .progress { margin: 3px 8px !important; }
 .canvas-container canvas { position: absolute; }
 .checkbox-inline * { cursor: pointer !important; }
+.coords label { font-weight: normal; }
 .coords .checkbox-inline { padding-top: 0; }
-.coords .checkbox-inline label { font-weight: normal; }
+.muted-select { background-color: #232627; padding: 0 4px 2px; height: 24px; margin-left: 6px;
+    color: rgb(139, 139, 139); border-color: transparent; display: inline-block; width: auto;
+    box-shadow: inset 1px 1px 2px 1px rgba(0,0,0,0.2);
+}
 
 #controls { width: 196px; height: 216px; padding: 8px; position: absolute; right: 2px; bottom: 28px; }
 #controls button { width: 60px; height: 60px; float: left; font-size: 2em; 

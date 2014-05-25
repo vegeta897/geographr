@@ -5,6 +5,7 @@ angular.module('Geographr.canvas', [])
         var fullPixSize = 1;
         var fullPixOff = fullPixSize/2;
         
+        // Terrain colors
         var mid = [{r:60,g:93,b:44},{r:70,g:107,b:53},{r:82,g:125,b:62},{r:106,g:140,b:70},
             {r:136,g:158,b:86},{r:174,g:172,b:102},{r:98,g:140,b:118},{r:71,g:121,b:110},
             {r:62,g:102,b:99},{r:51,g:79,b:87},{r:46,g:69,b:79},{r:44,g:61,b:75}];
@@ -25,6 +26,15 @@ angular.module('Geographr.canvas', [])
                 }
             }
             return near;
+        };
+        var getSlope = function(grid,terrain) {
+            grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
+            var slope = 0;
+            slope += Math.abs(terrain[(grid.x-1)+':'+grid.y]-terrain[grid.x+':'+grid.y]) || 0;
+            slope += Math.abs(terrain[(grid.x+1)+':'+grid.y]-terrain[grid.x+':'+grid.y]) || 0;
+            slope += Math.abs(terrain[grid.x+':'+(grid.y+1)]-terrain[grid.x+':'+grid.y]) || 0;
+            slope += Math.abs(terrain[grid.x+':'+(grid.y-1)]-terrain[grid.x+':'+grid.y]) || 0;
+            return slope;
         };
         var surveyTerrain = function(near,terrain) {
             var color = '';
@@ -395,6 +405,32 @@ angular.module('Geographr.canvas', [])
                         context.fillStyle = 'rgb('+p[0]+','+p[1]+','+p[2]+')';
                     }
                     context.fillRect(thisX,thisY, 1,1);
+                }
+            },
+            drawOverlay: function(context,type,visible,terrain,features,zoomPosition,pixSize) {
+                for(var vKey in visible) { if(!visible.hasOwnProperty(vKey)) { continue; }
+                    var coords = vKey.split(':'); var drawing = false;
+                    var x = parseInt(coords[0]), y = parseInt(coords[1]);
+                    // Don't draw if pixel is out of bounds
+                    if(x+1 < zoomPosition[0] || y+1 < zoomPosition[1] ||
+                        x-1 > zoomPosition[0]+(900/pixSize) || y-1 > zoomPosition[1]+(600/pixSize)) { continue; }
+                    switch(type) {
+                        case 'forest':
+                            if(features[vKey] && features[vKey].forest) {
+                                context.fillStyle = 'rgba(250,0,80,'+(0.2+features[vKey].forest*0.4)+')';
+                                drawing = true; } break;
+                        case 'elevation':
+                            if(terrain[vKey]) {
+                                context.fillStyle = 'rgba(250,0,80,'+Math.min(0.7,terrain[vKey]/40)+')';
+                                drawing = true; } break;
+                        case 'slope':
+                            if(terrain[vKey]) {
+                                var slope = getSlope(vKey,terrain);
+                                context.fillStyle = 'rgba(250,0,80,'+Math.min(0.8,slope/80)+')';
+                                drawing = true; } break;
+                    }
+                    if(drawing) { context.fillRect((x-zoomPosition[0])*pixSize,(y-zoomPosition[1])*pixSize,
+                        pixSize,pixSize); }
                 }
             },
             drawSelect: function(context,coords,zoomPixSize,type) {

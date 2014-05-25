@@ -24,15 +24,21 @@
     <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
         data-slider-max="6" data-slider-selection="none" data-slider-value="4" data-slider-tooltip="hide">
 </div>
-<div class="col-xs-2 text-right pull-right coords">
-    <div class="checkbox-inline text-muted"><label>
-        <input ng-change="refresh()" ng-model="mapElements.labels" type="checkbox"> Show Labels
-    </label></div>
-</div>
-<div class="col-xs-2 text-right pull-right hard-right coords">
-    <div class="checkbox-inline text-muted"><label>
-        <input ng-change="refresh()" ng-model="mapElements.objects" type="checkbox"> Show Objects
-    </label></div>
+<!--<div class="col-xs-2 text-right pull-right coords">-->
+    <!--<div class="checkbox-inline text-muted"><label>-->
+        <!--<input ng-change="refresh()" ng-model="mapElements.labels" type="checkbox"> Show Labels-->
+    <!--</label></div>-->
+<!--</div>-->
+<!--<div class="col-xs-2 text-right pull-right hard-right coords">-->
+    <!--<div class="checkbox-inline text-muted"><label>-->
+        <!--<input ng-change="refresh()" ng-model="mapElements.objects" type="checkbox"> Show Objects-->
+    <!--</label></div>-->
+<!--</div>-->
+<div class="col-xs-4 text-right pull-right hard-right coords">
+    <label>Map Overlay
+        <select ng-change="refresh()" class="form-control muted-select" ng-model="mapElements.overlay"
+            ng-options="overlay | capitalize for overlay in ['none','forest','elevation','slope']"></select>
+    </label>
 </div>
 <div class="col-xs-4 hard-left hard-right pull-left coords">
     <div class="col-xs-4 hard-left hard-right pull-left">

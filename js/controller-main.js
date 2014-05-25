@@ -1,12 +1,12 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.3; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
+        $scope.version = 0.301; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
         $scope.onPixel = {}; $scope.login = { email: '', password: '' };
         $scope.authStatus = ''; $scope.helpText = ''; $scope.lastTerrainUpdate = 0; $scope.terrainReady = false;
-        $scope.placingObject = {}; $scope.mapElements = { labels: true, objects: true };
+        $scope.placingObject = {}; $scope.mapElements = { labels: true, objects: true, overlay: 'none' };
         $scope.editTerrain = false; $scope.smoothTerrain = false; $scope.uiOptions = {};
         $scope.brushSize = 0; $scope.lockElevation = false; $scope.lockedElevation = 1;
         $scope.eventLog = []; $scope.tutorialSkips = []; $scope.skipTutorial = false;
@@ -933,9 +933,11 @@ angular.module('Geographr.controllerMain', [])
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
 //            canvasUtility.drawFog(
 //                zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize,localTerrain);
-            
             zoomFogContext.drawImage(fullFogCanvas, $scope.zoomPosition[0]*mainPixSize,
                 $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
+            if($scope.mapElements.overlay != 'none') { canvasUtility.drawOverlay(zoomFogContext,
+                $scope.mapElements.overlay,visiblePixels,localTerrain,terrainFeatures,
+                $scope.zoomPosition,zoomPixSize); }
             canvasUtility.drawPlayer(zoomObjectContext,$scope.user.location.split(':'),
                 $scope.zoomPosition,zoomPixSize);
         };
