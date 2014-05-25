@@ -362,13 +362,13 @@ angular.module('Geographr.canvas', [])
                 }
             },
             drawTerrainFeatures: function(context,features) {
+                var midForest = {r:48,g:65,b:29};
+                var northForest = {r:65,g:60,b:41};
+                var southForest = {r:56,g:77,b:30};
                 for(var fKey in features) { if(!features.hasOwnProperty(fKey)) { continue; }
                     if(features[fKey].forest) {
                         var northCoef = Math.min(1,Math.max(0,120-fKey.split(':')[1])/60);
                         var southCoef = Math.min(1,Math.max(0,fKey.split(':')[1]-180)/120);
-                        var midForest = {r:48,g:65,b:29};
-                        var northForest = {r:65,g:60,b:41};
-                        var southForest = {r:56,g:77,b:30};
                         var latDiff = northCoef > 0 ? {r:(northForest.r-midForest.r)*northCoef,
                             g:(northForest.g-midForest.g)*northCoef,b:(northForest.b-midForest.b)*northCoef} :
                             southCoef > 0 ? {r:(southForest.r-midForest.r)*southCoef,
@@ -382,13 +382,31 @@ angular.module('Geographr.canvas', [])
                     }
                 }
             },
-            drawFog: function(context,terrainContext,pixels,terrain) {
+            drawFog: function(context,terrainContext,pixels,terrain,features) {
                 context.fillStyle = 'rgb(42,47,51)';
+                var midForest = {r:48,g:65,b:29};
+                var northForest = {r:65,g:60,b:41};
+                var southForest = {r:56,g:77,b:30};
                 for(var key in pixels) { if(!pixels.hasOwnProperty(key)) { continue; }
                     var thisCoord = key.split(':');
                     var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
                     context.clearRect(thisX,thisY, 1,1);
                     var p = terrainContext.getImageData(thisX, thisY, 1, 1).data;
+                    if(features[key] && features[key].forest) { // Apply forest color if forest here
+                        var northCoef = Math.min(1,Math.max(0,120-thisY)/60);
+                        var southCoef = Math.min(1,Math.max(0,thisY-180)/120);
+                        var latDiff = northCoef > 0 ? {r:(northForest.r-midForest.r)*northCoef,
+                            g:(northForest.g-midForest.g)*northCoef,b:(northForest.b-midForest.b)*northCoef} :
+                            southCoef > 0 ? {r:(southForest.r-midForest.r)*southCoef,
+                                g:(southForest.g-midForest.g)*southCoef,b:(southForest.b-midForest.b)*southCoef} :
+                            {r:0,g:0,b:0};
+                        var forestColor = {r:parseInt(midForest.r+latDiff.r),g:parseInt(midForest.g+latDiff.g),
+                            b:parseInt(midForest.b+latDiff.b)};
+                        var density = 0.2 + features[key].forest*0.8;
+                        p = [Math.round(+p[0]+(forestColor.r-p[0])*density),
+                            Math.round(+p[1]+(forestColor.g-p[1])*density),
+                            Math.round(+p[2]+(forestColor.b-p[2])*density), 255];
+                    }
                     if(pixels[key] > 1) { // If semi-visible/explored pixel
                         var isWater = !terrain.hasOwnProperty(key);
                         var grey = parseInt(p[0]*0.2989 + p[1]*0.587 + p[2]*0.114)-15;

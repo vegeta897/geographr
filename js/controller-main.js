@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.301; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
+        $scope.version = 0.302; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-' }; // Mouse over info
@@ -891,13 +891,13 @@ angular.module('Geographr.controllerMain', [])
 //                $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
             
             var coords = [];
-            
+
+            canvasUtility.fillCanvas(fullObjectContext,'erase');
             canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var labKey in localLabels) {
                 if(localLabels.hasOwnProperty(labKey) && visiblePixels.hasOwnProperty(labKey)) {
                     coords = labKey.split(":"); drawLabel(coords,localLabels[labKey]); }
             }
-            canvasUtility.fillCanvas(fullObjectContext,'erase');
             for(var objKey in localObjects) {
                 if(localObjects.hasOwnProperty(objKey) && visiblePixels.hasOwnProperty(objKey)) {
                     coords = objKey.split(":"); drawObject(coords,localObjects[objKey]); }
@@ -1443,7 +1443,7 @@ angular.module('Geographr.controllerMain', [])
                     if(previousPixels[visKey] != visiblePixels[visKey]) { drawPixels[visKey]=visiblePixels[visKey]; }
                 } else { drawPixels[visKey] = visiblePixels[visKey]; }
             }
-            canvasUtility.drawFog(fullFogContext,fullTerrainContext,drawPixels,localTerrain);
+            canvasUtility.drawFog(fullFogContext,fullTerrainContext,drawPixels,localTerrain,terrainFeatures);
             
             //canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
             var firstWater; $scope.movePath = snap.val().movePath || [];
@@ -1475,9 +1475,7 @@ angular.module('Geographr.controllerMain', [])
         
         // Download the map terrain data from firebase
         var downloadTerrain = function() {
-            jQuery.ajax({
-                url: 'data/terrain.json', dataType: 'json'
-            }).done(function(results) {
+            jQuery.ajax({ url: 'data/terrain.json', dataType: 'json' }).done(function(results) {
                 console.log('new terrain downloaded');
                 localTerrain = results; // Download the whole terrain object at once into localTerrain
                 $scope.lastTerrainUpdate = new Date().getTime();
@@ -1507,61 +1505,64 @@ angular.module('Geographr.controllerMain', [])
         var prepareTerrain = function() {
             $scope.terrainReady = true;
             gameUtility.attachTerrain(localTerrain);
-            var forestTiles = gameUtility.generateForests();
-            for(var ftKey in forestTiles) { if(!forestTiles.hasOwnProperty(ftKey)) { continue; }
-                if(terrainFeatures.hasOwnProperty(ftKey)) { terrainFeatures[ftKey].forest = forestTiles[ftKey]; }
-                else { terrainFeatures[ftKey] = {forest:forestTiles[ftKey]}; }
-            }
-            gameUtility.attachTerrainFeatures(terrainFeatures);
-            var terrainImg = new Image;
-            terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0);
-                canvasUtility.drawTerrainFeatures(fullTerrainContext,terrainFeatures);
-                canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,localTerrain);
-            };
-            terrainImg.src = 'img/world-map.png';
-            fireRef.child('campList').once('value',function(snap) {
-                if(!snap.val() && userID < 3) { // Generate camps if none on firebase
-                    var nativeLocations = gameUtility.genNativeCamps();
-                    fireRef.child('campList').set(nativeLocations); return;
-                } 
-                campList = snap.val();
-                for(var i = 0; i < campList.length; i++) { // Store camps in localObjects
-                    Math.seedrandom(campList[i]);
-                    var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
-                    var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
-                    if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].camp = camp; }
-                    else { localObjects[campList[i]] = { camp: camp }; }
+            jQuery.ajax({ url: 'data/forest.json', dataType: 'json' }).done(function(forestTiles) {
+//            var forestTiles = gameUtility.generateForests();
+                for(var ftKey in forestTiles) { if(!forestTiles.hasOwnProperty(ftKey)) { continue; }
+                    if(terrainFeatures.hasOwnProperty(ftKey)) { terrainFeatures[ftKey].forest = forestTiles[ftKey]; }
+                    else { terrainFeatures[ftKey] = {forest:forestTiles[ftKey]}; }
                 }
-                fireUser.child('camps').on('value', function(snap) {
-                    var camps = snap.val();
-                    for(var v = 0, vc = $scope.user.visitedCamps.length; v < vc; v++) {
-                        delete localObjects[$scope.user.visitedCamps[v]].camp.blacksmithing;
-                        delete localObjects[$scope.user.visitedCamps[v]].camp.selling;
+                gameUtility.attachTerrainFeatures(terrainFeatures);
+                var terrainImg = new Image;
+                terrainImg.onload = function() { fullTerrainContext.drawImage(terrainImg,0,0);
+//                canvasUtility.drawTerrainFeatures(fullTerrainContext,terrainFeatures);
+                    canvasUtility.drawFog(fullFogContext,fullTerrainContext,visiblePixels,
+                        localTerrain,terrainFeatures);
+                };
+                terrainImg.src = 'img/world-map.png';
+                fireRef.child('campList').once('value',function(snap) {
+                    if(!snap.val() && userID < 3) { // Generate camps if none on firebase
+                        var nativeLocations = gameUtility.genNativeCamps();
+                        fireRef.child('campList').set(nativeLocations); return;
                     }
-                    for(var campKey in camps) { if(!camps.hasOwnProperty(campKey)) { continue; }
-                        for(var infoKey in camps[campKey]) { 
-                            if(!camps[campKey].hasOwnProperty(infoKey)) { continue; }
-                            localObjects[campKey].camp[infoKey] = camps[campKey][infoKey];
+                    campList = snap.val();
+                    for(var i = 0; i < campList.length; i++) { // Store camps in localObjects
+                        Math.seedrandom(campList[i]);
+                        var x = parseInt(campList[i].split(':')[0]), y = parseInt(campList[i].split(':')[1]);
+                        var camp = { type: 'camp', name: Chance(x*1000 + y).word(), grid: campList[i] };
+                        if(localObjects.hasOwnProperty(campList[i])) { localObjects[campList[i]].camp = camp; }
+                        else { localObjects[campList[i]] = { camp: camp }; }
+                    }
+                    fireUser.child('camps').on('value', function(snap) {
+                        var camps = snap.val();
+                        for(var v = 0, vc = $scope.user.visitedCamps.length; v < vc; v++) {
+                            delete localObjects[$scope.user.visitedCamps[v]].camp.blacksmithing;
+                            delete localObjects[$scope.user.visitedCamps[v]].camp.selling;
                         }
-                    }
-                    drawZoomCanvas();
+                        for(var campKey in camps) { if(!camps.hasOwnProperty(campKey)) { continue; }
+                            for(var infoKey in camps[campKey]) {
+                                if(!camps[campKey].hasOwnProperty(infoKey)) { continue; }
+                                localObjects[campKey].camp[infoKey] = camps[campKey][infoKey];
+                            }
+                        }
+                        drawZoomCanvas();
+                    });
                 });
-            });
-            fireUser.child('movement').on('value', movePlayer);
-            fireUser.child('stats/hunger').on('value', function(snap) {
-                $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
-                $timeout(function(){$scope.user.stats.hunger = snap.val();});
-            });
-            var myConnectionsRef = fireUser.child('connections');
-            var lastOnlineRef = fireUser.child('lastOnline');
-            var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
-            connectedRef.on('value', function(snap) {
-                if (snap.val() === true) {
-                    var con = myConnectionsRef.push(true);
-                    fireServer.push({ user: userID, action: 'logIn' });
-                    con.onDisconnect().remove();
-                    lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
-                }
+                fireUser.child('movement').on('value', movePlayer);
+                fireUser.child('stats/hunger').on('value', function(snap) {
+                    $scope.user.stats = $scope.user.stats ? $scope.user.stats : { hunger: 100 };
+                    $timeout(function(){$scope.user.stats.hunger = snap.val();});
+                });
+                var myConnectionsRef = fireUser.child('connections');
+                var lastOnlineRef = fireUser.child('lastOnline');
+                var connectedRef = new Firebase('https://geographr.firebaseio.com/.info/connected');
+                connectedRef.on('value', function(snap) {
+                    if (snap.val() === true) {
+                        var con = myConnectionsRef.push(true);
+                        fireServer.push({ user: userID, action: 'logIn' });
+                        con.onDisconnect().remove();
+                        lastOnlineRef.onDisconnect().set(Firebase.ServerValue.TIMESTAMP);
+                    }
+                });
             });
         };
         
