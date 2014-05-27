@@ -2,7 +2,8 @@
     <h2 ng-class="{'inline-header':onPixel.camp}">Location <small>({{ user.location | grid }})</small></h2>
     <span class="text-muted">Terrain:</span> {{ onPixel.terrain }}&emsp;
     <span class="text-muted">Elevation:</span> {{ onPixel.elevation }}&emsp;
-    <span class="text-muted">Slope:</span> {{ onPixel.slope }}
+    <span class="text-muted">Slope:</span> {{ onPixel.slope }}&emsp;
+    <span class="text-muted">Forest:</span> {{ onPixel.forest | percentage }}<span class="text-muted"> %</span>
 </div>
 <p ng-hide="onPixel.camp || onPixel.campfire" class="text-muted">Nothing here.</p>
 <button ng-disabled="looking || moving || inEvent" ng-hide="onPixel.campfire || onPixel.camp" 
@@ -33,10 +34,6 @@
 <div class="well camp-ui" ng-show="onPixel.camp">
     <h3 class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
     <button class="btn btn-default btn-market pull-right" ng-click="showMarket = !showMarket">Market</button>
-    <div class="checkbox-inline text-muted pull-right" ng-show="showMarket"><label>
-        <input type="checkbox" ng-model="uiOptions.plainStalls" 
-            ng-change="changeUIOption('plainStalls',uiOptions.plainStalls)"> Plain Stalls
-    </label></div>
     <button ng-show="onPixel.camp.economy.blacksmith.markup"
         class="btn btn-default btn-blacksmith pull-right" ng-click="showBS = !showBS">Blacksmith</button>
     <div class="text-success pull-right" ng-show="onPixel.camp.economy.blacksmith.refined">
@@ -44,7 +41,11 @@
     <div class="clearfix"></div>
     <div class="market" ng-class="{'last-section':!showBS}" ng-init="showMarket = true" 
          ng-show="showMarket && onPixel.camp.economy.market">
-        <h4>Market</h4>
+        <div class="camp-section-header">
+            <h4>Market</h4>
+            <label><input type="checkbox" ng-model="uiOptions.plainStalls"
+                   ng-change="changeUIOption('plainStalls',uiOptions.plainStalls)"> Plain Stalls</label>
+        </div>
         <div ng-show="onPixel.camp.economy.market.selectedStall" class="stall stall-open" id="selectedStall"
             ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.rightSide,
             'stall-setup':onPixel.camp.economy.market.selectedStall.id == 'su'+user.id}">
@@ -225,7 +226,9 @@
         </div>
     </div>
     <div ng-show="showBS" class="blacksmith" ng-class="{'last-section':showBS}" >
-        <h4>Blacksmith</h4>
+        <div class="camp-section-header">
+            <h4>Blacksmith</h4>
+        </div>
         <div class="blacksmith-content">
             <p ng-hide="hasItem({profession:'blacksmith',status:'unrefined'}) || 
                 onPixel.camp.economy.blacksmith.refined || onPixel.camp.economy.blacksmith.refining" class="text-muted">

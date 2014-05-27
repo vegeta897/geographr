@@ -20,7 +20,7 @@
         class="btn btn-default btn-sm" id="moveClear">Clear</button>
 </div>
 <div class="col-xs-1 text-right hard-right pull-right coords">{{ overPixel.x }} , {{ overPixel.y }}</div>
-<div class="col-xs-3 text-right pull-right coords">
+<div class="col-xs-2 text-right pull-right coords">
     <input type="text" class="zoom-slider" value="" data-slider-handle="square" data-slider-min="0"
         data-slider-max="6" data-slider-selection="none" data-slider-value="4" data-slider-tooltip="hide">
 </div>
@@ -34,20 +34,24 @@
         <!--<input ng-change="refresh()" ng-model="mapElements.objects" type="checkbox"> Show Objects-->
     <!--</label></div>-->
 <!--</div>-->
-<div class="col-xs-4 text-right pull-right hard-right coords">
+<div class="col-xs-3 text-right pull-right hard-right coords">
     <label>Map Overlay
         <select ng-change="refresh()" class="form-control muted-select" ng-model="mapElements.overlay"
             ng-options="overlay | capitalize for overlay in ['none','forest','elevation','slope']"></select>
     </label>
 </div>
-<div class="col-xs-4 hard-left hard-right pull-left coords">
-    <div class="col-xs-4 hard-left hard-right pull-left">
+<div class="col-xs-6 hard-left hard-right pull-left coords">
+    <div class="col-xs-3 hard-left hard-right pull-left">
         <span class="text-muted">Terrain:</span> {{ overPixel.type | capitalize }}
     </div>
-    <div class="col-xs-4 hard-left hard-right pull-left">
+    <div class="col-xs-3 hard-left hard-right pull-left">
         <span class="text-muted">Elevation:</span> {{ overPixel.elevation }}
     </div>
-    <div class="col-xs-4 hard-left pull-left">
+    <div class="col-xs-3 hard-left pull-left">
         <span class="text-muted">Slope:</span> {{ overPixel.slope }}
+    </div>
+    <div class="col-xs-3 hard-left pull-left">
+        <span class="text-muted">Forest:</span> {{ overPixel.forest | percentage }}
+        <span ng-hide="overPixel.forest == '-'" class="text-muted"> %</span>
     </div>
 </div>

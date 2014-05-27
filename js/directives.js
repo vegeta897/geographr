@@ -108,6 +108,12 @@ angular.module('Geographr.directives', [])
         return Math.round(number);
     };
 })
+.filter('percentage', function () {
+    return function (input, decimals) {
+        if(!input || input == '-') { return input; }
+        decimals = decimals || 3; return Math.round(input * Math.pow(10, decimals + 2))/Math.pow(10, decimals);
+    };
+})
 .filter('nlToArray', function() {
     return function(text) {
         if(!text) { return text; }

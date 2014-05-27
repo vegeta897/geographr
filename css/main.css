@@ -155,7 +155,10 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market.last-section, .blacksmith.last-section { margin-bottom: 6px; }
 .market *, .blacksmith * { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
     user-select: none; }
-.market>h4, .blacksmith>h4 { float: left; margin: -12px 0 0; background: #24272b; padding-right: 8px; }
+.camp-section-header { float: left; margin: -14px 0 0; background: #24272b; padding-right: 8px; }
+.camp-section-header h4, .camp-section-header label { display: inline-block; margin: 0; }
+.camp-section-header label { margin-left: 20px; }
+.camp-section-header label input { position: relative; top: 2px; margin-right: 4px; }
 .market>h4+div { clear: both; }
 .market>div:nth-last-child(2) { margin-top: 8px; }
 .market .stalls-min { width: 104px; float: left; }

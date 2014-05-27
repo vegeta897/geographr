@@ -37,3 +37,5 @@ ability to trash items in inventory, as well as stash
         - discovery chance based on observation skill (or other relevant skill, tbd)
         
 sharpen weapons/tools mini-game where you click off-colour our out-of-place pixels
+
+change favicon/title when need user's attention and tab is not active
