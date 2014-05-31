@@ -787,7 +787,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         grid = {x: parseInt(grid.split(':')[0]), y: parseInt(grid.split(':')[1]) };
         var inRange = getCircle([grid.x,grid.y],distance), forestAmount = 0;
         for(var i = 0; i < inRange.length; i++) {
-            if(inRange[i].inBounds && terrainFeatures[inRange[i].grid] && terrainFeatures[inRange[i].grid].forest) { 
+            if(inRange[i].inBounds && terrainFeatures[inRange[i].grid] && 
+                terrainFeatures[inRange[i].grid].forest) { 
                 forestAmount += terrainFeatures[inRange[i].grid].forest; }
         }
         return forestAmount;
@@ -1020,8 +1021,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             var elevation = terrain[location], slope = getSlope(location);
             var abundance = {
                 forage: Math.min(1,7/elevation) * (Math.random()/2+0.5) * Math.max(0.05,(1-slope/16)), 
-                hunt: 
-                    Math.min(1,Math.random()/5 + (terrainFeatures[location] && terrainFeatures[location].forest ? 
+                hunt: Math.min(1,
+                    Math.random()/5 + (terrainFeatures[location] && terrainFeatures[location].forest ? 
                     terrainFeatures[location].forest : 0)),
                 mine: getNearMiningAbundance(location,0)
             };
@@ -1092,7 +1093,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
                 Math.seedrandom('grid'+tKey);
                 var latMod = tKey.split(':')[1] > 220 ? 1-(tKey.split(':')[1]-220)/180 : 
                     tKey.split(':')[1] < 120 ? 1-Math.min(100,120 - tKey.split(':')[1])/100 : 1;
-                preBlur[tKey] = Math.random() > 0.7 ? Math.min(1,0.5+Math.random() - terrain[tKey]/35)*latMod : 0;
+                preBlur[tKey] = 
+                    Math.random() > 0.7 ? Math.min(1,0.5+Math.random() - terrain[tKey]/35)*latMod : 0;
             }
             for(var tKey2 in terrain) { if(!terrain.hasOwnProperty(tKey2)) { continue; }
                 var value = blurValues(tKey2,preBlur);

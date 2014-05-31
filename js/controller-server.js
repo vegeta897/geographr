@@ -139,22 +139,16 @@ angular.module('Geographr.controllerServer', [])
             if(!$scope.terrainReady) { return; }
             zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
                 $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
-            
-            var coords = [];
+
+//            canvasUtility.drawDepthTerrain(zoomTerrainContext,localTerrain,zoomPixSize,$scope.zoomPosition);
             
             canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var labKey in localLabels) {
-                if(localLabels.hasOwnProperty(labKey)) {
-                    coords = labKey.split(":");
-                    drawLabel(coords,localLabels[labKey]);
-                }
+                if(localLabels.hasOwnProperty(labKey)) { drawLabel(labKey.split(":"),localLabels[labKey]); }
             }
             canvasUtility.fillCanvas(fullObjectContext,'erase');
             for(var objKey in localObjects) {
-                if(localObjects.hasOwnProperty(objKey)) {
-                    coords = objKey.split(":");
-                    drawObject(coords,localObjects[objKey]);
-                }
+                if(localObjects.hasOwnProperty(objKey)) { drawObject(objKey.split(":"),localObjects[objKey]); }
             }
             $timeout(function(){
                 objectInfoPanel.css('visibility', 'visible');

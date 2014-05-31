@@ -37,5 +37,11 @@
     <script src="js/service-actCanvas.js"></script>
     <script src="js/service-game.js"></script>
     <script src="js/directives.js"></script>
+
+    <!-- Error Reporting -->
+    <script src="//cdn.ravenjs.com/1.1.14/jquery,native/raven.min.js"></script>
+    <script>
+        Raven.config('https://8d6f75cd5f26489bac4330469e1789e6@app.getsentry.com/25099', {}).install();
+    </script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.304; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
+        $scope.version = 0.305; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-', forest: '-' }; // Mouse over info
@@ -889,18 +889,16 @@ angular.module('Geographr.controllerMain', [])
             if(!$scope.terrainReady) { return; }
 //            zoomTerrainContext.drawImage(fullTerrainCanvas, $scope.zoomPosition[0]*mainPixSize, 
 //                $scope.zoomPosition[1]*mainPixSize, 900/zoomPixSize, 600/zoomPixSize, 0, 0, 900, 600);
-            
-            var coords = [];
 
             canvasUtility.fillCanvas(fullObjectContext,'erase');
             canvasUtility.fillCanvas(zoomObjectContext,'erase');
             for(var labKey in localLabels) {
                 if(localLabels.hasOwnProperty(labKey) && visiblePixels.hasOwnProperty(labKey)) {
-                    coords = labKey.split(":"); drawLabel(coords,localLabels[labKey]); }
+                    drawLabel(labKey.split(":"),localLabels[labKey]); }
             }
             for(var objKey in localObjects) {
                 if(localObjects.hasOwnProperty(objKey) && visiblePixels.hasOwnProperty(objKey)) {
-                    coords = objKey.split(":"); drawObject(coords,localObjects[objKey]); }
+                    drawObject(objKey.split(":"),localObjects[objKey]); }
             }
             $timeout(function(){
                 objectInfoPanel.css('visibility', 'visible');
@@ -927,9 +925,6 @@ angular.module('Geographr.controllerMain', [])
                     }
                 }
             },1);
-            
-            if(!$scope.user) { return; }
-            canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             //canvasUtility.drawCamps(zoomObjectContext,nativeCamps,$scope.zoomPosition,zoomPixSize);
 //            canvasUtility.drawFog(
 //                zoomFogContext,fullTerrainContext,visiblePixels,$scope.zoomPosition,zoomPixSize,localTerrain);
@@ -938,6 +933,8 @@ angular.module('Geographr.controllerMain', [])
             if($scope.mapElements.overlay != 'none') { canvasUtility.drawOverlay(zoomFogContext,
                 $scope.mapElements.overlay,visiblePixels,localTerrain,terrainFeatures,
                 $scope.zoomPosition,zoomPixSize); }
+            if(!$scope.user || !$scope.user.location) { return; }
+            canvasUtility.drawPlayer(fullObjectContext,$scope.user.location.split(':'),0,0);
             canvasUtility.drawPlayer(zoomObjectContext,$scope.user.location.split(':'),
                 $scope.zoomPosition,zoomPixSize);
         };
@@ -1448,7 +1445,6 @@ angular.module('Geographr.controllerMain', [])
                 } else { drawPixels[visKey] = visiblePixels[visKey]; }
             }
             canvasUtility.drawFog(fullFogContext,fullTerrainContext,drawPixels,localTerrain,terrainFeatures);
-            
             //canvasUtility.drawAllTerrain(fullTerrainContext,localTerrain,visiblePixels);
             var firstWater; $scope.movePath = snap.val().movePath || [];
             for(var i = 0; i < $scope.movePath.length; i++) {

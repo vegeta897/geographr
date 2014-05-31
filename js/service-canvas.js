@@ -209,33 +209,6 @@ angular.module('Geographr.canvas', [])
                     }
                 }
             },
-            drawTerrain: function(context,terrain,coords,zoomPosition,zoomPixSize) {
-                var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
-                var drawType = context.canvas.id.substr(4,1); // Object or terrain?
-                var x = parseInt(coords[0]), y = parseInt(coords[1]);
-                // Don't draw on zoom canvas if pixel is out of bounds
-                if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
-                    (canvasType == 'zoom' && y+1 < zoomPosition[1]) ||
-                    (canvasType == 'zoom' && x-1 > zoomPosition[0]+(900/zoomPixSize)) ||
-                    (canvasType == 'zoom' && y-1 > zoomPosition[1]+(600/zoomPixSize))) {
-                    return;
-                }
-                var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
-                var offset = canvasType == 'full' ? [0,0] : zoomPosition;
-                var affected = listNear(coords,1);
-                for(var i = 0; i < affected.length; i++) {
-                    
-                    //if(drawType=='O' && !things.hasOwnProperty(affected[i])) { continue; }
-                    var thisCoord = affected[i].split(':');
-                    var nearThis = listNear(thisCoord,1);
-                    var color = surveyTerrain(nearThis,terrain);
-                    var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
-                    context.fillStyle = color;
-                    var drawMethod = color == 'erase' ? 'clearRect' : 'fillRect';
-                    context[drawMethod]((thisX - offset[0])*canvasPixSize,
-                        (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
-                }
-            },
             drawObject: function(context,object,coords,zoomPosition,zoomPixSize) {
                 var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
                 var x = parseInt(coords[0]), y = parseInt(coords[1]);
@@ -329,6 +302,32 @@ angular.module('Geographr.canvas', [])
                 context.closePath(); context.stroke();
                 context.shadowColor = 'rgba(0,0,0,0)';
             },
+            drawTerrain: function(context,terrain,coords,zoomPosition,zoomPixSize) {
+                var canvasType = context.canvas.id.substr(0,4); // Zoom or full canvas?
+                var x = parseInt(coords[0]), y = parseInt(coords[1]);
+                // Don't draw on zoom canvas if pixel is out of bounds
+                if((canvasType == 'zoom' && x+1 < zoomPosition[0]) ||
+                    (canvasType == 'zoom' && y+1 < zoomPosition[1]) ||
+                    (canvasType == 'zoom' && x-1 > zoomPosition[0]+(900/zoomPixSize)) ||
+                    (canvasType == 'zoom' && y-1 > zoomPosition[1]+(600/zoomPixSize))) {
+                    return;
+                }
+                var canvasPixSize = canvasType == 'full' ? fullPixSize : zoomPixSize;
+                var offset = canvasType == 'full' ? [0,0] : zoomPosition;
+                var affected = listNear(coords,1);
+                for(var i = 0; i < affected.length; i++) {
+
+                    //if(drawType=='O' && !things.hasOwnProperty(affected[i])) { continue; }
+                    var thisCoord = affected[i].split(':');
+                    var nearThis = listNear(thisCoord,1);
+                    var color = surveyTerrain(nearThis,terrain);
+                    var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
+                    context.fillStyle = color;
+                    var drawMethod = color == 'erase' ? 'clearRect' : 'fillRect';
+                    context[drawMethod]((thisX - offset[0])*canvasPixSize,
+                        (thisY - offset[1])*canvasPixSize, canvasPixSize,canvasPixSize);
+                }
+            },
             drawAllTerrain: function(context,terrain,visible) {
                 var waterGradient = context.createLinearGradient(0,0,0,299);
                 waterGradient.addColorStop(0,'rgb(62,71,77)');
@@ -338,25 +337,63 @@ angular.module('Geographr.canvas', [])
                 waterGradient.addColorStop(1,'rgb(42,71,65)');
                 context.fillStyle = waterGradient;
                 context.fillRect(0,0,300,300);
-                for(var key in terrain) {
-                    if(terrain.hasOwnProperty(key)) {
-                        var coord = key.split(':');
-                        var affected = listNear(coord,1);
-                        var drawIt = false;
-                        for(var n = 0; n < affected.length; n++) {
-                            if(!visible || visible.hasOwnProperty(affected[n])) { drawIt = true; break;  }
-                        }
-                        if(!drawIt && visible) { continue; }
-                        for(var i = 0; i < affected.length; i++) {
+                for(var key in terrain) { if(!terrain.hasOwnProperty(key)) { continue; }
+                    var coord = key.split(':'), affected = listNear(coord,1), drawIt = false;
+                    for(var n = 0; n < affected.length; n++) {
+                        if(!visible || visible.hasOwnProperty(affected[n])) { drawIt = true; break; } }
+                    if(!drawIt && visible) { continue; }
+                    for(var i = 0; i < affected.length; i++) {
+                        // If not drawing center pixel, only draw if it's water
+                        if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }
+                        var thisCoord = affected[i].split(':');
+                        var nearThis = listNear(thisCoord,1);
+                        var color = surveyTerrain(nearThis,terrain);
+                        var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
+                        context.fillStyle = color;
+                        context.fillRect(thisX*fullPixSize,thisY*fullPixSize,
+                            fullPixSize,fullPixSize);
+                    }
+                }
+            },
+            drawDepthTerrain: function(context,terrain,pixSize,offset) {
+                var waterGradient = context.createLinearGradient(0,-offset[1]*pixSize,0,
+                    (300-(offset[1]+(600/pixSize)))*pixSize+600);
+                waterGradient.addColorStop(0,'rgb(62,71,77)');
+                waterGradient.addColorStop(0.13,'rgb(62,71,77)');
+                waterGradient.addColorStop(0.4,'rgb(44,61,75)');
+                waterGradient.addColorStop(0.6,'rgb(44,61,75)');
+                waterGradient.addColorStop(1,'rgb(42,71,65)');
+                context.fillStyle = waterGradient;
+                context.fillRect(0,0,900,600);
+                context.shadowColor = 'rgba(0,0,0,0.6)';
+                context.shadowOffsetX = context.shadowOffsetY = 1; context.shadowBlur = 2;
+                var elevations = new Array(50);
+                for(var key in terrain) { if(!terrain.hasOwnProperty(key)) { continue; }
+                    if(elevations[terrain[key]]) { elevations[terrain[key]].push(key)
+                    } else { elevations[terrain[key]] = [key]; }
+                }
+                for(var i = 0; i < 50; i++) { if(!elevations[i]) { continue; } 
+                    elevations[i] = elevations[i].sort(); 
+                    for(var j = 0, k = elevations[i].length; j < k; j++) {
+                        var grid = elevations[i][j], affected = listNear(grid.split(':'),1);
+                        var opacity = i / 50;
+                        context.shadowColor = 'rgba(0,0,0,'+opacity+')';
+                        context.shadowOffsetX = i / 10;
+                        context.shadowOffsetY = i / 8; context.shadowBlur = i / 4;
+                        if(grid.split(':')[0] < offset[0] || grid.split(':')[0] > +offset[0] + 900/pixSize ||
+                            grid.split(':')[1] < offset[1] || grid.split(':')[1] > +offset[1] + 600/pixSize) {
+                            continue; }
+                        for(var l = 0, m = affected.length; l < m; l++) {
                             // If not drawing center pixel, only draw if it's water
-                            if(i != 4 && terrain.hasOwnProperty(affected[i])) { continue; }
-                            var thisCoord = affected[i].split(':');
-                            var nearThis = listNear(thisCoord,1);
+                            if(l != 4 && terrain.hasOwnProperty(affected[l])) { continue; }
+                            if(!terrain.hasOwnProperty(affected[l])) { 
+                                context.shadowColor = 'rgba(0,0,0,0)'; } else {
+                                context.shadowColor = 'rgba(0,0,0,'+opacity+')'; }
+                            var nearThis = listNear(affected[l].split(':'),1);
                             var color = surveyTerrain(nearThis,terrain);
-                            var thisX = parseInt(thisCoord[0]), thisY = parseInt(thisCoord[1]);
+                            var x = parseInt(affected[l].split(':')[0]), y = parseInt(affected[l].split(':')[1]);
                             context.fillStyle = color;
-                            context.fillRect(thisX*fullPixSize,thisY*fullPixSize,
-                                fullPixSize,fullPixSize);
+                            context.fillRect((x-offset[0])*pixSize,(y-offset[1])*pixSize,pixSize,pixSize);
                         }
                     }
                 }
