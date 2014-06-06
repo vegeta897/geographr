@@ -217,11 +217,11 @@
         </div>
         <div class="clearfix"></div>
     </div>
-    <div class="clearfix"></div>
-    <div ng-repeat="service in services" class="camp-service" 
+    <div ng-repeat-start="service in services" class="clearfix"></div>
+    <div ng-repeat-end class="camp-service" 
         ng-show="onPixel.camp.economy[service].markup" ng-class="service">
         <div class="camp-section-header">
-            <h4><button ng-click="showService[service] = !showService[service]">Blacksmith</button>
+            <h4><button ng-click="showService[service] = !showService[service]">{{ service | capitalize }}</button>
                 <span class="text-success" ng-show="onPixel.camp.economy[service].refined">
                     Refined items ready for pick-up!</span>
             </h4>
@@ -232,7 +232,7 @@
                 You don't have anything to <strong>sell</strong> or <strong>refine</strong> here. 
                 Go out and find some stuff!</p>
             <div ng-show="onPixel.camp.economy[service].selectedRefGood"
-                class="refGood refGood-open" id="selectedRefGood"
+                class="refGood refGood-open" id="{{ service }}selectedRefGood"
                 ng-style="{background:'#'+onPixel.camp.economy[service].selectedRefGood.color}"
                 ng-class="{'has-error':onPixel.camp.economy[service].selectedRefGood.value * 
                     onPixel.camp.economy[service].selectedRefGood.refineAmount *
@@ -277,13 +277,13 @@
                     <button ng-click="sellItem(onPixel.camp.economy[service].selectedRefGood,
                         onPixel.camp.economy[service].selectedRefGood.sellAmount,
                         onPixel.camp.economy[service].selectedRefGood.value/2/
-                        onPixel.camp.economy[service].markup)">Sell</button>
+                        onPixel.camp.economy[service].markup, service)">Sell</button>
                 </div>
             </div>
             <div ng-class="{'refGoods-min':onPixel.camp.economy[service].selectedRefGood}">
                 <div class="refGood" ng-style="{background:'#'+refItem.color}"
                     ng-click="changeRefGood(refItem.key,service)"
-                    ng-repeat="refItem in inventory | typeFilter:['blacksmith']"
+                    ng-repeat="refItem in inventory | typeFilter:[service]"
                     ng-class="{'refGood-min':onPixel.camp.economy[service].selectedRefGood,
                     'refGood-selected':onPixel.camp.economy[service].selectedRefGood.id == refItem.key}">
                     <h4>{{ refItem.name | capitalize }}</h4>

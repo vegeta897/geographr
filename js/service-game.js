@@ -461,7 +461,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         var finalEconomy = { economyNodes: campNodes, message: '',
             market: { stalls: stalls, allGoods: allGoods, stallCount: countProperties(stalls) },
             blacksmith: { markup: campNodes.hasOwnProperty('mining camp') ?
-                1 + 1 / campNodes['mining camp'].amount : null } };
+                1 + 1 / campNodes['mining camp'].amount : null },
+            jeweler: { markup: campNodes.hasOwnProperty('mining camp') && campNodes['mining camp'].amount > 1  ?
+                1 + 1 / campNodes['mining camp'].amount : null }};
 //        console.log('final economy',angular.copy(finalEconomy));
         return finalEconomy;
     };

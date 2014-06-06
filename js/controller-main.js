@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.306; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
+        $scope.version = 0.307; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-', forest: '-' }; // Mouse over info
@@ -507,7 +507,7 @@ angular.module('Geographr.controllerMain', [])
             }
         };
         $scope.changeRefGood = function(goodID,refineType) {
-            var refGood = jQuery(document.getElementById('selectedRefGood')).finish(),
+            var refGood = jQuery(document.getElementById(refineType+'selectedRefGood')).finish(),
                 refinery = $scope.onPixel.camp.economy[refineType];
             if(refinery.hasOwnProperty('selectedRefGood')) {
                 if(refinery.selectedRefGood.id == goodID) {
@@ -1372,7 +1372,8 @@ angular.module('Geographr.controllerMain', [])
                     // Add refining refGoods to refineries
                     if(campSnap.hasOwnProperty('refining')) {
                         for(var i = 0; i < $scope.services.length; i++) {
-                            if(!campSnap.refining.hasOwnProperty($scope.services[i])) { continue; }
+                            if(!campSnap.refining.hasOwnProperty($scope.services[i])) {
+                                campData.economy[$scope.services[i]].refining = null; continue; }
                             var notOwnRefining = true;
                             for(var refiningKey in campSnap.refining[$scope.services[i]]) {
                                 if(!campSnap.refining[$scope.services[i]].hasOwnProperty(refiningKey)) { continue; }
@@ -1397,7 +1398,8 @@ angular.module('Geographr.controllerMain', [])
                     // Add refined refGoods to refineries
                     if(campSnap.hasOwnProperty('refined')) {
                         for(var j = 0; j < $scope.services.length; j++) {
-                            if(!campSnap.refined.hasOwnProperty($scope.services[j])) { continue; }
+                            if(!campSnap.refined.hasOwnProperty($scope.services[j])) { 
+                                campData.economy[$scope.services[j]].refined = null; continue; }
                             var notOwnRefined = true;
                             for(var refinedKey in campSnap.refined[$scope.services[j]]) {
                                 if(!campSnap.refined[$scope.services[j]].hasOwnProperty(refinedKey)) { continue; }

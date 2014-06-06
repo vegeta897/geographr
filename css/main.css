@@ -135,27 +135,13 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 
 .camp-ui.well { min-height: 52px; padding-bottom: 0; }
 .heading { margin-bottom: 1em; }
-.camp-ui h3 { color: #778187; font-size: 1.3em; margin: 2px 0 14px; }
+.camp-ui h3 { color: #778187; font-size: 1.3em; margin: 2px 0 4px; }
 .inline-header { display: inline; margin-right: 3em; }
-.btn-market, .btn-blacksmith { padding: 0.5em 0.8em; margin-left: 0.6em; margin-bottom: 0.3em; }
-.btn-market {
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#6C6D53), to(#4C4D36));
-    background-image: -webkit-linear-gradient(#6C6D53, #4C4D36);
-    background-image: linear-gradient(#6C6D53, #4C4D36);
-}
-.btn-market + div { font-size: 0.9em; }
-.btn-market + div.checkbox-inline { padding-top: 8px; margin-left: 24px; }
-.btn-blacksmith + div { height: 40px; width: 100px; font-size: 0.9em; }
-.btn-blacksmith {
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#575757), to(#3c3c3c));
-    background-image: -webkit-linear-gradient(#575757, #3c3c3c);
-    background-image: linear-gradient(#575757, #3c3c3c);
-}
-.market, .camp-service { margin: 6px 0 16px 2px; padding-top: 4px; border-top: 1px solid #464f57; }
+.market, .camp-service { margin: 16px 0 6px 2px; padding-top: 4px; border-top: 1px solid #464f57; }
 .market.last-section, .camp-service.last-section { margin-bottom: 6px; }
 .market *, .camp-service * { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
     user-select: none; }
-.camp-section-header { float: left; margin: -16px 0 0; padding-right: 8px; }
+.camp-section-header { margin: -16px 0 0; padding-right: 8px; }
 .camp-section-header h4 { padding-right: 8px; }
 .camp-section-header h4, .camp-section-header label { display: inline-block; margin: 0; background: #24272b; }
 .camp-section-header h4 button {
@@ -169,7 +155,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .camp-section-header label input { position: relative; top: 2px; margin-right: 4px; }
 .market .camp-section-header h4 button { background: #A8A368; }
 .market>h4+div { clear: both; }
-.market>div:nth-last-child(2) { margin-top: 12px; }
+.market>div:nth-last-child(2) { margin-top: 6px; }
 .market .stalls-min { width: 104px; float: left; }
 .market .stall { 
     font-size: 0.9em; float: left; cursor: pointer; margin: 13px 18px 10px 0; background: #393c3f; padding: 0 3px;
@@ -360,10 +346,14 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 
 /* Camp services */
 .camp-service.blacksmith .camp-section-header h4 button { background: #3f4042; }
+.camp-service.jeweler .camp-section-header h4 button { background: #4e655b; }
 .camp-service .camp-service-content {  padding: 4px 8px; box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.8); }
 .camp-service.blacksmith .camp-service-content { background-color: #1e1e1f; border-top: 6px outset #313136;
-    border-bottom: 6px outset #636364; border-right: 3px outset #64646B; margin: 16px 2px 12px;
+    border-bottom: 6px outset #636364; border-right: 3px outset #64646B; margin: 10px 2px 12px;
     border-left: 3px outset #29292B; }
+.camp-service.jeweler .camp-service-content { background-color: #161f17; border-top: 6px outset #253628;
+    border-bottom: 6px outset #456447; border-right: 3px outset #4f6b53; margin: 10px 2px 12px;
+    border-left: 3px outset #222b25; }
 .camp-service .camp-service-content>p { margin: 4px; } 
 .camp-service .camp-service-content>p strong { color: #aaa; }
 .camp-service .refGood {

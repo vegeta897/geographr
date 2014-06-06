@@ -180,6 +180,12 @@ angular.module('Geographr.directives', [])
                         list.push(input[bsKey]); }
                 }
                 break;
+            case 'jeweler':
+                for(var jKey in input) { if(!input.hasOwnProperty(jKey)) { continue; }
+                    if(input[jKey].profession == 'jeweler' && input[jKey].status == 'unrefined') {
+                        list.push(input[jKey]); }
+                }
+                break;
             case 'all':
                 for(var allKey in input) { if(input.hasOwnProperty(allKey)) { 
                     var allItem = input[allKey]; /*allItem.name = allKey;*/ list.push(input[allKey]); } }
