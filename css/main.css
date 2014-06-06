@@ -135,7 +135,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 
 .camp-ui.well { min-height: 52px; padding-bottom: 0; }
 .heading { margin-bottom: 1em; }
-.camp-ui h3 { color: #778187; font-size: 1.3em; margin-top: 8px; }
+.camp-ui h3 { color: #778187; font-size: 1.3em; margin: 2px 0 14px; }
 .inline-header { display: inline; margin-right: 3em; }
 .btn-market, .btn-blacksmith { padding: 0.5em 0.8em; margin-left: 0.6em; margin-bottom: 0.3em; }
 .btn-market {
@@ -151,16 +151,25 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     background-image: -webkit-linear-gradient(#575757, #3c3c3c);
     background-image: linear-gradient(#575757, #3c3c3c);
 }
-.market, .blacksmith { margin: 4px 0 18px 2px; border-top: 1px solid #464f57; }
-.market.last-section, .blacksmith.last-section { margin-bottom: 6px; }
-.market *, .blacksmith * { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
+.market, .camp-service { margin: 6px 0 16px 2px; padding-top: 4px; border-top: 1px solid #464f57; }
+.market.last-section, .camp-service.last-section { margin-bottom: 6px; }
+.market *, .camp-service * { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none;
     user-select: none; }
-.camp-section-header { float: left; margin: -14px 0 0; background: #24272b; padding-right: 8px; }
-.camp-section-header h4, .camp-section-header label { display: inline-block; margin: 0; }
-.camp-section-header label { margin-left: 20px; }
+.camp-section-header { float: left; margin: -16px 0 0; padding-right: 8px; }
+.camp-section-header h4 { padding-right: 8px; }
+.camp-section-header h4, .camp-section-header label { display: inline-block; margin: 0; background: #24272b; }
+.camp-section-header h4 button {
+    border: none; border-radius: 3px; padding: 3px 9px; color: white; margin-right: 18px;
+    text-shadow: 0 1px 1px #000, 1px 0 1px #000, 
+    1px 1px 1px #000, 0 0 1px #000;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+.camp-section-header h4 span { font-size: 0.9em; position: relative; top: -2px; }
+.camp-section-header label { font-size: 0.8em; font-weight: normal; color: #aaa; position: relative; top: -2px; }
 .camp-section-header label input { position: relative; top: 2px; margin-right: 4px; }
+.market .camp-section-header h4 button { background: #A8A368; }
 .market>h4+div { clear: both; }
-.market>div:nth-last-child(2) { margin-top: 8px; }
+.market>div:nth-last-child(2) { margin-top: 12px; }
 .market .stalls-min { width: 104px; float: left; }
 .market .stall { 
     font-size: 0.9em; float: left; cursor: pointer; margin: 13px 18px 10px 0; background: #393c3f; padding: 0 3px;
@@ -246,7 +255,7 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall .color-square.out-of-stock {
     box-shadow: inset 0 0 8px 3px rgba(50,50,50,0.8), inset 0 0 0 30px rgba(100,100,100,0.4); }
 /* Goods */
-.market .goods-min, .blacksmith .minerals-min { width: 308px; float: left; padding-top: 20px; }
+.market .goods-min, .camp-service .refGoods-min { width: 308px; float: left; padding-top: 20px; }
 .market .stall.stall-open .good { 
     display: block; float: left; width: 101px; height: 85px; margin: 6px 4px; text-align: center; 
     cursor: pointer; border-radius: 4px; text-shadow: 0 1px 1px rgba(0,0,0,0.7), 1px 0 1px rgba(0,0,0,0.7),
@@ -262,56 +271,56 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .stall.stall-open .good.meat { 
     box-shadow: inset 0 0 4px 3px rgba(151,45,65,0.7), 1px 1px 3px rgba(0,0,0,0.5); }
 .market .stall.stall-open .good:hover:not(.good-open), 
-.blacksmith .mineral:hover:not(.mineral-open):not(.mineral-refine) { background: #2d2e33 !important; }
+.camp-service .refGood:hover:not(.refGood-open):not(.refGood-refine) { background: #2d2e33 !important; }
 .market .stall.stall-open .good.good-open { 
     width: 120px; height: 1px; opacity: 0; border-radius: 6px; cursor: default; }
 .market .stall.stall-open .good.good-min { width: 69px; height: 65px; border-radius: 2px; padding-top: 2px;
     transition: background-color 0.1s ease; }
 .market .stall.stall-open .good.good-min.good-selected {
     background: #24272b !important; box-shadow: none; }
-.market .stall.stall-open .good h4, .blacksmith .mineral h4 { 
+.market .stall.stall-open .good h4, .camp-service .refGood h4 { 
     margin: 8px 0 3px; color: white; font-size: 1.2em;
     text-shadow: 0 1px 2px #000, 1px 0 2px #000,
     1px 1px 2px #000, 0 0 2px #000;
 }
-.market .stall.stall-open .good.good-open h4, .blacksmith .mineral.mineral-open h4 { 
+.market .stall.stall-open .good.good-open h4, .camp-service .refGood.refGood-open h4 { 
     margin: 6px 0 5px; font-size: 1.4em; }
 .market .stall.stall-open .good.good-min h4 { 
     margin: 2px 0; font-size: 0.9em; }
 .market .stall.stall-open .good h4 small { font-size: 0.7em; color: rgba(255,255,255,0.7);
     text-shadow: 0 1px 2px rgba(0,0,0,0.7), 1px 0 2px rgba(0,0,0,0.7), 
     1px 1px 2px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.7); }
-.market .stall.stall-open .good p, .blacksmith .mineral p { 
+.market .stall.stall-open .good p, .camp-service .refGood p { 
     margin-bottom: 0; color: #DDD; font-size: 1.1em; white-space: nowrap; }
-.market .stall.stall-open .good p strong.text-danger, .blacksmith .mineral p strong.text-danger { 
+.market .stall.stall-open .good p strong.text-danger, .camp-service .refGood p strong.text-danger { 
     color: rgb(224, 89, 89); }
-.market .stall.stall-open .good.good-open p, .blacksmith .mineral.mineral-open p { 
+.market .stall.stall-open .good.good-open p, .camp-service .refGood.refGood-open p { 
     font-size: 1.15em; margin: 0; line-height: 1.45em; }
 .market .stall.stall-open .good.good-open p+p { font-size: 1em; }
 .market .stall.stall-open .good.good-min p { margin-bottom: 0; font-size: 1em; }
-.market .stall.stall-open .good strong, .blacksmith .mineral strong { 
+.market .stall.stall-open .good strong, .camp-service .refGood strong { 
     color: #f3f3f3; font-size: 1.2em; 
     text-shadow: 0 1px 1px rgba(0,0,0,0.9), 1px 0 1px rgba(0,0,0,0.9), 
     1px 1px 1px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.9); }
 .market .stall.stall-open .good.good-open strong { color: #f8f8f8; font-size: 1.3em; }
 .market .stall.stall-open .good.good-open select.num-select, 
-.blacksmith .mineral.mineral-open select.num-select {
+.camp-service .refGood.refGood-open select.num-select {
     float: none; margin: 3px auto; width: 70px; height: 30px; padding: 0 6px; font-size: 1.1em; border: none;
     font-weight: bold; box-shadow: inset 1px 2px 6px rgba(0,0,0,0.45), inset 1px 1px 1px rgba(0,0,0,0.3); }
 .market .stall.stall-open .good.good-open.has-error select.num-select,
-.blacksmith .mineral.mineral-open.has-error select.num-select:not(.no-error) { border: 1px solid #ee5f5b; 
+.camp-service .refGood.refGood-open.has-error select.num-select:not(.no-error) { border: 1px solid #ee5f5b; 
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ee5f5b; }
-.market .stall.stall-open .good.good-open button, .blacksmith .mineral.mineral-open button {
+.market .stall.stall-open .good.good-open button, .camp-service .refGood.refGood-open button {
     width: 70px; height: 36px; margin-top: 5px; font-size: 1.2em; font-weight: bold;
     color: white; background: rgba(0,0,0,0.4); border-color: transparent; border-radius: 5px;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.8); transition: background-color 0.08s ease;
 }
-.market .stall.stall-open .good.good-open button:hover, .blacksmith .mineral.mineral-open button:hover {
+.market .stall.stall-open .good.good-open button:hover, .camp-service .refGood.refGood-open button:hover {
     background: rgba(0,0,0,0.5); box-shadow: 1px 1px 3px rgba(0,0,0,0.9); }
-.market .stall.stall-open .good.good-open button:active, .blacksmith .mineral.mineral-open button:active {
+.market .stall.stall-open .good.good-open button:active, .camp-service .refGood.refGood-open button:active {
     background: rgba(255,255,255,0.1); box-shadow: 1px 1px 3px #000; }
 .market .stall.stall-open .good.good-open button[disabled], 
-.blacksmith .mineral.mineral-open button[disabled] { 
+.camp-service .refGood.refGood-open button[disabled] { 
     background: rgba(0,0,0,0.2); color: #aaa; box-shadow: none; }
 /* Player Stall */
 .market .stall.stall-new p { margin-top: 21px; font-size: 1.2em; color: #ccc; }
@@ -349,13 +358,15 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
 .market .market-message .error { color:#F66;} .market .market-message .error strong { color:#FBB; }
 .market .market-message .promotion { color:#8D8; } .market .market-message .promotion strong { color:#DFD; }
 
-/* Blacksmith */
-.blacksmith .blacksmith-content { background-color: #1e1e1f; border-top: 6px outset #313136;
+/* Camp services */
+.camp-service.blacksmith .camp-section-header h4 button { background: #3f4042; }
+.camp-service .camp-service-content {  padding: 4px 8px; box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.8); }
+.camp-service.blacksmith .camp-service-content { background-color: #1e1e1f; border-top: 6px outset #313136;
     border-bottom: 6px outset #636364; border-right: 3px outset #64646B; margin: 16px 2px 12px;
-    border-left: 3px outset #29292B; padding: 4px 8px; box-shadow: 1px 1px 4px 0 rgba(0,0,0,0.8); 
-}
-.blacksmith .blacksmith-content>p { margin: 4px; } .blacksmith .blacksmith-content>p strong { color: #aaa; }
-.blacksmith .mineral {
+    border-left: 3px outset #29292B; }
+.camp-service .camp-service-content>p { margin: 4px; } 
+.camp-service .camp-service-content>p strong { color: #aaa; }
+.camp-service .refGood {
     display: block; float: left; width: 125px; height: 112px; margin: 6px 5px 10px; text-align: center;
     cursor: pointer; border-right: 3px inset rgba(0,0,0,0.3); border-bottom: 4px inset rgba(0,0,0,0.5);
     border-top: 4px inset rgba(255,255,255,0.28); border-left: 3px inset rgba(255,255,255,0.08);
@@ -363,28 +374,28 @@ select.num-select + .btn-group.btn-group-xs .btn:last-of-type { margin-right: 10
     1px 1px 1px rgba(0,0,0,0.7), 0 0 1px rgba(0,0,0,0.7);
     box-shadow: 1px 1px 3px rgba(0,0,0,0.5); transition: background-color 0.06s ease;
 }
-.blacksmith .mineral.mineral-open {
+.camp-service .refGood.refGood-open {
     width: 180px; height: 1px; opacity: 0; border-top-width: 5px; border-bottom-width: 5px;
     border-left-width: 4px; border-right-width: 4px; cursor: default; }
-.blacksmith .mineral h4 { margin: 4px 0 6px; }
-.blacksmith .mineral>div { width: 50%; float: right; }
-.blacksmith .mineral>div:first-of-type { float: left; border-right: 1px solid rgba(0,0,0,0.2); }
-.blacksmith .mineral>div+p { clear: both; }
-.blacksmith .mineral.mineral-open p { line-height: 1.6em; }
-.blacksmith .mineral.mineral-open p:first-of-type { font-size: 1em; }
-.blacksmith .minerals-min { width: 351px; }
-.blacksmith .mineral.mineral-min {
+.camp-service .refGood h4 { margin: 4px 0 6px; }
+.camp-service .refGood>div { width: 50%; float: right; }
+.camp-service .refGood>div:first-of-type { float: left; border-right: 1px solid rgba(0,0,0,0.2); }
+.camp-service .refGood>div+p { clear: both; }
+.camp-service .refGood.refGood-open p { line-height: 1.6em; }
+.camp-service .refGood.refGood-open p:first-of-type { font-size: 1em; }
+.camp-service .refGoods-min { width: 351px; }
+.camp-service .refGood.refGood-min {
     width: 77px; height: 95px; padding-top: 2px; transition: background-color 0.1s ease; }
-.blacksmith .mineral.mineral-min.mineral-selected { display: none; }
-.blacksmith .mineral.mineral-min h4 { margin: 1px 0 4px; font-size: 1em; }
-.blacksmith .mineral.mineral-min>div { float: none; width: 100%; }
-.blacksmith .mineral.mineral-min p { display: inline; line-height: 1.2em; margin: 0; }
-.blacksmith .mineral.mineral-min strong { font-size: 1.1em; }
-.blacksmith .refined, .blacksmith .refining { clear: both; }
-.blacksmith h5 { font-size: 1.2em; margin-bottom: 4px; }
-.blacksmith .refined .mineral, .blacksmith .refining .mineral {
+.camp-service .refGood.refGood-min.refGood-selected { display: none; }
+.camp-service .refGood.refGood-min h4 { margin: 1px 0 4px; font-size: 1em; }
+.camp-service .refGood.refGood-min>div { float: none; width: 100%; }
+.camp-service .refGood.refGood-min p { display: inline; line-height: 1.2em; margin: 0; }
+.camp-service .refGood.refGood-min strong { font-size: 1.1em; }
+.camp-service .refined, .camp-service .refining { clear: both; }
+.camp-service h5 { font-size: 1.2em; margin-bottom: 4px; }
+.camp-service .refined .refGood, .camp-service .refining .refGood {
     width: auto; height: auto; padding: 6px 10px; }
-.blacksmith .refining .mineral { cursor: default; }
+.camp-service .refining .refGood { cursor: default; }
 
 #inventory>div>table.unstyled { width: 100%; margin-bottom: 7px; }
 #inventory>div { border-bottom: 1px solid #50575c; margin: 5px 0; min-height: 22px; }

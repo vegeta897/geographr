@@ -31,23 +31,16 @@
         </tr>
     </table>
 </div>
-<div class="well camp-ui" ng-show="onPixel.camp">
-    <h3 class="pull-left">{{ onPixel.camp | itemDisplay }}</h3>
-    <button class="btn btn-default btn-market pull-right" ng-click="showMarket = !showMarket">Market</button>
-    <button ng-show="onPixel.camp.economy.blacksmith.markup"
-        class="btn btn-default btn-blacksmith pull-right" ng-click="showBS = !showBS">Blacksmith</button>
-    <div class="text-success pull-right" ng-show="onPixel.camp.economy.blacksmith.refined">
-        Refined items ready for pick-up!</div>
-    <div class="clearfix"></div>
-    <div class="market" ng-class="{'last-section':!showBS}" ng-init="showMarket = true" 
-         ng-show="showMarket && onPixel.camp.economy.market">
+<div class="well camp-ui" ng-show="onPixel.camp"><h3>{{ onPixel.camp | itemDisplay }}</h3><div class="clearfix"></div>
+    <div class="market" ng-init="showMarket = true" ng-show="onPixel.camp.economy.market">
         <div class="camp-section-header">
-            <h4>Market</h4>
-            <label><input type="checkbox" ng-model="uiOptions.plainStalls"
-                   ng-change="changeUIOption('plainStalls',uiOptions.plainStalls)"> Plain Stalls</label>
+            <h4><button ng-click="showMarket = !showMarket">Market</button>
+                <label><input type="checkbox" ng-model="uiOptions.plainStalls"
+                    ng-change="changeUIOption('plainStalls',uiOptions.plainStalls)"> Plain Stalls</label>
+            </h4>
         </div>
-        <div ng-show="onPixel.camp.economy.market.selectedStall" class="stall stall-open" id="selectedStall"
-            ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.rightSide,
+        <div ng-show="onPixel.camp.economy.market.selectedStall && showMarket" class="stall stall-open"
+            id="selectedStall" ng-class="{'pull-right':onPixel.camp.economy.market.selectedStall.rightSide,
             'stall-setup':onPixel.camp.economy.market.selectedStall.id == 'su'+user.id}">
             <div class="canvas" ng-class="{'no-stripes':uiOptions.plainStalls}"
                 ng-style="{'background-color': '#'+onPixel.camp.economy.market.selectedStall.canvas}"
@@ -177,7 +170,7 @@
             <div class="market-message" ng-bind-html="onPixel.camp.economy.market.message"
                ng-show="onPixel.camp.economy.market.message"></div>
         </div>
-        <div ng-class="{'stalls-min':onPixel.camp.economy.market.selectedStall}">
+        <div ng-class="{'stalls-min':onPixel.camp.economy.market.selectedStall}" ng-show="showMarket">
             <div class="stall" ng-repeat="(stall, stallData) in onPixel.camp.economy.market.stalls"
                 ng-click="changeStall(stall,$index)" 
                 ng-style="{'background-color': uiOptions.plainStalls ? '#393c3f' : '#' + stallData.bg}"
@@ -222,99 +215,104 @@
                     <span ng-hide="onPixel.camp.economy.market.selectedStall">Set up a stall!</span></p>
             </div>
         </div>
-        <div class="clearfix">
-        </div>
+        <div class="clearfix"></div>
     </div>
-    <div ng-show="showBS" class="blacksmith" ng-class="{'last-section':showBS}" >
+    <div class="clearfix"></div>
+    <div ng-repeat="service in services" class="camp-service" 
+        ng-show="onPixel.camp.economy[service].markup" ng-class="service">
         <div class="camp-section-header">
-            <h4>Blacksmith</h4>
+            <h4><button ng-click="showService[service] = !showService[service]">Blacksmith</button>
+                <span class="text-success" ng-show="onPixel.camp.economy[service].refined">
+                    Refined items ready for pick-up!</span>
+            </h4>
         </div>
-        <div class="blacksmith-content">
-            <p ng-hide="hasItem({profession:'blacksmith',status:'unrefined'}) || 
-                onPixel.camp.economy.blacksmith.refined || onPixel.camp.economy.blacksmith.refining" class="text-muted">
+        <div class="camp-service-content" ng-show="showService[service]">
+            <p ng-hide="hasItem({profession:service,status:'unrefined'}) || 
+                onPixel.camp.economy[service].refined || onPixel.camp.economy[service].refining" class="text-muted">
                 You don't have anything to <strong>sell</strong> or <strong>refine</strong> here. 
-                Go out and <strong>mine</strong> some stuff!</p>
-            <div ng-show="onPixel.camp.economy.blacksmith.selectedMineral"
-                class="mineral mineral-open" id="selectedMineral"
-                ng-style="{background:'#'+onPixel.camp.economy.blacksmith.selectedMineral.color}"
-                ng-class="{'has-error':onPixel.camp.economy.blacksmith.selectedMineral.value * 
-                    onPixel.camp.economy.blacksmith.selectedMineral.refineAmount *
-                    onPixel.camp.economy.blacksmith.markup > user.money}">
-                <h4>Unrefined {{ onPixel.camp.economy.blacksmith.selectedMineral.name | capitalize }}</h4>
+                Go out and find some stuff!</p>
+            <div ng-show="onPixel.camp.economy[service].selectedRefGood"
+                class="refGood refGood-open" id="selectedRefGood"
+                ng-style="{background:'#'+onPixel.camp.economy[service].selectedRefGood.color}"
+                ng-class="{'has-error':onPixel.camp.economy[service].selectedRefGood.value * 
+                    onPixel.camp.economy[service].selectedRefGood.refineAmount *
+                    onPixel.camp.economy[service].markup > user.money}">
+                <h4>Unrefined {{ onPixel.camp.economy[service].selectedRefGood.name | capitalize }}</h4>
                 <div>
-                    <p><strong>{{ onPixel.camp.economy.blacksmith.selectedMineral.value * 
-                        onPixel.camp.economy.blacksmith.markup | number:1 }} </strong>gold</p>
+                    <p><strong>{{ onPixel.camp.economy[service].selectedRefGood.value * 
+                        onPixel.camp.economy[service].markup | number:1 }} </strong>gold</p>
                     <select class="form-control num-select"
-                        ng-model="onPixel.camp.economy.blacksmith.selectedMineral.refineAmount">
-                        <option ng-selected="onPixel.camp.economy.blacksmith.selectedMineral.refineAmount == count"
-                            ng-repeat="count in countTo(onPixel.camp.economy.blacksmith.selectedMineral.amount)"
+                        ng-model="onPixel.camp.economy[service].selectedRefGood.refineAmount">
+                        <option ng-selected="onPixel.camp.economy[service].selectedRefGood.refineAmount == count"
+                            ng-repeat="count in countTo(onPixel.camp.economy[service].selectedRefGood.amount)"
                             ng-value="count">{{ count }}</option>
                     </select>
-                    <p>Cost: <strong ng-class="{'text-danger':onPixel.camp.economy.blacksmith.selectedMineral.value * 
-                        onPixel.camp.economy.blacksmith.selectedMineral.refineAmount *
-                        onPixel.camp.economy.blacksmith.markup > user.money}">
-                        {{ onPixel.camp.economy.blacksmith.selectedMineral.value * 
-                        onPixel.camp.economy.blacksmith.selectedMineral.refineAmount *
-                        onPixel.camp.economy.blacksmith.markup | int }}</strong></p>
-                    <button ng-click="refineItem(onPixel.camp.economy.blacksmith.selectedMineral,
-                        onPixel.camp.economy.blacksmith.selectedMineral.refineAmount,
-                        onPixel.camp.economy.blacksmith.selectedMineral.value*onPixel.camp.economy.blacksmith.markup)"
-                        ng-disabled="onPixel.camp.economy.blacksmith.selectedMineral.value * 
-                        onPixel.camp.economy.blacksmith.selectedMineral.refineAmount *
-                        onPixel.camp.economy.blacksmith.markup > user.money">
+                    <p>Cost: <strong ng-class="{'text-danger':onPixel.camp.economy[service].selectedRefGood.value * 
+                        onPixel.camp.economy[service].selectedRefGood.refineAmount *
+                        onPixel.camp.economy[service].markup > user.money}">
+                        {{ onPixel.camp.economy[service].selectedRefGood.value * 
+                        onPixel.camp.economy[service].selectedRefGood.refineAmount *
+                        onPixel.camp.economy[service].markup | int }}</strong></p>
+                    <button ng-click="refineItem(onPixel.camp.economy[service].selectedRefGood,
+                        onPixel.camp.economy[service].selectedRefGood.refineAmount,
+                        onPixel.camp.economy[service].selectedRefGood.value*onPixel.camp.economy[service].markup,
+                        service)"
+                        ng-disabled="onPixel.camp.economy[service].selectedRefGood.value * 
+                        onPixel.camp.economy[service].selectedRefGood.refineAmount *
+                        onPixel.camp.economy[service].markup > user.money">
                         Refine</button>
                 </div>
                 <div>
-                    <p><strong>{{ onPixel.camp.economy.blacksmith.selectedMineral.value / 2 /
-                        onPixel.camp.economy.blacksmith.markup | number:1 }} </strong>gold</p>
+                    <p><strong>{{ onPixel.camp.economy[service].selectedRefGood.value / 2 /
+                        onPixel.camp.economy[service].markup | number:1 }} </strong>gold</p>
                     <select class="form-control num-select no-error"
-                        ng-model="onPixel.camp.economy.blacksmith.selectedMineral.sellAmount">
-                        <option ng-selected="onPixel.camp.economy.blacksmith.selectedMineral.sellAmount == count"
-                            ng-repeat="count in countTo(onPixel.camp.economy.blacksmith.selectedMineral.amount)"
+                        ng-model="onPixel.camp.economy[service].selectedRefGood.sellAmount">
+                        <option ng-selected="onPixel.camp.economy[service].selectedRefGood.sellAmount == count"
+                            ng-repeat="count in countTo(onPixel.camp.economy[service].selectedRefGood.amount)"
                             ng-value="count">{{ count }}</option>
                     </select>
-                    <p>Sell: <strong>{{ onPixel.camp.economy.blacksmith.selectedMineral.value *
-                        onPixel.camp.economy.blacksmith.selectedMineral.sellAmount / 2 / 
-                        onPixel.camp.economy.blacksmith.markup | int }}</strong></p>
-                    <button ng-click="sellItem(onPixel.camp.economy.blacksmith.selectedMineral,
-                        onPixel.camp.economy.blacksmith.selectedMineral.sellAmount,
-                        onPixel.camp.economy.blacksmith.selectedMineral.value/2/
-                        onPixel.camp.economy.blacksmith.markup)">Sell</button>
+                    <p>Sell: <strong>{{ onPixel.camp.economy[service].selectedRefGood.value *
+                        onPixel.camp.economy[service].selectedRefGood.sellAmount / 2 / 
+                        onPixel.camp.economy[service].markup | int }}</strong></p>
+                    <button ng-click="sellItem(onPixel.camp.economy[service].selectedRefGood,
+                        onPixel.camp.economy[service].selectedRefGood.sellAmount,
+                        onPixel.camp.economy[service].selectedRefGood.value/2/
+                        onPixel.camp.economy[service].markup)">Sell</button>
                 </div>
             </div>
-            <div ng-class="{'minerals-min':onPixel.camp.economy.blacksmith.selectedMineral}">
-                <div class="mineral" ng-style="{background:'#'+bsItem.color}"
-                    ng-click="changeMineral(bsItem.key)"
-                    ng-repeat="bsItem in inventory | typeFilter:['blacksmith']"
-                    ng-class="{'mineral-min':onPixel.camp.economy.blacksmith.selectedMineral,
-                    'mineral-selected':onPixel.camp.economy.blacksmith.selectedMineral.id == bsItem.key}">
-                    <h4>{{ bsItem.name | capitalize }}</h4>
+            <div ng-class="{'refGoods-min':onPixel.camp.economy[service].selectedRefGood}">
+                <div class="refGood" ng-style="{background:'#'+refItem.color}"
+                    ng-click="changeRefGood(refItem.key,service)"
+                    ng-repeat="refItem in inventory | typeFilter:['blacksmith']"
+                    ng-class="{'refGood-min':onPixel.camp.economy[service].selectedRefGood,
+                    'refGood-selected':onPixel.camp.economy[service].selectedRefGood.id == refItem.key}">
+                    <h4>{{ refItem.name | capitalize }}</h4>
                     <div>
-                        <p ng-hide="onPixel.camp.economy.blacksmith.selectedMineral">Refine</p>
-                        <p ng-show="onPixel.camp.economy.blacksmith.selectedMineral">R:</p>
-                        <p><strong>{{ bsItem.value * onPixel.camp.economy.blacksmith.markup | number:1 }}</strong></p>
+                        <p ng-hide="onPixel.camp.economy[service].selectedRefGood">Refine</p>
+                        <p ng-show="onPixel.camp.economy[service].selectedRefGood">R:</p>
+                        <p><strong>{{ refItem.value * onPixel.camp.economy[service].markup | number:1 }}</strong></p>
                     </div>
                     <div>
-                        <p ng-hide="onPixel.camp.economy.blacksmith.selectedMineral">Sell</p>
-                        <p ng-show="onPixel.camp.economy.blacksmith.selectedMineral">S:</p>
-                        <p><strong>{{ bsItem.value / 2 / onPixel.camp.economy.blacksmith.markup | number:1 }}
+                        <p ng-hide="onPixel.camp.economy[service].selectedRefGood">Sell</p>
+                        <p ng-show="onPixel.camp.economy[service].selectedRefGood">S:</p>
+                        <p><strong>{{ refItem.value / 2 / onPixel.camp.economy[service].markup | number:1 }}
                             </strong></p>
                     </div>
-                    <p><span ng-hide="onPixel.camp.economy.blacksmith.selectedMineral">Your qty:</span><strong>
-                        {{ bsItem.amount }} </strong><span ng-show="onPixel.camp.economy.blacksmith.selectedMineral">
+                    <p><span ng-hide="onPixel.camp.economy[service].selectedRefGood">Your qty:</span><strong>
+                        {{ refItem.amount }} </strong><span ng-show="onPixel.camp.economy[service].selectedRefGood">
                         qty</span></p>
                 </div>
             </div><div class="clearfix"></div>
-            <div ng-show="onPixel.camp.economy.blacksmith.refined" class="refined">
-                <h5>Your Refined Minerals&emsp;<small>click your items to claim them</small></h5>
-                <div class="mineral mineral-refine" ng-repeat="refined in onPixel.camp.economy.blacksmith.refined"
-                    ng-click="claimRefined(refined)" ng-style="{background:'#'+refined.color}">
+            <div ng-show="onPixel.camp.economy[service].refined" class="refined">
+                <h5>Your Refined Goods&emsp;<small>click your items to claim them</small></h5>
+                <div class="refGood refGood-refine" ng-repeat="refined in onPixel.camp.economy[service].refined"
+                    ng-click="claimRefined(refined,service)" ng-style="{background:'#'+refined.color}">
                     <p><strong>{{ refined.amount }}</strong>x <strong>{{ refined.name | capitalize }}</strong></p>
                 </div>
             </div><div class="clearfix"></div>
-            <div ng-show="onPixel.camp.economy.blacksmith.refining" class="refining">
-                <h5>Refining Minerals&emsp;<small>refining takes 10-15 minutes</small></h5>
-                <div class="mineral mineral-refine" ng-repeat="refining in onPixel.camp.economy.blacksmith.refining"
+            <div ng-show="onPixel.camp.economy[service].refining" class="refining">
+                <h5>Refining Goods&emsp;<small>refining takes 10-15 minutes</small></h5>
+                <div class="refGood refGood-refine" ng-repeat="refining in onPixel.camp.economy[service].refining"
                     ng-style="{background:'#'+refining.color}">
                     <p><strong>{{ refining.amount }}</strong>x <strong>{{ refining.name | capitalize }}</strong></p>
                     <p><strong> {{ refining.started | timeUnits }} </strong>

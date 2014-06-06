@@ -1,6 +1,6 @@
 angular.module('Geographr.controllerMain', [])
 .controller('Main', ['$scope', '$timeout', 'localStorageService', 'colorUtility', 'canvasUtility', 'actCanvasUtility', 'gameUtility', function($scope, $timeout, localStorage, colorUtility, canvasUtility, actCanvasUtility, gameUtility) {
-        $scope.version = 0.305; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
+        $scope.version = 0.306; $scope.versionName = 'Polite Chaos'; $scope.needUpdate = false;
         $scope.commits = { list: [], show: false }; // Latest commits from github api
         $scope.zoomLevel = 4; $scope.zoomPosition = [120,120]; // Tracking zoom window position
         $scope.overPixel = { x: '-', y: '-', slope: '-', elevation: '-', type: '-', forest: '-' }; // Mouse over info
@@ -12,7 +12,8 @@ angular.module('Geographr.controllerMain', [])
         $scope.eventLog = []; $scope.tutorialSkips = []; $scope.skipTutorial = false;
         $scope.movePath = []; $scope.lookCount = 0;
         $scope.showItemTypes = {'animal':true,'fish':true,'fruit':true,'gem':true,'metal':true,'plant':true,
-            'tool':true,'weapon':true,'vegetable':true,'other':true};
+            'tool':true,'weapon':true,'vegetable':true,'other':true}; 
+        $scope.showService = {}; $scope.services = ['blacksmith','jeweler'];
         setInterval(function(){$timeout(function(){});},60000); // Refresh scope every minute
         gameUtility.attachScope($scope);
         var mainPixSize = 1, zoomPixSize = 20, zoomSize = [45,30], lastZoomPosition = [0,0], viewCenter, panOrigin,
@@ -387,7 +388,7 @@ angular.module('Geographr.controllerMain', [])
                 //fireUser.child('movement/campfires/'+$scope.user.location).set(new Date().getTime());
                 $timeout(function(){ $scope.looking = false; $scope.onPixel.campfire = true; });
             };
-            var buildTime = Math.floor(Math.random()*5 + 4)/2; // 2 to 4 seconds
+            var buildTime = Math.ceil(Math.random()*2 + (1-$scope.onPixel.forest)*8); // 2 to 4 seconds
             setTimeout(campfireReady,buildTime*1000); playWaitingBar(buildTime);
             gameUtility.changeHunger(userID,3); // Use 3 hunger
         };
@@ -505,26 +506,26 @@ angular.module('Geographr.controllerMain', [])
                 market.selectedStall.selectedGood.buyAmount = buyAmount ? buyAmount : 1;
             }
         };
-        $scope.changeMineral = function(goodID) {
-            var mineral = jQuery(document.getElementById('selectedMineral')).finish(),
-                blacksmith = $scope.onPixel.camp.economy.blacksmith;
-            if(blacksmith.hasOwnProperty('selectedMineral')) {
-                if(blacksmith.selectedMineral.id == goodID) {
-                    mineral.animate({'opacity':0,'height':'1px'},100,function() {
-                        delete blacksmith.selectedMineral;
+        $scope.changeRefGood = function(goodID,refineType) {
+            var refGood = jQuery(document.getElementById('selectedRefGood')).finish(),
+                refinery = $scope.onPixel.camp.economy[refineType];
+            if(refinery.hasOwnProperty('selectedRefGood')) {
+                if(refinery.selectedRefGood.id == goodID) {
+                    refGood.animate({'opacity':0,'height':'1px'},100,function() {
+                        delete refinery.selectedRefGood;
                         $timeout(function(){});
                     });
                 } else {
-                    blacksmith.selectedMineral = $scope.inventory[goodID]; blacksmith.selectedMineral.id = goodID; }
+                    refinery.selectedRefGood = $scope.inventory[goodID]; refinery.selectedRefGood.id = goodID; }
             } else {
-                blacksmith.selectedMineral = $scope.inventory[goodID]; blacksmith.selectedMineral.id = goodID;
-                mineral.animate({'opacity':1,'height':'184px'},150);
+                refinery.selectedRefGood = $scope.inventory[goodID]; refinery.selectedRefGood.id = goodID;
+                refGood.animate({'opacity':1,'height':'184px'},150);
             }
-            if(blacksmith.hasOwnProperty('selectedMineral')) {
-                var sellAmount = blacksmith.selectedMineral.sellAmount;
-                var refineAmount = blacksmith.selectedMineral.refineAmount;
-                blacksmith.selectedMineral.sellAmount = sellAmount ? sellAmount : $scope.inventory[goodID].amount;
-                blacksmith.selectedMineral.refineAmount = 
+            if(refinery.hasOwnProperty('selectedRefGood')) {
+                var sellAmount = refinery.selectedRefGood.sellAmount;
+                var refineAmount = refinery.selectedRefGood.refineAmount;
+                refinery.selectedRefGood.sellAmount = sellAmount ? sellAmount : $scope.inventory[goodID].amount;
+                refinery.selectedRefGood.refineAmount = 
                     refineAmount ? refineAmount : $scope.inventory[goodID].amount;
             }
         };
@@ -635,53 +636,53 @@ angular.module('Geographr.controllerMain', [])
             $scope.user.money = Math.round($scope.user.money - Math.round(amount * good.value * stall.markup));
             fireUser.child('money').set($scope.user.money);
         };
-        $scope.sellItem = function(item,amount,value) {
+        $scope.sellItem = function(item,amount,value,refinery) {
             if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
             amount = parseInt(amount);
             console.log('selling',amount,item.name,'at',value,'gold per unit');
             var status = item.status ? ':' + item.status : '';
             if(item.amount - amount > 0) {
-                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
+                if($scope.onPixel.camp.economy[refinery].selectedRefGood) {
                     item.amount -= amount; item.refineAmount = item = item.amount; }
             } else {
-                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
-                    delete $scope.onPixel.camp.economy.blacksmith.selectedMineral; }
+                if($scope.onPixel.camp.economy[refinery].selectedRefGood) {
+                    delete $scope.onPixel.camp.economy[refinery].selectedRefGood; }
             }
             fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
                 return invAmount-amount == 0 ? null : invAmount-amount; });
             $scope.user.money = Math.round($scope.user.money + amount * value); 
             fireUser.child('money').set($scope.user.money);
         };
-        $scope.refineItem = function(item,amount,cost) {
+        $scope.refineItem = function(item,amount,cost,refineType) {
             if(amount < 1 || amount > item.amount || !parseInt(amount)) { return; }
             amount = parseInt(amount);
             if(Math.round($scope.user.money - amount * cost) < 0) { return; }
             console.log('refining',amount,item.name,'at',cost,'gold per unit');
             var status = item.status ? ':' + item.status : '';
             if(item.amount - amount > 0) {
-                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
+                if($scope.onPixel.camp.economy[refineType].selectedRefGood) {
                     item.amount -= amount; item.refineAmount = item.sellAmount = item.amount; }
             } else {
-                if($scope.onPixel.camp.economy.blacksmith.selectedMineral) {
-                    delete $scope.onPixel.camp.economy.blacksmith.selectedMineral; }
+                if($scope.onPixel.camp.economy[refineType].selectedRefGood) {
+                    delete $scope.onPixel.camp.economy[refineType].selectedRefGood; }
             }
             fireInventory.child(item.type+':'+item.name+status).transaction(function(invAmount) {
                 return invAmount-amount == 0 ? null : invAmount-amount; });
             $scope.user.money = Math.round($scope.user.money - amount * cost);
             fireUser.child('money').set($scope.user.money);
-            fireUser.child('camps/'+$scope.onPixel.camp.grid+'/blacksmithing').transaction(function(bsAmount) {
-                return bsAmount+1 || amount; }); // Add or set refine amount
+            fireUser.child('camps/'+$scope.onPixel.camp.grid+'/refining/'+refineType).transaction(function(refAmount) {
+                return refAmount+1 || amount; }); // Add or set refine amount
             var uniqueID = fireRef.push().name(); uniqueID = uniqueID.substr(uniqueID.length - 6,5);
-            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refining/'+userID+':-:'+item.type+':'+
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refining/'+refineType+'/'+userID+':-:'+item.type+':'+
                 item.name+status+':-:'+amount+':-:'+uniqueID).set(Firebase.ServerValue.TIMESTAMP);
         };
-        $scope.claimRefined = function(refined) {
+        $scope.claimRefined = function(refined,refineType) {
             var status = refined.status ? ':' + refined.status : '';
             fireInventory.child(refined.type+':'+refined.name+status).transaction(function(invAmount) {
-                return invAmount ? +invAmount + refined.amount : refined.amount; });
-            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refined/'+refined.key).remove();
-            fireUser.child('camps/'+$scope.onPixel.camp.grid+'/blacksmithing').transaction(function(bsAmount) {
-                return bsAmount-1 == 0 ? null : bsAmount-1; }); // Subtract/set refine amt
+                return invAmount ? +invAmount + +refined.amount : refined.amount; });
+            fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refined/'+refineType+'/'+refined.key).remove();
+            fireUser.child('camps/'+$scope.onPixel.camp.grid+'/refining/'+refineType).transaction(function(refAmount) {
+                return refAmount-1 == 0 ? null : refAmount-1; }); // Subtract/set refine amt
         };
         $scope.cookFood = function(item,amount) {
             if(amount < 1 || amount > item.amount) { return; }
@@ -849,10 +850,10 @@ angular.module('Geographr.controllerMain', [])
                     $scope.selectedGrid.grid = grid;
                     $scope.overPixel.objects = $scope.selectedGrid;
                     if($scope.selectedGrid.camp && jQuery.inArray(grid,$scope.user.visitedCamps) >= 0 ) {
-                        var bsAmount = $scope.selectedGrid.camp.blacksmithing;
+                        var refineAmounts = $scope.selectedGrid.camp.refining;
                         var sellAmount = $scope.selectedGrid.camp.selling;
                         $scope.selectedGrid.camp = gameUtility.expandCamp(grid);
-                        $scope.selectedGrid.camp.blacksmithing = bsAmount;
+                        $scope.selectedGrid.camp.refining = refineAmounts;
                         $scope.selectedGrid.camp.selling = sellAmount;
                         $scope.selectedGrid.camp.type = 'camp';
                         $scope.selectedGrid.camp.visited = true;
@@ -1268,15 +1269,25 @@ angular.module('Geographr.controllerMain', [])
                 var campData = gameUtility.expandCamp(snap.val().location);
                 fireRef.child('camps/list/' + snap.val().location).on('value',function(campSnap) {
                     campSnap = campSnap.val();
-                    campData.economy.blacksmith.refining = {}; campData.economy.blacksmith.refined = {};
+                    for(var s = 0; s < $scope.services.length; s++) {
+                        if(!campData.economy.hasOwnProperty($scope.services[s])) { continue; }
+                        campData.economy[$scope.services[s]].refining = {}; 
+                        campData.economy[$scope.services[s]].refined = {};
+                    }
                     campData.economy.market.inventory = angular.copy($scope.inventory) || {};
                     for(var removeStall in campData.economy.market.stalls) {
                         if(!campData.economy.market.stalls.hasOwnProperty(removeStall)) { continue; }
                         if(removeStall.substr(0,2) == 'su') { 
                             delete campData.economy.market.stalls[removeStall]; }
                     }
+                    var clearService = function(type) {
+                        for(var r = 0; r < $scope.services.length; r++) {
+                            if(!campData.economy.hasOwnProperty($scope.services[r])) { continue; }
+                            campData.economy[$scope.services[r]][type] = null;
+                        }
+                    };
                     if(!campSnap) { // If no snap data
-                        campData.economy.blacksmith.refining = campData.economy.blacksmith.refined = null;
+                        clearService('refining'); clearService('refined');
                         delete localObjects[snap.val().location].camp.selling;
                         fireUser.child('camps/'+snap.val().location+'/selling').remove();
                         $timeout(function(){ $scope.onPixel.camp = campData;
@@ -1357,42 +1368,57 @@ angular.module('Geographr.controllerMain', [])
                             }
                         }
                     }
-                    // Add refining minerals to blacksmith
+                    
+                    // Add refining refGoods to refineries
                     if(campSnap.hasOwnProperty('refining')) {
-                        var notOwnRefining = true;
-                        for(var refiningKey in campSnap.refining) {
-                            if(!campSnap.refining.hasOwnProperty(refiningKey)) { continue; }
-                            var refining = campSnap.refining[refiningKey];
-                            if(refiningKey.split(':-:')[0] == userID) {
-                                notOwnRefining = false; refining = {
-                                    amount: refiningKey.split(':-:')[2], 
-                                    type: refiningKey.split(':-:')[1].split(':')[0],
-                                    name: refiningKey.split(':-:')[1].split(':')[1],
-                                    status: refiningKey.split(':-:')[1].split(':')[2], started: refining
-                                };
-                                campData.economy.blacksmith.refining[refiningKey.split(':-:')[1]+
-                                    refiningKey.split(':-:')[3]] = gameUtility.dressItem(refining);
+                        for(var i = 0; i < $scope.services.length; i++) {
+                            if(!campSnap.refining.hasOwnProperty($scope.services[i])) { continue; }
+                            var notOwnRefining = true;
+                            for(var refiningKey in campSnap.refining[$scope.services[i]]) {
+                                if(!campSnap.refining[$scope.services[i]].hasOwnProperty(refiningKey)) { continue; }
+                                var refining = campSnap.refining[$scope.services[i]][refiningKey];
+                                if(refiningKey.split(':-:')[0] == userID) {
+                                    notOwnRefining = false; refining = {
+                                        amount: refiningKey.split(':-:')[2],
+                                        type: refiningKey.split(':-:')[1].split(':')[0],
+                                        name: refiningKey.split(':-:')[1].split(':')[1],
+                                        status: refiningKey.split(':-:')[1].split(':')[2], started: refining
+                                    };
+                                    if(!campData.economy[$scope.services[i]].hasOwnProperty('refining')) {
+                                        campData.economy[$scope.services[i]].refining = {};
+                                    }
+                                    campData.economy[$scope.services[i]].refining[refiningKey.split(':-:')[1]+
+                                        refiningKey.split(':-:')[3]] = gameUtility.dressItem(refining);
+                                }
                             }
+                            if(notOwnRefining) { campData.economy[$scope.services[i]].refining = null; }
                         }
-                        if(notOwnRefining) { campData.economy.blacksmith.refining = null; }
-                    } else { campData.economy.blacksmith.refining = null; }
-                    // Add refined minerals to blacksmith
+                    } else { clearService('refining'); }
+                    // Add refined refGoods to refineries
                     if(campSnap.hasOwnProperty('refined')) {
-                        var notOwnRefined = true;
-                        for(var refinedKey in campSnap.refined) {
-                            if(!campSnap.refined.hasOwnProperty(refinedKey)) { continue; }
-                            var refined = campSnap.refined[refinedKey];
-                            if(refinedKey.split(':-:')[0] == userID) {
-                                notOwnRefined = false; refined = {
-                                    amount: refinedKey.split(':-:')[2], type: refinedKey.split(':-:')[1].split(':')[0],
-                                    name: refinedKey.split(':-:')[1].split(':')[1], key: refinedKey
-                                };
-                                campData.economy.blacksmith.refined[refinedKey.split(':-:')[1]+
-                                    refinedKey.split(':-:')[3]] = gameUtility.dressItem(refined);
+                        for(var j = 0; j < $scope.services.length; j++) {
+                            if(!campSnap.refined.hasOwnProperty($scope.services[j])) { continue; }
+                            var notOwnRefined = true;
+                            for(var refinedKey in campSnap.refined[$scope.services[j]]) {
+                                if(!campSnap.refined[$scope.services[j]].hasOwnProperty(refinedKey)) { continue; }
+                                var refined = campSnap.refined[$scope.services[j]][refinedKey];
+                                if(refinedKey.split(':-:')[0] == userID) {
+                                    notOwnRefined = false; refined = {
+                                        amount: refinedKey.split(':-:')[2], 
+                                        type: refinedKey.split(':-:')[1].split(':')[0],
+                                        name: refinedKey.split(':-:')[1].split(':')[1], key: refinedKey
+                                    };
+                                    if(!campData.economy[$scope.services[j]].hasOwnProperty('refined')) {
+                                        campData.economy[$scope.services[j]].refined = {};
+                                    }
+                                    campData.economy[$scope.services[j]].refined[refinedKey.split(':-:')[1]+
+                                        refinedKey.split(':-:')[3]] = gameUtility.dressItem(refined);
+                                }
                             }
+                            if(notOwnRefined) { campData.economy[$scope.services[j]].refined = null; }
                         }
-                        if(notOwnRefined) { campData.economy.blacksmith.refined = null; }
-                    } else { campData.economy.blacksmith.refined = null; }
+                    } else { clearService('refined'); }
+                    
                     // Update "selling" amount in user/camps to reflect any sold goods
                     if(campData.economy.market.stalls.hasOwnProperty('su1')) {
                         localObjects[snap.val().location].camp.selling = 
@@ -1404,7 +1430,7 @@ angular.module('Geographr.controllerMain', [])
                         fireUser.child('camps/'+snap.val().location+'/selling').remove(); 
                     }
                     // Reselect or delete selected stall/good
-                    $timeout(function() { 
+                    $timeout(function() {
                         $scope.onPixel.camp = campData;
                         var market = $scope.onPixel.camp.economy.market;
                         if(market.selectedStall) { // If stall selected
@@ -1536,7 +1562,7 @@ angular.module('Geographr.controllerMain', [])
                     fireUser.child('camps').on('value', function(snap) {
                         var camps = snap.val();
                         for(var v = 0, vc = $scope.user.visitedCamps.length; v < vc; v++) {
-                            delete localObjects[$scope.user.visitedCamps[v]].camp.blacksmithing;
+                            delete localObjects[$scope.user.visitedCamps[v]].camp.refining;
                             delete localObjects[$scope.user.visitedCamps[v]].camp.selling;
                         }
                         for(var campKey in camps) { if(!camps.hasOwnProperty(campKey)) { continue; }

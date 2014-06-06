@@ -540,19 +540,23 @@ angular.module('Geographr.controllerServer', [])
                         var camp = campList[campKey];
                         if(camp.hasOwnProperty('stock') && restocking) { delete camp.stock; }
                         if(camp.hasOwnProperty('refining')) {
-                            for(var refiningKey in camp.refining) {
-                                if(!camp.refining.hasOwnProperty(refiningKey)) { continue; }
-                                var refining = camp.refining[refiningKey];
-                                if(refining + 600000 < theTime.getTime()) {
-                                    if(!camp.hasOwnProperty('refined')) { camp.refined = {}; }
-                                    var split = refiningKey.split(':-:');
-                                    message += ', ' + localUsers[refiningKey.split(':-:')[0]].nick + '\'s ' +
-                                        split[1] + ' has finished refining at camp ' + campKey;
-                                    var newAmount = 
-                                        Math.round(parseInt(split[2]) + Math.random()/1.5 * parseInt(split[2]));
-                                    var refinedKey = split[0] + ':-:' + split[1] + ':-:' + newAmount + ':-:' + split[3];
-                                    camp.refined[refinedKey] = refining;
-                                    delete camp.refining[refiningKey];
+                            for(var refineryKey in camp.refining) {
+                                if(!camp.refining.hasOwnProperty(refineryKey)) { continue; }
+                                for(var refiningKey in camp.refining[refineryKey]) {
+                                    if(!camp.refining[refineryKey].hasOwnProperty(refiningKey)) { continue; }
+                                    var refining = camp.refining[refineryKey][refiningKey];
+                                    if(refining + 600000 < theTime.getTime()) {
+                                        if(!camp.hasOwnProperty('refined')) { camp.refined = {}; }
+                                        if(!camp.refined.hasOwnProperty(refineryKey)) { camp.refined[refineryKey] = {}; }
+                                        var split = refiningKey.split(':-:');
+                                        message += ', '+localUsers[refiningKey.split(':-:')[0]].nick +'\'s '+
+                                            split[1] + ' has finished refining at camp ' + campKey +' '+ [refineryKey];
+                                        var newAmount = 
+                                            Math.round(parseInt(split[2]) + Math.random()/1.5 * parseInt(split[2]));
+                                        var refinedKey = split[0] +':-:'+ split[1] +':-:'+ newAmount +':-:'+ split[3];
+                                        camp.refined[refineryKey][refinedKey] = refining;
+                                        delete camp.refining[refineryKey][refiningKey];
+                                    }
                                 }
                             }
                         }

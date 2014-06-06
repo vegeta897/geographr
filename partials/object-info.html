@@ -10,6 +10,7 @@
     <span ng-show="selectedGrid.camp.economy.blacksmith.markup" style="background-color: #3C3C3C;"
         class="label bigger-label">Blacksmith</span>
 </p>
-<p ng-show="selectedGrid.camp.blacksmithing">
-    The blacksmith has <strong>{{ selectedGrid.camp.blacksmithing }}</strong> of your items
+<p ng-repeat="service in services" ng-show="selectedGrid.camp.refining[service]">
+    The <strong>{{ service }}</strong> has 
+    <strong>{{ selectedGrid.camp.refining[service] }}</strong> of your items
 </p>

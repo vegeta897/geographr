@@ -122,9 +122,9 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         mine: {
             'other:salt': { rarity: 0 }, 'other:coal': { rarity: 0.2 },
             'metal:iron': { rarity: 0.4 }, 'metal:copper': { rarity: 0.3 },
-            'metal:silver': { rarity: 0.8 }, 'metal:gold': { rarity: 0.85 },
-            'gem:emerald': { rarity: 0.8 }, 'gem:ruby': { rarity: 0.85 }, 'gem:topaz': { rarity: 0.75 }, 
-            'gem:sapphire': { rarity: 0.85 }, 'gem:diamond': { rarity: 0.95 }
+            'metal:silver': { rarity: 0.9 }, 'metal:gold': { rarity: 0.95 },
+            'gem:emerald': { rarity: 0.95 }, 'gem:ruby': { rarity: 0.95 }, 'gem:topaz': { rarity: 0.9 }, 
+            'gem:sapphire': { rarity: 0.98 }, 'gem:diamond': { rarity: 0.996 }
         }
     };
     var economyNodes = {
@@ -834,40 +834,40 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
         }
         return Math.max(0,amount * result);
     };
-    var createEventPool = function(event) {
+    var createEventPool = function(eventInfo) {
         var pool = [], number, i, product, item;
         var typesChosen = []; // Prevent 2 instances of same product, if necessary
         var coordsChosen = [];
-        switch(event.type) {
+        switch(eventInfo.type) {
             case 'forage':
-                number = Math.max(Math.round(event.abundance * 3 + Math.random()*2*event.abundance),1);
+                number = Math.max(Math.round(eventInfo.abundance * 3 + Math.random()*2*eventInfo.abundance),1);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct('event:'+event.type,scope.user.location,event.seed);
+                    product = pickProduct('event:'+eventInfo.type,scope.user.location,event.seed);
                     var count = 1;
                     while(jQuery.inArray(product.name,typesChosen) >= 0) { // Prevent duplicates
-                        product = pickProduct('event:'+event.type,event.seed+count/100); count++;
+                        product = pickProduct('event:'+eventInfo.type,event.seed+count/100); count++;
                     }
                     typesChosen.push(product.name);
                     item = { product: product,
                         targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
-                    item.product.amount = Math.max(1,item.product.avgQty * event.abundance
-                        + randomIntRange(0,Math.round(2*event.abundance)));
+                    item.product.amount = Math.max(1,item.product.avgQty * eventInfo.abundance
+                        + randomIntRange(0,Math.round(2*eventInfo.abundance)));
                     pool.push(item);
                 }
                 break;
             case 'hunt':
-                number = Math.max(Math.round(event.abundance * 2 + Math.random()*event.abundance),1);
+                number = Math.max(Math.round(eventInfo.abundance * 2 + Math.random()*eventInfo.abundance),1);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct('event:'+event.type,scope.user.location,event.seed);
+                    product = pickProduct('event:'+eventInfo.type,scope.user.location,event.seed);
                     item = { product: product,
                         targetX: randomIntRange(100,199), targetY: randomIntRange(100,199) };
                     pool.push(item);
                 }
                 break;
             case 'mine':
-                number = Math.round(1 + event.abundance * 8 + Math.random()*8*event.abundance);
+                number = Math.round(1 + eventInfo.abundance * 8 + Math.random()*8*eventInfo.abundance);
                 for(i = 0; i < number; i++) {
-                    product = pickProduct('event:'+event.type,scope.user.location,event.seed);
+                    product = pickProduct('event:'+eventInfo.type,scope.user.location,event.seed);
                     product.status = 'unrefined';
                     item = { product: product,
                         targetX: [randomIntRange(0,4),randomIntRange(0,2),randomIntRange(0,1)], 
@@ -911,8 +911,8 @@ angular.module('Geographr.game', []).service('gameUtility', function(actCanvasUt
             event = {}; event.skill = skill ? Math.floor(skill / 10) : 0;
             actCanvasUtility.clearAll();
             Math.seedrandom();
-            event.pool = createEventPool(eventInfo); event.result = {};
             event.seed = randomIntRange(0,10000); // For consistent redrawing
+            event.pool = createEventPool(eventInfo); event.result = {};
             switch(eventInfo.type) {
                 case 'hunt': createEventTimers(eventInfo.type,4,400,800); break;
                 case 'mine': event.clicks = []; event.energy = 10; break;

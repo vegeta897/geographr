@@ -248,7 +248,7 @@ angular.module('Geographr.canvas', [])
                             x = (x - offset[0])*zoomPixSize; y = (y - offset[1])*zoomPixSize;
                             context.fillRect(Math.floor(x+zoomPixSize/4), Math.floor(y+zoomPixSize/4), 
                                 canvasPixSize-zoomPixSize/2+pix,canvasPixSize-zoomPixSize/2+pix);
-                            if(object[objKey].blacksmithing) { // If blacksmithing
+                            if(object[objKey].refining) { // If refining
                                 context.fillStyle = 'rgb(200,80,80)';
                                 context.fillRect(Math.ceil(x+zoomPixSize/4-(zoomPixSize+pix)/8), 
                                     Math.ceil(y+zoomPixSize/4-(zoomPixSize+pix)/8),
