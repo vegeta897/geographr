@@ -198,7 +198,7 @@ angular.module('Geographr.controllerMain', [])
             });
         };
         $scope.countTo = function(n) { 
-            var counted = []; for(var i = 0; i < n; i++) { counted.push(i+1); } return counted; };
+            var counted = []; for(var i = 0; i < n; i++) { counted.push(+i+1); } return counted; };
         $scope.isNumber = function(input) { return parseInt(input) === input; };
         $scope.restrictNumber = function(input,dec) {
             input = input.replace(/[^\d.-]/g, '').replace('..','.').replace('..','.').replace('-','');
@@ -539,10 +539,9 @@ angular.module('Geographr.controllerMain', [])
             if(theStall.selectedGood.editing) {
                 if(theStall.goods.hasOwnProperty(theItem.key)) { // Good type didn't change
                     fireInventory.child(theItem.key).transaction(function(invAmount) {
-                        if(invAmount) { return parseInt(invAmount) +
-                            parseInt(theStall.selectedGood.prevAmount) - theStall.selectedGood.addAmount == 0 ? null :
-                            parseInt(invAmount) + parseInt(theStall.selectedGood.prevAmount) - 
-                                theStall.selectedGood.addAmount;
+                        if(invAmount) { return +invAmount + +theStall.selectedGood.prevAmount - 
+                            theStall.selectedGood.addAmount == 0 ? null :
+                            +invAmount + +theStall.selectedGood.prevAmount - theStall.selectedGood.addAmount;
                         } else { return theStall.selectedGood.prevAmount - theStall.selectedGood.addAmount == 0 ?
                             null : theStall.selectedGood.prevAmount - theStall.selectedGood.addAmount; }
                     });
@@ -559,7 +558,7 @@ angular.module('Geographr.controllerMain', [])
                     fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/userStalls/su'+userID+'/'+
                         theStall.selectedGood.prevGood.key).set(null);
                     fireInventory.child(theStall.selectedGood.prevGood.key).transaction(function(invAmount) {
-                        return parseInt(invAmount)+parseInt(theStall.selectedGood.prevAmount) || 
+                        return +invAmount + +theStall.selectedGood.prevAmount || 
                             theStall.selectedGood.prevAmount; });
                     fireInventory.child(theItem.key).transaction(function(invAmount) {
                         return invAmount-theStall.selectedGood.addAmount == 0 ? null :
@@ -621,7 +620,7 @@ angular.module('Geographr.controllerMain', [])
             console.log('buying',amount,good.name,'at', good.value * stall.markup,'gold per unit');
             var status = good.status ? ':' + good.status : '';
             fireInventory.child(good.type+':'+good.name+status).transaction(function(invAmount) {
-                return invAmount ? +invAmount + amount : +amount; });
+                return invAmount ? +invAmount + +amount : +amount; });
             var stockPath = stall.id.substr(0,2) == 'su' ? 
                 '/userStalls/'+stall.id+'/'+good.key+'/amount' : '/stock/'+stall.id+'/goods/'+good.key;
             if(stall.id.substr(0,2) == 'su') { // If this is a user stall, pay the man
@@ -671,7 +670,7 @@ angular.module('Geographr.controllerMain', [])
             $scope.user.money = Math.round($scope.user.money - amount * cost);
             fireUser.child('money').set($scope.user.money);
             fireUser.child('camps/'+$scope.onPixel.camp.grid+'/refining/'+refineType).transaction(function(refAmount) {
-                return refAmount+1 || amount; }); // Add or set refine amount
+                return +refAmount+1 || amount; }); // Add or set refine amount
             var uniqueID = fireRef.push().name(); uniqueID = uniqueID.substr(uniqueID.length - 6,5);
             fireRef.child('camps/list/'+$scope.onPixel.camp.grid+'/refining/'+refineType+'/'+userID+':-:'+item.type+':'+
                 item.name+status+':-:'+amount+':-:'+uniqueID).set(Firebase.ServerValue.TIMESTAMP);
@@ -1129,9 +1128,9 @@ angular.module('Geographr.controllerMain', [])
                     $scope.changeZoom($scope.zoomLevel + 1);
                 }
                 $('.zoom-slider').slider('setValue',$scope.zoomLevel);
+                event.preventDefault(); return false;
             };
             clearTimeout(scrollTimer); scrollTimer = setTimeout(doZoom, 3);
-            event.preventDefault(); return false;
         };
         var scrollTimer; // Timer to prevent scroll event firing twice in a row
         
@@ -1315,7 +1314,7 @@ angular.module('Geographr.controllerMain', [])
                                     modelGood.type == 'other' ? modelGood.name : modelGood.type : modelGood.status;
                                 if(theStall.hasOwnProperty('categories')) {
                                     if(theStall.categories.hasOwnProperty(catName)) {
-                                        theStall.categories[catName][0] += theGood.amount;
+                                        theStall.categories[catName][0] += +theGood.amount;
                                         theStall.categories[catName].push(modelGood.name+status);
                                     } else { theStall.categories[catName] =
                                         [theGood.amount,modelGood.name+status]; }
@@ -1337,8 +1336,8 @@ angular.module('Geographr.controllerMain', [])
                                 var myStall = campSnap.userStalls[userStall];
                                 for(var myGood in myStall) { if(!myStall.hasOwnProperty(myGood)) { continue; }
                                     if(campData.economy.market.inventory.hasOwnProperty(myGood)) {
-                                        campData.economy.market.inventory[myGood].amount +=
-                                            parseInt(myStall[myGood].amount);
+                                        campData.economy.market.inventory[myGood].amount =
+                                            +campData.economy.market.inventory[myGood].amount + +myStall[myGood].amount;
                                     } else {
                                         campData.economy.market.inventory[myGood] = gameUtility.dressItem({
                                             type: myGood.split(':')[0], name: myGood.split(':')[1], key: myGood,
